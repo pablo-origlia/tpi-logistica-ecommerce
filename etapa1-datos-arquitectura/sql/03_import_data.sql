@@ -1,0 +1,1 @@
+﻿-- COPY / BULK INSERT para cargar los CSVs en PostgreSQL

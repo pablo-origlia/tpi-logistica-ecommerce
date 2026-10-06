@@ -1,0 +1,1 @@
+﻿-- CREATE INDEX sobre order_id, vehicle_id, seller_state, etc.

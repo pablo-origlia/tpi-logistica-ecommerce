@@ -1,0 +1,1 @@
+﻿-- Queries para los 14 KPIs definidos en la propuesta

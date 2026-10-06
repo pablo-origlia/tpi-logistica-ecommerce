@@ -1,0 +1,1 @@
+﻿-- 5 consultas analÃ­ticas de las preguntas de la Etapa 1

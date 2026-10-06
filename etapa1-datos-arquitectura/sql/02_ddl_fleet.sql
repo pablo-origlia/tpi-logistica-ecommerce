@@ -1,0 +1,1 @@
+﻿-- DDL: CREATE TABLE para las 5 tablas de flota sintÃ©tica

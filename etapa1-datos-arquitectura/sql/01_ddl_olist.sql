@@ -1,0 +1,1 @@
+﻿-- DDL: CREATE TABLE para las 9 tablas de Olist (PKs, FKs, tipos de datos)
