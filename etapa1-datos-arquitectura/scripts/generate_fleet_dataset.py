@@ -1,44 +1,44 @@
 """
 generate_fleet_dataset.py
 =========================
-Genera las 5 tablas de flota simulada para el TPI "Optimización de la cadena
-logística de última milla" — Análisis de Datos Masivos, UCASAL 2026.
+Genera las 5 tablas de flota simulada para el TPI "Optimizacion de la cadena
+logistica de ultima milla" — Analisis de Datos Masivos, UCASAL 2026.
 
 Tablas producidas:
-  - fleet_vehicles    ← catálogo de vehículos (60 unidades)
-  - fleet_drivers     ← conductores asignados por región
-  - fleet_deliveries  ← tabla de vinculación con Olist (via order_id)
-  - fleet_maintenance ← historial de mantenimientos por vehículo
+  - fleet_vehicles    ← catalogo de vehiculos (60 unidades)
+  - fleet_drivers     ← conductores asignados por region
+  - fleet_deliveries  ← tabla de vinculacion con Olist (via order_id)
+  - fleet_maintenance ← historial de mantenimientos por vehiculo
   - fleet_incidents   ← incidentes que causaron demoras en entregas
 
 Fuentes de entrada:
-  1. dynamic_supply_chain_logistics_dataset.csv  (Kaggle – calibración de distribuciones)
-  2. olist_orders_dataset.csv                    (Olist – órdenes reales)
-  3. olist_sellers_dataset.csv                   (Olist – región del vendedor)
+  1. dynamic_supply_chain_logistics_dataset.csv  (Kaggle – calibracion de distribuciones)
+  2. olist_orders_dataset.csv                    (Olist – ordenes reales)
+  3. olist_sellers_dataset.csv                   (Olist – region del vendedor)
   4. olist_order_items_dataset.csv               (Olist – peso y vendedor por orden)
   5. olist_products_dataset.csv                  (Olist – peso del producto)
 
-Salida: 5 archivos CSV en ./output/ + fleet_generation_log.txt con métricas
+Salida: 5 archivos CSV en ./output/ + fleet_generation_log.txt con metricas
 
-Notas sobre la vinculación ficticia documentada:
+Notas sobre la vinculacion ficticia documentada:
   - fleet_deliveries.order_id referencia olist_orders.order_id (solo status='delivered')
-  - Asignación de vehículo basada en product_weight_g:
+  - Asignacion de vehiculo basada en product_weight_g:
       moto  < 300 g | van  300–2000 g | truck > 2000 g
-  - Asignación de conductor basada en seller_state
+  - Asignacion de conductor basada en seller_state
   - distance_km estimada como proxy de shipping_costs / 3.0
-    (coeficiente empírico: mediana ~$456 BRL → ~152 km en Brasil, 2016-2018)
-  - Timestamps respetan el período 2016-2018 de Olist (seed=42, reproducible)
+    (coeficiente empirico: mediana ~$456 BRL → ~152 km en Brasil, 2016-2018)
+  - Timestamps respetan el periodo 2016-2018 de Olist (seed=42, reproducible)
   - Coordenadas GPS del dataset Kaggle (lat/lng de EE.UU./Europa) no se
     transfieren a estas tablas; la georeferencia proviene de olist_geolocation
 
 Changelog:
-  v1.1 – Corrección: incidentes limitados al subconjunto de órdenes demoradas
-         Corrección: formato de patente brasileño AAA-9999 (DENATRAN 1990-2018)
-         Corrección: categorías de licencia DETRAN (A/B/C/D/E)
-         Corrección: seed fijada antes de cada bloque vectorizado para
+  v1.1 – Correccion: incidentes limitados al subconjunto de ordenes demoradas
+         Correccion: formato de patente brasileno AAA-9999 (DENATRAN 1990-2018)
+         Correccion: categorias de licencia DETRAN (A/B/C/D/E)
+         Correccion: seed fijada antes de cada bloque vectorizado para
                      reproducibilidad total
          Mejora: coeficiente distance_km documentado
-         Mejora: log de métricas en fleet_generation_log.txt
+         Mejora: log de metricas en fleet_generation_log.txt
 """
 
 import pandas as pd
@@ -48,12 +48,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ─────────────────────────────────────────────
-# CONFIGURACIÓN
+# CONFIGURACION
 # ─────────────────────────────────────────────
 SEED = 42
 np.random.seed(SEED)
 
-INPUT_DIR  = Path("../raw")          # carpeta con los CSV de entrada
+INPUT_DIR  = Path(".")          # carpeta con los CSV de entrada
 OUTPUT_DIR = Path("./output")   # carpeta de salida
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -74,15 +74,15 @@ print(f"  Olist orders : {len(orders):,}")
 
 # ─────────────────────────────────────────────
 # 2. EXTRAER DISTRIBUCIONES DEL DATASET KAGGLE
-#    (calibración de parámetros realistas)
+#    (calibracion de parametros realistas)
 # ─────────────────────────────────────────────
 print("\n▶ Extrayendo distribuciones del dataset Kaggle...")
 
-# Fuel consumption por tipo de vehículo (moto < van < truck)
+# Fuel consumption por tipo de vehiculo (moto < van < truck)
 fuel_mean  = kaggle["fuel_consumption_rate"].mean()   # ~5-8 L/h
 fuel_std   = kaggle["fuel_consumption_rate"].std()
 
-# Variación ETA → para calibrar delivery_status
+# Variacion ETA → para calibrar delivery_status
 eta_mean   = kaggle["eta_variation_hours"].mean()
 eta_std    = kaggle["eta_variation_hours"].std()
 
@@ -114,11 +114,11 @@ print(f"  Delay threshold: {delay_threshold:.2f}")
 print(f"  Driver score   : {drv_mean:.2f} ± {drv_std:.2f}")
 
 # ─────────────────────────────────────────────
-# 3. PREPARAR ÓRDENES DE OLIST
+# 3. PREPARAR ORDENES DE OLIST
 # ─────────────────────────────────────────────
-print("\n▶ Filtrando órdenes entregadas de Olist...")
+print("\n▶ Filtrando ordenes entregadas de Olist...")
 
-# Solo órdenes entregadas tienen registro en fleet_deliveries
+# Solo ordenes entregadas tienen registro en fleet_deliveries
 delivered = orders[orders["order_status"] == "delivered"].copy()
 delivered = delivered.dropna(subset=["order_purchase_timestamp",
                                      "order_delivered_customer_date"])
@@ -137,7 +137,7 @@ items_sellers = items_sellers.merge(
 )
 delivered = delivered.merge(items_sellers, on="order_id", how="left")
 
-# Unir con product_weight_g para asignar tipo de vehículo
+# Unir con product_weight_g para asignar tipo de vehiculo
 items_products = items[["order_id", "product_id"]].drop_duplicates("order_id")
 items_products = items_products.merge(
     products[["product_id", "product_weight_g"]], on="product_id", how="left"
@@ -147,7 +147,7 @@ delivered = delivered.merge(
 )
 delivered["product_weight_g"] = delivered["product_weight_g"].fillna(500)
 
-print(f"  Órdenes entregadas: {len(delivered):,}")
+print(f"  Ordenes entregadas: {len(delivered):,}")
 
 # ─────────────────────────────────────────────
 # 4. TABLA: fleet_vehicles
@@ -168,7 +168,7 @@ models = {
 }
 capacity = {"moto": 30, "van": 500, "truck": 5000}  # kg
 
-# Distribución de tipos calibrada a Brasil
+# Distribucion de tipos calibrada a Brasil
 type_dist  = ["moto"] * 25 + ["van"] * 25 + ["truck"] * 10
 vehicle_types = np.random.choice(type_dist, N_VEHICLES, replace=False)
 np.random.shuffle(vehicle_types)
@@ -210,7 +210,7 @@ for i in range(N_VEHICLES):
 
 fleet_vehicles = pd.DataFrame(rows)
 fleet_vehicles.to_csv(OUTPUT_DIR / "fleet_vehicles.csv", index=False)
-print(f"  Generados {len(fleet_vehicles)} vehículos")
+print(f"  Generados {len(fleet_vehicles)} vehiculos")
 
 # ─────────────────────────────────────────────
 # 5. TABLA: fleet_drivers
@@ -219,26 +219,26 @@ print("\n▶ Generando fleet_drivers...")
 
 N_DRIVERS = 40
 
-# Regiones de Brasil con mayor volumen logístico
+# Regiones de Brasil con mayor volumen logistico
 regions = ["SP", "RJ", "MG", "RS", "PR", "SC", "BA", "CE", "PE", "GO",
            "ES", "MT", "MS", "RN", "PB", "AL", "SE", "PI", "MA", "PA"]
 
-# Nombres sintéticos brasileños
+# Nombres sinteticos brasilenos
 first_names = ["Carlos", "João", "Pedro", "Lucas", "Marcos", "Rafael",
-               "André", "Felipe", "Rodrigo", "Bruno", "Fernando", "Diego",
+               "Andre", "Felipe", "Rodrigo", "Bruno", "Fernando", "Diego",
                "Eduardo", "Thiago", "Gustavo", "Gabriel", "Mateus", "Igor",
                "Leandro", "Alessandro", "Maria", "Ana", "Julia", "Camila",
                "Patricia", "Sandra", "Lucia", "Renata", "Claudia", "Beatriz"]
 last_names  = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira",
                "Costa", "Rodrigues", "Alves", "Nascimento", "Pereira",
                "Carvalho", "Melo", "Barbosa", "Ribeiro", "Martins",
-               "Rocha", "Gomes", "Araújo", "Cavalcanti"]
+               "Rocha", "Gomes", "Araujo", "Cavalcanti"]
 
 # Driver behavior score calibrado desde Kaggle
 driver_scores = np.clip(
     np.random.normal(drv_mean, drv_std, N_DRIVERS), 0, 1
 )
-# Asignar vehículo activo por conductor
+# Asignar vehiculo activo por conductor
 active_vehicles = fleet_vehicles[fleet_vehicles["status"] == "activo"]["vehicle_id"].tolist()
 
 rows = []
@@ -251,8 +251,8 @@ for i in range(N_DRIVERS):
         fleet_vehicles["vehicle_id"] == vt_assigned, "type"
     ].values[0]
     # Categorias CNH Brasil (DETRAN): A=moto, B=passeio/van leve,
-    # C=caminhão rígido, D=ônibus/van pesada, E=articulado
-    # Esta frota usa trucks rígidos (Accelo, P310) → categoria C
+    # C=caminhão rigido, D=ônibus/van pesada, E=articulado
+    # Esta frota usa trucks rigidos (Accelo, P310) → categoria C
     license_map = {"moto": "A", "van": "B", "truck": "C"}
     rows.append({
         "driver_id"         : i + 1,
@@ -271,13 +271,13 @@ fleet_drivers.to_csv(OUTPUT_DIR / "fleet_drivers.csv", index=False)
 print(f"  Generados {len(fleet_drivers)} conductores")
 
 # ─────────────────────────────────────────────
-# 6. TABLA: fleet_deliveries  (tabla de vinculación)
+# 6. TABLA: fleet_deliveries  (tabla de vinculacion)
 # ─────────────────────────────────────────────
-print("\n▶ Generando fleet_deliveries (tabla de vinculación)...")
+print("\n▶ Generando fleet_deliveries (tabla de vinculacion)...")
 
 n = len(delivered)
 
-# Asignar vehículo según peso del producto
+# Asignar vehiculo segun peso del producto
 def assign_vehicle_type(weight_g):
     if weight_g < 300:
         return "moto"
@@ -310,7 +310,7 @@ def pick_driver(state):
 delivered["driver_id"] = delivered["seller_state"].apply(pick_driver)
 
 # Distancia_km estimada como proxy de shipping_costs (BRL) del dataset Kaggle.
-# Coeficiente empírico: shipping_mean ≈ 456 BRL → 152 km (mediana inter-estado
+# Coeficiente empirico: shipping_mean ≈ 456 BRL → 152 km (mediana inter-estado
 # en Brasil, ANTT 2017). std escalado a /4 para acotar varianza sin outliers.
 np.random.seed(SEED + 10)   # sub-seed: reproducible e independiente del bloque anterior
 delivered["distance_km"] = np.clip(
@@ -384,7 +384,7 @@ print(f"  Delayed: {(fleet_deliveries['delivery_status']=='delayed').sum():,} "
 # ─────────────────────────────────────────────
 print("\n▶ Generando fleet_maintenance...")
 
-# Frecuencia: ~8-15 mantenimientos por vehículo en 2 años
+# Frecuencia: ~8-15 mantenimientos por vehiculo en 2 anos
 maintenance_rows = []
 maint_id = 1
 
@@ -410,7 +410,7 @@ for _, veh in fleet_vehicles.iterrows():
     vtype = veh["type"]
     n_maint = np.random.randint(8, 16)
 
-    # Distribución temporal 2016-2018
+    # Distribucion temporal 2016-2018
     maint_dates = pd.date_range("2016-01-01", "2018-12-31", periods=n_maint)
     mileage = np.random.randint(20000, 50000)
 
@@ -427,7 +427,7 @@ for _, veh in fleet_vehicles.iterrows():
         lo, hi = cost_range[vtype][maint_type]
         cost = round(np.random.uniform(lo, hi), 2)
 
-        # Downtime: correctivo toma más tiempo, calibrado con Kaggle loading_time
+        # Downtime: correctivo toma mas tiempo, calibrado con Kaggle loading_time
         if maint_type == "correctivo":
             downtime = round(np.random.uniform(4, 48), 1)
         else:
@@ -456,8 +456,8 @@ print(f"  Generados {len(fleet_maintenance):,} registros de mantenimiento")
 # ─────────────────────────────────────────────
 print("\n▶ Generando fleet_incidents...")
 
-# Los incidentes explican el ~15% de las ÓRDENES DEMORADAS (no del total).
-# Corrección v1.1: el denominador es delayed_deliveries, no fleet_deliveries,
+# Los incidentes explican el ~15% de las ORDENES DEMORADAS (no del total).
+# Correccion v1.1: el denominador es delayed_deliveries, no fleet_deliveries,
 # para evitar que n_incidents > len(delayed_deliveries).
 delayed_deliveries = fleet_deliveries[
     fleet_deliveries["delivery_status"] == "delayed"
@@ -469,10 +469,10 @@ incident_sample = delayed_deliveries.sample(
     random_state=SEED
 )
 
-incident_types = ["avería", "accidente", "retraso_tráfico",
-                  "condición_climática", "falla_mecánica_menor"]
+incident_types = ["averia", "accidente", "retraso_trafico",
+                  "condicion_climatica", "falla_mecanica_menor"]
 
-# Pesos calibrados con Kaggle: traffic_congestion y weather son los más frecuentes
+# Pesos calibrados con Kaggle: traffic_congestion y weather son los mas frecuentes
 incident_weights = [0.20, 0.05, 0.40, 0.25, 0.10]
 
 incident_rows = []
@@ -484,17 +484,17 @@ for idx, (_, row) in enumerate(incident_sample.iterrows()):
         np.random.normal(disruption_mean, disruption_std), 0, 1
     ))
 
-    # Impacto en entrega según tipo de incidente
+    # Impacto en entrega segun tipo de incidente
     impact_map = {
-        "avería"              : np.random.uniform(4, 24),
+        "averia"              : np.random.uniform(4, 24),
         "accidente"           : np.random.uniform(8, 48),
-        "retraso_tráfico"     : np.random.uniform(1, 6),
-        "condición_climática" : np.random.uniform(2, 12),
-        "falla_mecánica_menor": np.random.uniform(1, 4)
+        "retraso_trafico"     : np.random.uniform(1, 6),
+        "condicion_climatica" : np.random.uniform(2, 12),
+        "falla_mecanica_menor": np.random.uniform(1, 4)
     }
     impact_h = round(impact_map[inc_type], 1)
 
-    # Fecha del incidente = en algún punto entre pickup y delivery
+    # Fecha del incidente = en algun punto entre pickup y delivery
     if pd.notna(row["pickup_date"]) and pd.notna(row["delivery_date"]):
         try:
             t0 = pd.Timestamp(row["pickup_date"])
@@ -521,7 +521,7 @@ for idx, (_, row) in enumerate(incident_sample.iterrows()):
 
 fleet_incidents = pd.DataFrame(incident_rows)
 fleet_incidents.to_csv(OUTPUT_DIR / "fleet_incidents.csv", index=False)
-print(f"  Generados {len(fleet_incidents):,} incidentes logísticos")
+print(f"  Generados {len(fleet_incidents):,} incidentes logisticos")
 
 # ─────────────────────────────────────────────
 # 9. RESUMEN FINAL + LOG
@@ -533,22 +533,22 @@ summary_lines = [
     "=" * 60,
     "DATASET DE FLOTA GENERADO — RESUMEN",
     "=" * 60,
-    f"  {'fleet_vehicles.csv':<32} {len(fleet_vehicles):>8,}  vehículos",
+    f"  {'fleet_vehicles.csv':<32} {len(fleet_vehicles):>8,}  vehiculos",
     f"  {'fleet_drivers.csv':<32} {len(fleet_drivers):>8,}  conductores",
     f"  {'fleet_deliveries.csv':<32} {len(fleet_deliveries):>8,}  entregas (vinculadas a Olist)",
     f"  {'fleet_maintenance.csv':<32} {len(fleet_maintenance):>8,}  registros de mantenimiento",
-    f"  {'fleet_incidents.csv':<32} {len(fleet_incidents):>8,}  incidentes logísticos",
+    f"  {'fleet_incidents.csv':<32} {len(fleet_incidents):>8,}  incidentes logisticos",
     "",
-    f"  Período cubierto        : 2016–2018 (consistente con Olist)",
+    f"  Periodo cubierto        : 2016–2018 (consistente con Olist)",
     f"  Seed aleatoria          : {SEED} (reproducible)",
     f"  Tasa de demora          : {delay_rate*100:.1f}% de las entregas",
     f"  % mantenimiento correct.: {pct_correctivo*100:.1f}%",
-    f"  Vehículos tipo moto     : {(fleet_vehicles['type']=='moto').sum()}",
-    f"  Vehículos tipo van      : {(fleet_vehicles['type']=='van').sum()}",
-    f"  Vehículos tipo truck    : {(fleet_vehicles['type']=='truck').sum()}",
+    f"  Vehiculos tipo moto     : {(fleet_vehicles['type']=='moto').sum()}",
+    f"  Vehiculos tipo van      : {(fleet_vehicles['type']=='van').sum()}",
+    f"  Vehiculos tipo truck    : {(fleet_vehicles['type']=='truck').sum()}",
     f"  Carpeta de salida       : {OUTPUT_DIR.resolve()}",
     "",
-    "  Clave de vinculación:",
+    "  Clave de vinculacion:",
     "  olist_orders.order_id  ←→  fleet_deliveries.order_id",
     "=" * 60,
 ]
@@ -560,11 +560,11 @@ for line in summary_lines:
 log_path = OUTPUT_DIR / "fleet_generation_log.txt"
 with open(log_path, "w", encoding="utf-8") as f:
     f.write("\n".join(summary_lines))
-    f.write("\n\nNotas de vinculación ficticia:\n")
-    f.write("- vehicle_id asignado según product_weight_g (moto<300g, van<2000g, truck>=2000g)\n")
-    f.write("- driver_id asignado según seller_state de la orden\n")
-    f.write("- distance_km = proxy de shipping_costs / 3.0 (coef. empírico ANTT 2017)\n")
-    f.write("- Incidentes = 15% del subconjunto de órdenes demoradas\n")
+    f.write("\n\nNotas de vinculacion ficticia:\n")
+    f.write("- vehicle_id asignado segun product_weight_g (moto<300g, van<2000g, truck>=2000g)\n")
+    f.write("- driver_id asignado segun seller_state de la orden\n")
+    f.write("- distance_km = proxy de shipping_costs / 3.0 (coef. empirico ANTT 2017)\n")
+    f.write("- Incidentes = 15% del subconjunto de ordenes demoradas\n")
     f.write("- Coordenadas GPS del dataset Kaggle NO transferidas (usar olist_geolocation)\n")
 
 print(f"\n  Log guardado en: {log_path}")

@@ -3,16 +3,16 @@
     Crea la estructura de carpetas y archivos placeholder del TPI.
 
 .DESCRIPTION
-    Genera el árbol completo de directorios para el proyecto
-    "Optimización de la cadena logística de última milla"
-    (Análisis de Datos Masivos — Maestría en Ciencias de Datos, UCASAL 2026).
+    Genera el arbol completo de directorios para el proyecto
+    "Optimizacion de la cadena logistica de ultima milla"
+    (Analisis de Datos Masivos — Maestria en Ciencias de Datos, UCASAL 2026).
 
-    Los archivos .gitkeep mantienen las carpetas vacías en Git.
-    Los archivos placeholder (.sql, .md, .ipynb) se crean vacíos
+    Los archivos .gitkeep mantienen las carpetas vacias en Git.
+    Los archivos placeholder (.sql, .md, .ipynb) se crean vacios
     listos para ser completados.
 
 .PARAMETER RootPath
-    Ruta donde se creará la carpeta raíz tpi-logistica-ecommerce/.
+    Ruta donde se creara la carpeta raiz tpi-logistica-ecommerce/.
     Por defecto: directorio actual.
 
 .EXAMPLE
@@ -28,7 +28,7 @@ param(
 )
 
 # ─────────────────────────────────────────
-# CONFIGURACIÓN
+# CONFIGURACION
 # ─────────────────────────────────────────
 $ProjectName = "tpi-logistica-ecommerce"
 $Root = Join-Path (Resolve-Path $RootPath) $ProjectName
@@ -69,9 +69,9 @@ Write-Host ""
 New-Dir $Root
 
 # ─────────────────────────────────────────
-# README en la raíz
+# README en la raiz
 # ─────────────────────────────────────────
-New-Placeholder -Path "$Root\README.md" -Content "# TPI — Optimización de la cadena logística de última milla`n`nVer README.md completo en la carpeta del proyecto."
+New-Placeholder -Path "$Root\README.md" -Content "# TPI — Optimizacion de la cadena logistica de ultima milla`n`nVer README.md completo en la carpeta del proyecto."
 
 # ─────────────────────────────────────────
 # ETAPA 1 — Datos y arquitectura
@@ -79,20 +79,20 @@ New-Placeholder -Path "$Root\README.md" -Content "# TPI — Optimización de la 
 $E1 = "$Root\etapa1-datos-arquitectura"
 
 New-Dir "$E1\raw"
-New-Placeholder -Path "$E1\raw\.gitkeep" -Content "# Colocar aquí los CSV descargados de Kaggle (Olist + Dynamic Supply Chain)"
+New-Placeholder -Path "$E1\raw\.gitkeep" -Content "# Colocar aqui los CSV descargados de Kaggle (Olist + Dynamic Supply Chain)"
 
 New-Dir "$E1\fleet_synthetic"
 New-Placeholder -Path "$E1\fleet_synthetic\.gitkeep" -Content "# Generado por: etapa1-datos-arquitectura\scripts\generate_fleet_dataset.py"
 
 New-Dir "$E1\sql"
 New-Placeholder -Path "$E1\sql\01_ddl_olist.sql"            -Content "-- DDL: CREATE TABLE para las 9 tablas de Olist (PKs, FKs, tipos de datos)"
-New-Placeholder -Path "$E1\sql\02_ddl_fleet.sql"            -Content "-- DDL: CREATE TABLE para las 5 tablas de flota sintética"
+New-Placeholder -Path "$E1\sql\02_ddl_fleet.sql"            -Content "-- DDL: CREATE TABLE para las 5 tablas de flota sintetica"
 New-Placeholder -Path "$E1\sql\03_import_data.sql"          -Content "-- COPY / BULK INSERT para cargar los CSVs en PostgreSQL"
-New-Placeholder -Path "$E1\sql\04_consultas_analiticas.sql" -Content "-- 5 consultas analíticas de las preguntas de la Etapa 1"
+New-Placeholder -Path "$E1\sql\04_consultas_analiticas.sql" -Content "-- 5 consultas analiticas de las preguntas de la Etapa 1"
 New-Placeholder -Path "$E1\sql\05_indices.sql"              -Content "-- CREATE INDEX sobre order_id, vehicle_id, seller_state, etc."
 
 New-Dir "$E1\scripts"
-New-Placeholder -Path "$E1\scripts\generate_fleet_dataset.py" -Content "# Copiar aquí generate_fleet_dataset.py (v1.1)"
+New-Placeholder -Path "$E1\scripts\generate_fleet_dataset.py" -Content "# Copiar aqui generate_fleet_dataset.py (v1.1)"
 
 New-Dir "$E1\docs"
 New-Placeholder -Path "$E1\docs\propuesta_datasets_tpi.md"  -Content "# Propuesta de datasets — completar con el documento de propuesta"
@@ -106,7 +106,7 @@ New-GitKeep -Dir "$E1\performance\explain_con_indices"
 Write-Host "  [OK] etapa1-datos-arquitectura/" -ForegroundColor Green
 
 # ─────────────────────────────────────────
-# ETAPA 2 — Preparación y EDA
+# ETAPA 2 — Preparacion y EDA
 # ─────────────────────────────────────────
 $E2 = "$Root\etapa2-preparacion-eda"
 
@@ -115,14 +115,14 @@ New-Placeholder -Path "$E2\notebooks\01_limpieza.ipynb"     -Content '{"cells":[
 New-Placeholder -Path "$E2\notebooks\02_eda.ipynb"          -Content '{"cells":[],"metadata":{"kernelspec":{"display_name":"Python 3","language":"python","name":"python3"}},"nbformat":4,"nbformat_minor":5}'
 
 New-Dir "$E2\sql"
-New-Placeholder -Path "$E2\sql\vistas_analiticas.sql"       -Content "-- CREATE VIEW para el dataset analítico (JOIN principal Olist + flota)"
-New-Placeholder -Path "$E2\sql\tablas_temporales.sql"       -Content "-- Tablas temporales (#) para cálculos intermedios del EDA"
+New-Placeholder -Path "$E2\sql\vistas_analiticas.sql"       -Content "-- CREATE VIEW para el dataset analitico (JOIN principal Olist + flota)"
+New-Placeholder -Path "$E2\sql\tablas_temporales.sql"       -Content "-- Tablas temporales (#) para calculos intermedios del EDA"
 
 New-Dir "$E2\output"
 New-Placeholder -Path "$E2\output\.gitkeep"                 -Content "# dataset_analitico.csv y .parquet se generan al ejecutar 01_limpieza.ipynb"
 
 New-Dir "$E2\docs"
-New-Placeholder -Path "$E2\docs\informe_calidad_datos.md"   -Content "# Informe de calidad de datos`n`n## Diagnóstico inicial`n## Transformaciones aplicadas`n## Impacto en el volumen de datos"
+New-Placeholder -Path "$E2\docs\informe_calidad_datos.md"   -Content "# Informe de calidad de datos`n`n## Diagnostico inicial`n## Transformaciones aplicadas`n## Impacto en el volumen de datos"
 
 New-Dir "$E2\figures"
 New-GitKeep -Dir "$E2\figures"
@@ -145,10 +145,10 @@ New-Dir "$E3\sql"
 New-Placeholder -Path "$E3\sql\kpis.sql"                    -Content "-- Queries para los 14 KPIs definidos en la propuesta"
 
 New-Dir "$E3\output"
-New-Placeholder -Path "$E3\output\metricas_modelos.md"      -Content "# Métricas de evaluación`n`n## Modelo 1 — Regresión ETA`n## Modelo 2 — Clasificación delay"
+New-Placeholder -Path "$E3\output\metricas_modelos.md"      -Content "# Metricas de evaluacion`n`n## Modelo 1 — Regresion ETA`n## Modelo 2 — Clasificacion delay"
 
 New-Dir "$E3\docs"
-New-Placeholder -Path "$E3\docs\informe_modelos.md"         -Content "# Informe de modelos`n`n## Técnica elegida`n## Justificación`n## Variables utilizadas`n## Resultados`n## Evaluación`n## Significado para el problema"
+New-Placeholder -Path "$E3\docs\informe_modelos.md"         -Content "# Informe de modelos`n`n## Tecnica elegida`n## Justificacion`n## Variables utilizadas`n## Resultados`n## Evaluacion`n## Significado para el problema"
 
 New-Dir "$E3\figures"
 New-GitKeep -Dir "$E3\figures"
@@ -164,7 +164,7 @@ New-Dir "$E4\pbix"
 New-Placeholder -Path "$E4\pbix\.gitkeep"                   -Content "# dashboard_logistica_ecommerce.pbix (Power BI) o .twb (Tableau)"
 
 New-Dir "$E4\data_source"
-New-Placeholder -Path "$E4\data_source\.gitkeep"            -Content "# Copia estable del dataset analítico para conectar al dashboard"
+New-Placeholder -Path "$E4\data_source\.gitkeep"            -Content "# Copia estable del dataset analitico para conectar al dashboard"
 
 New-Dir "$E4\screenshots"
 New-Placeholder -Path "$E4\screenshots\.gitkeep"            -Content "# vista_ejecutiva.png / vista_analitica.png / vista_decision.png"
@@ -177,7 +177,7 @@ Write-Host "  [OK] etapa4-dashboard/" -ForegroundColor Green
 $EF = "$Root\entregable-final"
 
 New-Dir $EF
-New-Placeholder -Path "$EF\.gitkeep"                        -Content "# Copiar aquí los entregables finales para subir al Drive`n# informe_final.pdf | diccionario_kpis.xlsx | dataset_analitico_top1000.csv | script_sql_completo.sql | dashboard .pbix | generate_fleet_dataset.py"
+New-Placeholder -Path "$EF\.gitkeep"                        -Content "# Copiar aqui los entregables finales para subir al Drive`n# informe_final.pdf | diccionario_kpis.xlsx | dataset_analitico_top1000.csv | script_sql_completo.sql | dashboard .pbix | generate_fleet_dataset.py"
 
 Write-Host "  [OK] entregable-final/" -ForegroundColor Green
 
@@ -195,7 +195,7 @@ $Files = (Get-ChildItem -Path $Root -Recurse -File).Count
 Write-Host "  Carpetas : $Dirs" -ForegroundColor White
 Write-Host "  Archivos : $Files (placeholders)" -ForegroundColor White
 Write-Host ""
-Write-Host "  Próximo paso:" -ForegroundColor Yellow
+Write-Host "  Proximo paso:" -ForegroundColor Yellow
 Write-Host "  1. Copiar generate_fleet_dataset.py en etapa1-datos-arquitectura\scripts\" -ForegroundColor White
 Write-Host "  2. Copiar propuesta_datasets_tpi.md en etapa1-datos-arquitectura\docs\" -ForegroundColor White
 Write-Host "  3. Descargar los CSV de Kaggle en etapa1-datos-arquitectura\raw\" -ForegroundColor White

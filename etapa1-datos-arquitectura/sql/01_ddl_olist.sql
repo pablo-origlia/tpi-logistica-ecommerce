@@ -2,9 +2,9 @@
 -- 01_ddl_olist.sql
 -- DDL: Tablas de Olist Brazilian E-Commerce Dataset
 -- Base de datos: olist_logistics_db (PostgreSQL 15+)
--- Proyecto TPI — Análisis de Datos Masivos, UCASAL 2026
+-- Proyecto TPI — Analisis de Datos Masivos, UCASAL 2026
 -- =============================================================
--- Orden de creación respeta dependencias de FK:
+-- Orden de creacion respeta dependencias de FK:
 --   1. olist_geolocation          (sin FK entrante)
 --   2. olist_customers            (usa zip → geolocation)
 --   3. olist_sellers              (usa zip → geolocation)
@@ -30,8 +30,8 @@ DROP TABLE IF EXISTS olist_geolocation                 CASCADE;
 -- -------------------------------------------------------------
 -- 1. olist_geolocation
 --    ~1.000.163 filas — coordenadas por prefijo de CEP (ZIP)
---    Sin PK única en el CSV original: el mismo zip puede tener
---    múltiples coordenadas. Se usa como tabla de referencia.
+--    Sin PK unica en el CSV original: el mismo zip puede tener
+--    multiples coordenadas. Se usa como tabla de referencia.
 -- -------------------------------------------------------------
 CREATE TABLE olist_geolocation (
     geolocation_zip_code_prefix  CHAR(5)        NOT NULL,
@@ -48,18 +48,18 @@ CREATE TABLE olist_geolocation (
         ))
 );
 
--- Índice para los JOINs frecuentes por zip
+-- Indice para los JOINs frecuentes por zip
 CREATE INDEX idx_geo_zip ON olist_geolocation (geolocation_zip_code_prefix);
 CREATE INDEX idx_geo_state ON olist_geolocation (geolocation_state);
 
 COMMENT ON TABLE olist_geolocation IS
-    'Coordenadas geográficas por prefijo de CEP brasileño. '
+    'Coordenadas geograficas por prefijo de CEP brasileno. '
     'Una fila por coordenada medida — un zip puede tener varias filas. '
     'Fuente: Olist dataset, ~1M filas.';
 
 -- -------------------------------------------------------------
 -- 2. olist_customers
---    ~99.441 filas — un registro por cliente único
+--    ~99.441 filas — un registro por cliente unico
 -- -------------------------------------------------------------
 CREATE TABLE olist_customers (
     customer_id              VARCHAR(40)  PRIMARY KEY,
@@ -79,7 +79,7 @@ CREATE INDEX idx_cust_state ON olist_customers (customer_state);
 CREATE INDEX idx_cust_uid   ON olist_customers (customer_unique_id);
 
 COMMENT ON TABLE olist_customers IS
-    'Clientes de Olist. customer_id es el ID de orden (varía por pedido); '
+    'Clientes de Olist. customer_id es el ID de orden (varia por pedido); '
     'customer_unique_id identifica al cliente real entre pedidos.';
 
 -- -------------------------------------------------------------
@@ -103,11 +103,11 @@ CREATE INDEX idx_sel_state ON olist_sellers (seller_state);
 
 COMMENT ON TABLE olist_sellers IS
     'Vendedores registrados en Olist. seller_state determina la '
-    'asignación de conductor en fleet_drivers (vinculación ficticia).';
+    'asignacion de conductor en fleet_drivers (vinculacion ficticia).';
 
 -- -------------------------------------------------------------
 -- 4. olist_products
---    ~32.951 filas — catálogo de productos
+--    ~32.951 filas — catalogo de productos
 -- -------------------------------------------------------------
 CREATE TABLE olist_products (
     product_id                 VARCHAR(40)  PRIMARY KEY,
@@ -125,12 +125,12 @@ CREATE INDEX idx_prod_category ON olist_products (product_category_name);
 CREATE INDEX idx_prod_weight   ON olist_products (product_weight_g);
 
 COMMENT ON TABLE olist_products IS
-    'Catálogo de productos. product_weight_g determina el tipo de '
-    'vehículo asignado en fleet_deliveries: moto < 300g, van < 2000g, truck >= 2000g.';
+    'Catalogo de productos. product_weight_g determina el tipo de '
+    'vehiculo asignado en fleet_deliveries: moto < 300g, van < 2000g, truck >= 2000g.';
 
 -- -------------------------------------------------------------
 -- 5. product_category_name_translation
---    ~71 filas — traducción PT → EN de categorías
+--    ~71 filas — traduccion PT → EN de categorias
 -- -------------------------------------------------------------
 CREATE TABLE product_category_name_translation (
     product_category_name         VARCHAR(100) PRIMARY KEY,
@@ -138,7 +138,7 @@ CREATE TABLE product_category_name_translation (
 );
 
 COMMENT ON TABLE product_category_name_translation IS
-    'Traducción de categorías de productos del portugués al inglés.';
+    'Traduccion de categorias de productos del portugues al ingles.';
 
 -- -------------------------------------------------------------
 -- 6. olist_orders
@@ -160,7 +160,7 @@ CREATE TABLE olist_orders (
     order_estimated_delivery_date   TIMESTAMP    NOT NULL,
 
     -- Columna calculada: demora en horas (positivo = tarde, negativo = antes)
-    -- Se puede poblar con un UPDATE después del import, o generarse en la vista analítica
+    -- Se puede poblar con un UPDATE despues del import, o generarse en la vista analitica
     CONSTRAINT chk_ord_dates CHECK (
         order_delivered_customer_date IS NULL
         OR order_delivered_customer_date >= order_purchase_timestamp
@@ -171,23 +171,23 @@ CREATE INDEX idx_ord_customer  ON olist_orders (customer_id);
 CREATE INDEX idx_ord_status    ON olist_orders (order_status);
 CREATE INDEX idx_ord_purchase  ON olist_orders (order_purchase_timestamp);
 CREATE INDEX idx_ord_delivered ON olist_orders (order_delivered_customer_date);
--- Índice parcial: solo órdenes entregadas (las más consultadas en análisis)
+-- Indice parcial: solo ordenes entregadas (las mas consultadas en analisis)
 CREATE INDEX idx_ord_delivered_only ON olist_orders (order_id)
     WHERE order_status = 'delivered';
 
 COMMENT ON TABLE olist_orders IS
     'Tabla central de Olist. Contiene el ciclo de vida completo de cada orden. '
-    'Las órdenes con order_status = ''delivered'' se vinculan con fleet_deliveries.';
+    'Las ordenes con order_status = ''delivered'' se vinculan con fleet_deliveries.';
 
 -- -------------------------------------------------------------
 -- 7. olist_order_items
---    ~112.650 filas — líneas de detalle por orden
---    PK compuesta: una orden puede tener múltiples ítems
+--    ~112.650 filas — lineas de detalle por orden
+--    PK compuesta: una orden puede tener multiples items
 -- -------------------------------------------------------------
 CREATE TABLE olist_order_items (
     order_id             VARCHAR(40)   NOT NULL
         REFERENCES olist_orders (order_id),
-    order_item_id        SMALLINT      NOT NULL,   -- nro de línea dentro de la orden
+    order_item_id        SMALLINT      NOT NULL,   -- nro de linea dentro de la orden
     product_id           VARCHAR(40)   NOT NULL
         REFERENCES olist_products (product_id),
     seller_id            VARCHAR(40)   NOT NULL
@@ -203,12 +203,12 @@ CREATE INDEX idx_items_product ON olist_order_items (product_id);
 CREATE INDEX idx_items_seller  ON olist_order_items (seller_id);
 
 COMMENT ON TABLE olist_order_items IS
-    'Detalle de productos por orden. freight_value es el costo de envío '
+    'Detalle de productos por orden. freight_value es el costo de envio '
     'cobrado al cliente — se usa como proxy para estimar distance_km en la flota.';
 
 -- -------------------------------------------------------------
 -- 8. olist_order_reviews
---    ~99.224 filas — reseñas de clientes post-entrega
+--    ~99.224 filas — resenas de clientes post-entrega
 -- -------------------------------------------------------------
 CREATE TABLE olist_order_reviews (
     review_id               VARCHAR(40)  PRIMARY KEY,
@@ -226,14 +226,14 @@ CREATE INDEX idx_rev_order ON olist_order_reviews (order_id);
 CREATE INDEX idx_rev_score ON olist_order_reviews (review_score);
 
 COMMENT ON TABLE olist_order_reviews IS
-    'Reseñas de clientes. review_score (1-5) es la variable de impacto final: '
-    'refleja el resultado percibido de la logística. '
-    'review_comment_message es texto libre — permite análisis de sentimiento.';
+    'Resenas de clientes. review_score (1-5) es la variable de impacto final: '
+    'refleja el resultado percibido de la logistica. '
+    'review_comment_message es texto libre — permite analisis de sentimiento.';
 
 -- -------------------------------------------------------------
 -- 9. olist_order_payments
---    ~103.886 filas — métodos y montos de pago por orden
---    Una orden puede tener múltiples registros (ej. cupón + tarjeta)
+--    ~103.886 filas — metodos y montos de pago por orden
+--    Una orden puede tener multiples registros (ej. cupon + tarjeta)
 -- -------------------------------------------------------------
 CREATE TABLE olist_order_payments (
     order_id              VARCHAR(40)   NOT NULL
@@ -252,12 +252,12 @@ CREATE TABLE olist_order_payments (
 CREATE INDEX idx_pay_type ON olist_order_payments (payment_type);
 
 COMMENT ON TABLE olist_order_payments IS
-    'Pagos asociados a cada orden. Una orden puede dividirse en múltiples '
-    'métodos (boleto + voucher). payment_value es el monto efectivamente pagado.';
+    'Pagos asociados a cada orden. Una orden puede dividirse en multiples '
+    'metodos (boleto + voucher). payment_value es el monto efectivamente pagado.';
 
 -- =============================================================
--- VERIFICACIÓN RÁPIDA POST-IMPORT
--- Ejecutar después de cargar los CSV con 03_import_data.sql
+-- VERIFICACION RAPIDA POST-IMPORT
+-- Ejecutar despues de cargar los CSV con 03_import_data.sql
 -- =============================================================
 -- SELECT 'olist_geolocation'              AS tabla, COUNT(*) AS filas FROM olist_geolocation
 -- UNION ALL

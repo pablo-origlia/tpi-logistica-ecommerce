@@ -2,21 +2,21 @@
 -- 03_import_data.sql
 -- Carga de datos: COPY desde CSV hacia las tablas de la BD
 -- Base de datos: olist_logistics_db (PostgreSQL 15+)
--- Proyecto TPI — Análisis de Datos Masivos, UCASAL 2026
+-- Proyecto TPI — Analisis de Datos Masivos, UCASAL 2026
 -- =============================================================
 -- ANTES DE EJECUTAR:
---   1. Ajustar la variable :csv_path al directorio donde están
+--   1. Ajustar la variable :csv_path al directorio donde estan
 --      los CSV (ver instrucciones abajo).
 --   2. Ejecutar como superusuario o con permisos pg_read_server_files.
 --   3. Los archivos deben estar accesibles desde el servidor PostgreSQL.
 --
 -- AJUSTE DE RUTA:
---   Opción A — psql con variable:
+--   Opcion A — psql con variable:
 --     psql -v csv_olist="C:/ruta/etapa1-datos-arquitectura/raw" \
 --          -v csv_fleet="C:/ruta/etapa1-datos-arquitectura/fleet_synthetic" \
 --          -d olist_logistics_db -f 03_import_data.sql
 --
---   Opción B — reemplazar :'csv_olist' y :'csv_fleet' con la ruta real.
+--   Opcion B — reemplazar :'csv_olist' y :'csv_fleet' con la ruta real.
 --
 -- NOTA: En Windows usar barras / no \ en las rutas dentro de COPY.
 -- =============================================================
@@ -127,7 +127,7 @@ COPY olist_order_reviews (
 FROM :'csv_olist' || '/olist_order_reviews_dataset.csv'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '', QUOTE '"');
--- QUOTE '"' necesario: review_comment_message puede contener comas y saltos de línea
+-- QUOTE '"' necesario: review_comment_message puede contener comas y saltos de linea
 
 -- 9. order_payments
 COPY olist_order_payments (
@@ -142,7 +142,7 @@ WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
 -- ─────────────────────────────────────────
--- FLOTA SINTÉTICA
+-- FLOTA SINTETICA
 -- ─────────────────────────────────────────
 
 -- 10. fleet_vehicles
@@ -162,7 +162,7 @@ FROM :'csv_fleet' || '/fleet_vehicles.csv'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
--- Resetear secuencia SERIAL al máximo ya cargado
+-- Resetear secuencia SERIAL al maximo ya cargado
 SELECT setval('fleet_vehicles_vehicle_id_seq', MAX(vehicle_id)) FROM fleet_vehicles;
 
 -- 11. fleet_drivers
@@ -238,7 +238,7 @@ WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
 SELECT setval('fleet_incidents_incident_id_seq', MAX(incident_id)) FROM fleet_incidents;
 
 -- =============================================================
--- VERIFICACIÓN FINAL — ejecutar siempre después del import
+-- VERIFICACION FINAL — ejecutar siempre despues del import
 -- =============================================================
 SELECT
     relname                          AS tabla,
@@ -247,7 +247,7 @@ FROM pg_stat_user_tables
 WHERE schemaname = 'public'
 ORDER BY relname;
 
--- Control de FK crítica: todas las órdenes 'delivered' tienen entrega registrada
+-- Control de FK critica: todas las ordenes 'delivered' tienen entrega registrada
 SELECT
     COUNT(*)                         AS ordenes_delivered_sin_entrega_en_flota
 FROM olist_orders o
@@ -256,10 +256,10 @@ WHERE o.order_status = 'delivered'
   AND fd.order_id IS NULL;
 -- Resultado esperado: 0
 
--- Distribución de tipos de vehículo
+-- Distribucion de tipos de vehiculo
 SELECT type, COUNT(*) FROM fleet_vehicles GROUP BY type ORDER BY type;
 -- Esperado: moto=25, van=25, truck=10
 
--- Distribución de delivery_status
+-- Distribucion de delivery_status
 SELECT delivery_status, COUNT(*), ROUND(COUNT(*)*100.0/SUM(COUNT(*)) OVER(),1) AS pct
 FROM fleet_deliveries GROUP BY delivery_status;
