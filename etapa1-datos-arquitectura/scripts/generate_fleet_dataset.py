@@ -53,7 +53,7 @@ warnings.filterwarnings("ignore")
 SEED = 42
 np.random.seed(SEED)
 
-INPUT_DIR  = Path(".")          # carpeta con los CSV de entrada
+INPUT_DIR  = Path("../raw")          # carpeta con los CSV de entrada
 OUTPUT_DIR = Path("./output")   # carpeta de salida
 OUTPUT_DIR.mkdir(exist_ok=True)
 
