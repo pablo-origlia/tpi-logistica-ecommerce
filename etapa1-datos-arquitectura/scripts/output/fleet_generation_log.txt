@@ -1,0 +1,28 @@
+============================================================
+DATASET DE FLOTA GENERADO — RESUMEN
+============================================================
+  fleet_vehicles.csv                     60  vehiculos
+  fleet_drivers.csv                      40  conductores
+  fleet_deliveries.csv               96,470  entregas (vinculadas a Olist)
+  fleet_maintenance.csv                 688  registros de mantenimiento
+  fleet_incidents.csv                 3,574  incidentes logisticos
+
+  Periodo cubierto        : 2016–2018 (consistente con Olist)
+  Seed aleatoria          : 42 (reproducible)
+  Tasa de demora          : 24.7% de las entregas
+  % mantenimiento correct.: 27.5%
+  Vehiculos tipo moto     : 25
+  Vehiculos tipo van      : 25
+  Vehiculos tipo truck    : 10
+  Carpeta de salida       : C:\poriglia\tpi-logistica-ecommerce\etapa1-datos-arquitectura\scripts\output
+
+  Clave de vinculacion:
+  olist_orders.order_id  ←→  fleet_deliveries.order_id
+============================================================
+
+Notas de vinculacion ficticia:
+- vehicle_id asignado segun product_weight_g (moto<300g, van<2000g, truck>=2000g)
+- driver_id asignado segun seller_state de la orden
+- distance_km = proxy de shipping_costs / 3.0 (coef. empirico ANTT 2017)
+- Incidentes = 15% del subconjunto de ordenes demoradas
+- Coordenadas GPS del dataset Kaggle NO transferidas (usar olist_geolocation)
