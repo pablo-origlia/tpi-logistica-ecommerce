@@ -5,18 +5,18 @@ Genera las 5 tablas de flota simulada para el TPI "Optimizacion de la cadena
 logistica de ultima milla" — Analisis de Datos Masivos, UCASAL 2026.
 
 Tablas producidas:
-  - fleet_vehicles    ← catalogo de vehiculos (60 unidades)
-  - fleet_drivers     ← conductores asignados por region
-  - fleet_deliveries  ← tabla de vinculacion con Olist (via order_id)
-  - fleet_maintenance ← historial de mantenimientos por vehiculo
-  - fleet_incidents   ← incidentes que causaron demoras en entregas
+  - fleet_vehicles   : catalogo de vehiculos (60 unidades)
+  - fleet_drivers    : conductores asignados por region
+  - fleet_deliveries : tabla de vinculacion con Olist (via order_id)
+  - fleet_maintenance: historial de mantenimientos por vehiculo
+  - fleet_incidents  : incidentes que causaron demoras en entregas
 
 Fuentes de entrada:
-  1. dynamic_supply_chain_logistics_dataset.csv  (Kaggle – calibracion de distribuciones)
-  2. olist_orders_dataset.csv                    (Olist – ordenes reales)
-  3. olist_sellers_dataset.csv                   (Olist – region del vendedor)
-  4. olist_order_items_dataset.csv               (Olist – peso y vendedor por orden)
-  5. olist_products_dataset.csv                  (Olist – peso del producto)
+  1. dynamic_supply_chain_logistics_dataset.csv  (Logistics and supply chain dataset, calibracion de distribuciones)
+  2. olist_orders_dataset.csv                    (Olist,  ordenes reales)
+  3. olist_sellers_dataset.csv                   (Olist, region del vendedor)
+  4. olist_order_items_dataset.csv               (Olist, peso y vendedor por orden)
+  5. olist_products_dataset.csv                  (Olist, peso del producto)
 
 Salida: 5 archivos CSV en ./output/ + fleet_generation_log.txt con metricas
 
@@ -53,7 +53,7 @@ warnings.filterwarnings("ignore")
 SEED = 42
 np.random.seed(SEED)
 
-INPUT_DIR  = Path(".")          # carpeta con los CSV de entrada
+INPUT_DIR  = Path("../raw")          # carpeta con los CSV de entrada
 OUTPUT_DIR = Path("./output")   # carpeta de salida
 OUTPUT_DIR.mkdir(exist_ok=True)
 
