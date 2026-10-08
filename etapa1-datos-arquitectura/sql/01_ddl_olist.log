@@ -1,0 +1,59 @@
+C:\poriglia\tpi-logistica-ecommerce\etapa1-datos-arquitectura\sql [main ≡]> psql -U postgres -d olist_logistics_db -f 01_ddl_olist.sql
+Password for user postgres: 
+
+SET
+psql:01_ddl_olist.sql:21: NOTICE:  la tabla Â«olist_order_paymentsÂ» no existe, omitiendo
+DROP TABLE
+psql:01_ddl_olist.sql:22: NOTICE:  la tabla Â«olist_order_reviewsÂ» no existe, omitiendo
+DROP TABLE
+psql:01_ddl_olist.sql:23: NOTICE:  la tabla Â«olist_order_itemsÂ» no existe, omitiendo
+DROP TABLE
+psql:01_ddl_olist.sql:24: NOTICE:  la tabla Â«olist_ordersÂ» no existe, omitiendo
+DROP TABLE
+psql:01_ddl_olist.sql:25: NOTICE:  la tabla Â«product_category_name_translationÂ» no existe, omitiendo
+DROP TABLE
+psql:01_ddl_olist.sql:26: NOTICE:  la tabla Â«olist_productsÂ» no existe, omitiendo
+DROP TABLE
+psql:01_ddl_olist.sql:27: NOTICE:  la tabla Â«olist_sellersÂ» no existe, omitiendo
+DROP TABLE
+psql:01_ddl_olist.sql:28: NOTICE:  la tabla Â«olist_customersÂ» no existe, omitiendo
+DROP TABLE
+psql:01_ddl_olist.sql:29: NOTICE:  la tabla Â«olist_geolocationÂ» no existe, omitiendo
+DROP TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+COMMENT

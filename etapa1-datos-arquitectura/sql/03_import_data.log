@@ -1,0 +1,87 @@
+C:\poriglia\tpi-logistica-ecommerce\etapa1-datos-arquitectura\sql [main ≡]> psql -U postgres -d olist_logistics_db -v csv_olist="C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/raw" -v csv_fleet="C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/fleet_synthetic" -f 03_import_data.sql
+Password for user postgres: 
+
+SET
+COPY 1000163
+COPY 99441
+COPY 3095
+COPY 32951
+COPY 71
+COPY 99441
+COPY 112650
+COPY 99224
+COPY 103886
+COPY 60
+ setval                                                                                                                                                                             
+--------
+     60
+(1 row)
+
+
+COPY 40
+ setval                                                                                                                                                                             
+--------
+     40
+(1 row)
+
+
+COPY 96470
+ setval                                                                                                                                                                             
+--------
+  96470
+(1 row)
+
+
+COPY 688
+ setval                                                                                                                                                                             
+--------
+    688
+(1 row)
+
+
+COPY 3574
+ setval                                                                                                                                                                             
+--------
+   3574
+(1 row)
+
+
+               tabla               | filas_estimadas                                                                                                                                
+-----------------------------------+-----------------
+ fleet_deliveries                  |           96470
+ fleet_drivers                     |              40
+ fleet_incidents                   |               0
+ fleet_maintenance                 |               0
+ fleet_vehicles                    |              60
+ olist_customers                   |           99441
+ olist_geolocation                 |         1000163
+ olist_order_items                 |          112650
+ olist_order_payments              |          103886
+ olist_order_reviews               |           99224
+ olist_orders                      |           99441
+ olist_products                    |           32952
+ olist_sellers                     |            3095
+ product_category_name_translation |              71
+(14 rows)
+
+
+ ordenes_delivered_sin_entrega_en_flota                                                                                                                                             
+----------------------------------------
+                                      8
+(1 row)
+
+
+ type  | count                                                                                                                                                                      
+-------+-------
+ moto  |    25
+ truck |    10
+ van   |    25
+(3 rows)
+
+
+ delivery_status | count | pct                                                                                                                                                      
+-----------------+-------+------
+ on_time         | 72643 | 75.3
+ delayed         | 23827 | 24.7
+(2 rows)
+
