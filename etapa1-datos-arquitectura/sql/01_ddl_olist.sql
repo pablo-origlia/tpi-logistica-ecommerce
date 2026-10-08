@@ -1,8 +1,9 @@
+SET client_encoding = 'UTF8';
 -- =============================================================
 -- 01_ddl_olist.sql
 -- DDL: Tablas de Olist Brazilian E-Commerce Dataset
 -- Base de datos: olist_logistics_db (PostgreSQL 15+)
--- Proyecto TPI — Analisis de Datos Masivos, UCASAL 2026
+-- Proyecto TPI — Análisis de Datos Masivos, UCASAL 2026
 -- =============================================================
 -- Orden de creacion respeta dependencias de FK:
 --   1. olist_geolocation          (sin FK entrante)
@@ -30,7 +31,7 @@ DROP TABLE IF EXISTS olist_geolocation                 CASCADE;
 -- -------------------------------------------------------------
 -- 1. olist_geolocation
 --    ~1.000.163 filas — coordenadas por prefijo de CEP (ZIP)
---    Sin PK unica en el CSV original: el mismo zip puede tener
+--    Sin PK única en el CSV original: el mismo zip puede tener
 --    multiples coordenadas. Se usa como tabla de referencia.
 -- -------------------------------------------------------------
 CREATE TABLE olist_geolocation (
@@ -53,7 +54,7 @@ CREATE INDEX idx_geo_zip ON olist_geolocation (geolocation_zip_code_prefix);
 CREATE INDEX idx_geo_state ON olist_geolocation (geolocation_state);
 
 COMMENT ON TABLE olist_geolocation IS
-    'Coordenadas geograficas por prefijo de CEP brasileno. '
+    'Coordenadas geográficas por prefijo de CEP brasileño. '
     'Una fila por coordenada medida — un zip puede tener varias filas. '
     'Fuente: Olist dataset, ~1M filas.';
 
@@ -79,7 +80,7 @@ CREATE INDEX idx_cust_state ON olist_customers (customer_state);
 CREATE INDEX idx_cust_uid   ON olist_customers (customer_unique_id);
 
 COMMENT ON TABLE olist_customers IS
-    'Clientes de Olist. customer_id es el ID de orden (varia por pedido); '
+    'Clientes de Olist. customer_id es el ID de orden (varía por pedido); '
     'customer_unique_id identifica al cliente real entre pedidos.';
 
 -- -------------------------------------------------------------
@@ -103,7 +104,7 @@ CREATE INDEX idx_sel_state ON olist_sellers (seller_state);
 
 COMMENT ON TABLE olist_sellers IS
     'Vendedores registrados en Olist. seller_state determina la '
-    'asignacion de conductor en fleet_drivers (vinculacion ficticia).';
+    'asignación de conductor en fleet_drivers (vinculación ficticia).';
 
 -- -------------------------------------------------------------
 -- 4. olist_products
@@ -126,7 +127,7 @@ CREATE INDEX idx_prod_weight   ON olist_products (product_weight_g);
 
 COMMENT ON TABLE olist_products IS
     'Catalogo de productos. product_weight_g determina el tipo de '
-    'vehiculo asignado en fleet_deliveries: moto < 300g, van < 2000g, truck >= 2000g.';
+    'vehículo asignado en fleet_deliveries: moto < 300g, van < 2000g, truck >= 2000g.';
 
 -- -------------------------------------------------------------
 -- 5. product_category_name_translation
@@ -138,7 +139,7 @@ CREATE TABLE product_category_name_translation (
 );
 
 COMMENT ON TABLE product_category_name_translation IS
-    'Traduccion de categorias de productos del portugues al ingles.';
+    'Traducción de categorías de productos del portugués al ingles.';
 
 -- -------------------------------------------------------------
 -- 6. olist_orders
@@ -160,7 +161,7 @@ CREATE TABLE olist_orders (
     order_estimated_delivery_date   TIMESTAMP    NOT NULL,
 
     -- Columna calculada: demora en horas (positivo = tarde, negativo = antes)
-    -- Se puede poblar con un UPDATE despues del import, o generarse en la vista analitica
+    -- Se puede poblar con un UPDATE después del import, o generarse en la vista analítica
     CONSTRAINT chk_ord_dates CHECK (
         order_delivered_customer_date IS NULL
         OR order_delivered_customer_date >= order_purchase_timestamp
@@ -203,7 +204,7 @@ CREATE INDEX idx_items_product ON olist_order_items (product_id);
 CREATE INDEX idx_items_seller  ON olist_order_items (seller_id);
 
 COMMENT ON TABLE olist_order_items IS
-    'Detalle de productos por orden. freight_value es el costo de envio '
+    'Detalle de productos por orden. freight_value es el costo de envío '
     'cobrado al cliente — se usa como proxy para estimar distance_km en la flota.';
 
 -- -------------------------------------------------------------
@@ -226,14 +227,14 @@ CREATE INDEX idx_rev_order ON olist_order_reviews (order_id);
 CREATE INDEX idx_rev_score ON olist_order_reviews (review_score);
 
 COMMENT ON TABLE olist_order_reviews IS
-    'Resenas de clientes. review_score (1-5) es la variable de impacto final: '
-    'refleja el resultado percibido de la logistica. '
-    'review_comment_message es texto libre — permite analisis de sentimiento.';
+    'Reseñas de clientes. review_score (1-5) es la variable de impacto final: '
+    'refleja el resultado percibido de la logística. '
+    'review_comment_message es texto libre — permite análisis de sentimiento.';
 
 -- -------------------------------------------------------------
 -- 9. olist_order_payments
---    ~103.886 filas — metodos y montos de pago por orden
---    Una orden puede tener multiples registros (ej. cupon + tarjeta)
+--    ~103.886 filas — métodos y montos de pago por orden
+--    Una orden puede tener multiples registros (ej. cupón + tarjeta)
 -- -------------------------------------------------------------
 CREATE TABLE olist_order_payments (
     order_id              VARCHAR(40)   NOT NULL
@@ -253,11 +254,11 @@ CREATE INDEX idx_pay_type ON olist_order_payments (payment_type);
 
 COMMENT ON TABLE olist_order_payments IS
     'Pagos asociados a cada orden. Una orden puede dividirse en multiples '
-    'metodos (boleto + voucher). payment_value es el monto efectivamente pagado.';
+    'métodos (boleto + voucher). payment_value es el monto efectivamente pagado.';
 
 -- =============================================================
--- VERIFICACION RAPIDA POST-IMPORT
--- Ejecutar despues de cargar los CSV con 03_import_data.sql
+-- VERIFICACIÓN RAPIDA POST-IMPORT
+-- Ejecutar después de cargar los CSV con 03_import_data.sql
 -- =============================================================
 -- SELECT 'olist_geolocation'              AS tabla, COUNT(*) AS filas FROM olist_geolocation
 -- UNION ALL

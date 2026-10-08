@@ -54,8 +54,8 @@ Ajustar las rutas al directorio real del equipo (usar `/` aunque sea Windows):
 
 ```bash
 psql -U postgres -d olist_logistics_db \
-  -v csv_olist="C:/ruta/tpi-logistica-ecommerce/etapa1-datos-arquitectura/raw" \
-  -v csv_fleet="C:/ruta/tpi-logistica-ecommerce/etapa1-datos-arquitectura/fleet_synthetic" \
+  -v csv_olist="C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/raw" \
+  -v csv_fleet="C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/fleet_synthetic" \
   -f 03_import_data.sql
 ```
 

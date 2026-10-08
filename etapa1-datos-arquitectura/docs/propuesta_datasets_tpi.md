@@ -79,7 +79,7 @@ Las 5 tablas de flota se generan con `generate_fleet_dataset.py` (v1.1), que:
 
 ### Tablas generadas
 
-#### `fleet_vehicles` — 60 vehículos
+#### `fleet_vehicles`: 60 vehículos
 
 | Campo                      | Tipo    | Descripción                                                                       |
 | -------------------------- | ------- | --------------------------------------------------------------------------------- |
@@ -94,7 +94,7 @@ Las 5 tablas de flota se generan con `generate_fleet_dataset.py` (v1.1), que:
 | `fuel_consumption_rate_lh` | FLOAT   | Calibrado desde Kaggle, escalado por tipo de vehículo                             |
 | `status`                   | VARCHAR | activo (90%) / baja (10%)                                                         |
 
-#### `fleet_drivers` — 40 conductores
+#### `fleet_drivers`: 40 conductores
 
 | Campo                   | Tipo    | Descripción                                                   |
 | ----------------------- | ------- | ------------------------------------------------------------- |
@@ -107,7 +107,7 @@ Las 5 tablas de flota se generan con `generate_fleet_dataset.py` (v1.1), que:
 | `driver_behavior_score` | FLOAT   | Calibrado desde Kaggle (0–1)                                  |
 | `fatigue_score_avg`     | FLOAT   | Calibrado desde Kaggle (0–1)                                  |
 
-#### `fleet_deliveries` — ~96.000 registros *(tabla de vinculación central)*
+#### `fleet_deliveries`: ~96.000 registros *(tabla de vinculación central)*
 
 | Campo                      | Tipo     | Descripción                                                         |
 | -------------------------- | -------- | ------------------------------------------------------------------- |
@@ -132,7 +132,7 @@ product_weight_g < 300 g   → moto
 product_weight_g ≥ 2000 g  → truck
 ```
 
-#### `fleet_maintenance` — ~720 registros
+#### `fleet_maintenance`: ~720 registros
 
 | Campo                | Tipo    | Descripción                                                 |
 | -------------------- | ------- | ----------------------------------------------------------- |
@@ -147,7 +147,7 @@ product_weight_g ≥ 2000 g  → truck
 
 **Patrón estacional:** probabilidad de mantenimiento correctivo aumenta en nov–dic (×1.5–1.6) y ene–feb (×1.2–1.3), coherente con el pico de demanda del e-commerce brasileño visible en Olist.
 
-#### `fleet_incidents` — ~15% del subconjunto de ordenes demoradas
+#### `fleet_incidents`: ~15% del subconjunto de ordenes demoradas
 
 | Campo                   | Tipo    | Descripción                                                                                                    |
 | ----------------------- | ------- | -------------------------------------------------------------------------------------------------------------- |
@@ -298,12 +298,12 @@ El dataset Kaggle de telemetría **no se carga en la base SQL** como tabla de he
 ## 10. Próximos pasos — Etapa 1
 
 - [x] Descargar los 9 CSV de Olist desde Kaggle y el dataset `dynamic_supply_chain_logistics_dataset.csv`.
-- [ ] Instalar PostgreSQL y crear la base de datos `olist_logistics_db`.
+- [x] Instalar PostgreSQL y crear la base de datos `olist_logistics_db`.
 - [x] Escribir el DDL para las 9 tablas de Olist con PKs, FKs y tipos de datos correctos (`CREATE TABLE` con constraints).
 - [x] Importar los CSVs de Olist con `COPY` o `pg_bulkload`.
 - [x] Ejecutar `generate_fleet_dataset.py` y verificar el `fleet_generation_log.txt`.
 - [x] Crear el DDL para las 5 tablas de flota y cargar los CSVs generados.
-- [ ] Desarrollar las 5 consultas SQL de las preguntas analiticas.
+- [x] Desarrollar las 5 consultas SQL de las preguntas analiticas.
 - [ ] Capturar planes de ejecucion con `EXPLAIN ANALYZE` antes y despues de crear indices sobre `order_id` y `vehicle_id`.
 - [ ] Documentar metricas de performance (tiempo de ejecucion, filas procesadas, I/O) para la presentacion de Etapa 1.
 - [ ] Completar el diccionario de datos con la documentacion de vinculacion ficticia del `fleet_generation_log.txt`.

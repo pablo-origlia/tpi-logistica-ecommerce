@@ -1,3 +1,4 @@
+SET client_encoding = 'UTF8';
 -- =============================================================
 -- 03_import_data.sql
 -- Carga de datos: COPY desde CSV hacia las tablas de la BD
@@ -22,6 +23,25 @@
 -- =============================================================
 
 -- ─────────────────────────────────────────
+-- Definición de rutas completas mediante psql
+-- ─────────────────────────────────────────
+\set file_geo    :csv_olist '/olist_geolocation_dataset.csv'
+\set file_cust   :csv_olist '/olist_customers_dataset.csv'
+\set file_sell   :csv_olist '/olist_sellers_dataset.csv'
+\set file_prod   :csv_olist '/olist_products_dataset.csv'
+\set file_trans  :csv_olist '/product_category_name_translation.csv'
+\set file_ord    :csv_olist '/olist_orders_dataset.csv'
+\set file_items  :csv_olist '/olist_order_items_dataset.csv'
+\set file_rev    :csv_olist '/olist_order_reviews_dataset.csv'
+\set file_pay    :csv_olist '/olist_order_payments_dataset.csv'
+
+\set file_veh    :csv_fleet '/fleet_vehicles.csv'
+\set file_drv    :csv_fleet '/fleet_drivers.csv'
+\set file_del    :csv_fleet '/fleet_deliveries.csv'
+\set file_mnt    :csv_fleet '/fleet_maintenance.csv'
+\set file_inc    :csv_fleet '/fleet_incidents.csv'
+
+-- ─────────────────────────────────────────
 -- OLIST — orden respeta dependencias de FK
 -- ─────────────────────────────────────────
 
@@ -33,7 +53,7 @@ COPY olist_geolocation (
     geolocation_city,
     geolocation_state
 )
-FROM :'csv_olist' || '/olist_geolocation_dataset.csv'
+FROM :'file_geo'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -45,7 +65,7 @@ COPY olist_customers (
     customer_city,
     customer_state
 )
-FROM :'csv_olist' || '/olist_customers_dataset.csv'
+FROM :'file_cust'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -56,7 +76,7 @@ COPY olist_sellers (
     seller_city,
     seller_state
 )
-FROM :'csv_olist' || '/olist_sellers_dataset.csv'
+FROM :'file_sell'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -72,7 +92,7 @@ COPY olist_products (
     product_height_cm,
     product_width_cm
 )
-FROM :'csv_olist' || '/olist_products_dataset.csv'
+FROM :'file_prod'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -81,7 +101,7 @@ COPY product_category_name_translation (
     product_category_name,
     product_category_name_english
 )
-FROM :'csv_olist' || '/product_category_name_translation.csv'
+FROM :'file_trans'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -96,7 +116,7 @@ COPY olist_orders (
     order_delivered_customer_date,
     order_estimated_delivery_date
 )
-FROM :'csv_olist' || '/olist_orders_dataset.csv'
+FROM :'file_ord'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -110,7 +130,7 @@ COPY olist_order_items (
     price,
     freight_value
 )
-FROM :'csv_olist' || '/olist_order_items_dataset.csv'
+FROM :'file_items'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -124,7 +144,7 @@ COPY olist_order_reviews (
     review_creation_date,
     review_answer_timestamp
 )
-FROM :'csv_olist' || '/olist_order_reviews_dataset.csv'
+FROM :'file_rev'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '', QUOTE '"');
 -- QUOTE '"' necesario: review_comment_message puede contener comas y saltos de linea
@@ -137,7 +157,7 @@ COPY olist_order_payments (
     payment_installments,
     payment_value
 )
-FROM :'csv_olist' || '/olist_order_payments_dataset.csv'
+FROM :'file_pay'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -158,7 +178,7 @@ COPY fleet_vehicles (
     fuel_consumption_rate_lh,
     status
 )
-FROM :'csv_fleet' || '/fleet_vehicles.csv'
+FROM :'file_veh'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -176,7 +196,7 @@ COPY fleet_drivers (
     driver_behavior_score,
     fatigue_score_avg
 )
-FROM :'csv_fleet' || '/fleet_drivers.csv'
+FROM :'file_drv'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -198,7 +218,7 @@ COPY fleet_deliveries (
     loading_unloading_time_h,
     route_risk_level
 )
-FROM :'csv_fleet' || '/fleet_deliveries.csv'
+FROM :'file_del'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -215,7 +235,7 @@ COPY fleet_maintenance (
     downtime_hours,
     mileage_at_service
 )
-FROM :'csv_fleet' || '/fleet_maintenance.csv'
+FROM :'file_mnt'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
@@ -231,7 +251,7 @@ COPY fleet_incidents (
     impact_on_delivery_h,
     order_id
 )
-FROM :'csv_fleet' || '/fleet_incidents.csv'
+FROM :'file_inc'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
       NULL '');
 
