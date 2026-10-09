@@ -1,8 +1,9 @@
+SET client_encoding = 'UTF8';
 -- =============================================================
 -- 05_indices.sql
--- Indices adicionales para las consultas analiticas — Etapa 1
+-- Indices adicionales para las consultas analiticas  -  Etapa 1
 -- Base de datos: olist_logistics_db (PostgreSQL 15+)
--- Proyecto TPI — Analisis de Datos Masivos, UCASAL 2026
+-- Proyecto TPI  -  Analisis de Datos Masivos, UCASAL 2026
 -- =============================================================
 -- CUANDO EJECUTAR:
 --   Despues de 03_import_data.sql y ANTES de correr las
@@ -18,18 +19,18 @@
 --   sobre subconjuntos de alta selectividad.
 --
 -- WORKFLOW DE MEDICION (ver tabla en 04_consultas_analiticas.sql):
---   1. Ejecutar EXPLAIN ANALYZE sobre cada consulta → guardar
+--   1. Ejecutar EXPLAIN ANALYZE sobre cada consulta -> guardar
 --      en performance/explain_sin_indices/
 --   2. Ejecutar este script (05_indices.sql)
---   3. Ejecutar EXPLAIN ANALYZE nuevamente → guardar en
+--   3. Ejecutar EXPLAIN ANALYZE nuevamente -> guardar en
 --      performance/explain_con_indices/
---   4. Comparar: tiempo, filas, Seq Scan → Index Scan / Bitmap Scan
+--   4. Comparar: tiempo, filas, Seq Scan -> Index Scan / Bitmap Scan
 -- =============================================================
 
 
 -- =============================================================
--- SECCION A — Indices para la Consulta 1
--- (estado × tipo_vehiculo, entregas demoradas por region)
+-- SECCION A  -  Indices para la Consulta 1
+-- (estado x tipo_vehiculo, entregas demoradas por region)
 -- =============================================================
 
 -- A1. Covering index en olist_orders para el filtro WHERE + JOIN
@@ -71,8 +72,8 @@ COMMENT ON INDEX idx_del_vehicle_status IS
 
 
 -- =============================================================
--- SECCION B — Indices para la Consulta 2
--- (behavior_score × review_score por conductor)
+-- SECCION B  -  Indices para la Consulta 2
+-- (behavior_score x review_score por conductor)
 -- =============================================================
 
 -- B1. Covering index en fleet_deliveries para el JOIN por driver_id
@@ -102,7 +103,7 @@ COMMENT ON INDEX idx_rev_order_score IS
 
 
 -- =============================================================
--- SECCION C — Indices para la Consulta 3
+-- SECCION C  -  Indices para la Consulta 3
 -- (mantenimientos correctivos por mes vs. demoras mensuales)
 -- =============================================================
 
@@ -113,8 +114,8 @@ COMMENT ON INDEX idx_rev_order_score IS
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_mnt_year_month_type
     ON fleet_maintenance (
-        EXTRACT(YEAR  FROM date)::INTEGER,
-        EXTRACT(MONTH FROM date)::INTEGER,
+        CAST(EXTRACT(YEAR FROM date) AS INTEGER),
+        CAST(EXTRACT(MONTH FROM date) AS INTEGER),
         type
     )
     INCLUDE (cost_brl, downtime_hours);
@@ -130,8 +131,8 @@ COMMENT ON INDEX idx_mnt_year_month_type IS
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_ord_year_month_status
     ON olist_orders (
-        EXTRACT(YEAR  FROM order_purchase_timestamp)::INTEGER,
-        EXTRACT(MONTH FROM order_purchase_timestamp)::INTEGER,
+        CAST(EXTRACT(YEAR FROM order_purchase_timestamp) AS INTEGER),
+        CAST(EXTRACT(MONTH FROM order_purchase_timestamp) AS INTEGER),
         order_status
     )
     INCLUDE (order_id);
@@ -142,8 +143,8 @@ COMMENT ON INDEX idx_ord_year_month_status IS
 
 
 -- =============================================================
--- SECCION D — Indices para la Consulta 4
--- (incidentes: tipo × impacto × vehiculo)
+-- SECCION D  -  Indices para la Consulta 4
+-- (incidentes: tipo x impacto x vehiculo)
 -- =============================================================
 
 -- D1. Covering index en fleet_incidents para el GROUP BY por tipo
@@ -174,7 +175,7 @@ COMMENT ON INDEX idx_del_delayed_order IS
 
 
 -- =============================================================
--- SECCION E — Indices para la Consulta 5
+-- SECCION E  -  Indices para la Consulta 5
 -- (costo de mantenimiento vs. rendimiento por tipo de vehiculo)
 -- =============================================================
 
@@ -206,7 +207,7 @@ COMMENT ON INDEX idx_del_vehicle_metrics IS
 
 
 -- =============================================================
--- SECCION F — Indices para el dataset analitico (Etapa 2)
+-- SECCION F  -  Indices para el dataset analitico (Etapa 2)
 -- (anticipados: el JOIN principal que generara el dataset analitico)
 -- =============================================================
 -- Estos indices no impactan en las consultas de Etapa 1 pero
@@ -233,7 +234,7 @@ COMMENT ON INDEX idx_del_analytical_base IS
 
 -- F2. Indice en olist_order_items para el JOIN por order_id
 --     + proyeccion de freight_value y product_id.
---     La PK de items es (order_id, order_item_id) — este indice
+--     La PK de items es (order_id, order_item_id)  -  este indice
 --     cubre solo order_id con las columnas analiticas relevantes.
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_items_order_analytical
@@ -247,7 +248,7 @@ COMMENT ON INDEX idx_items_order_analytical IS
 
 
 -- =============================================================
--- VERIFICACION — ejecutar despues de crear los indices
+-- VERIFICACION  -  ejecutar despues de crear los indices
 -- =============================================================
 
 -- Listar todos los indices de la base con su tamano en disco

@@ -2,15 +2,21 @@
 
 ## Archivos y orden de ejecución
 
-| Orden | Archivo                       | Que hace                                                      |
-| ----- | ----------------------------- | ------------------------------------------------------------- |
-| 1     | `01_ddl_olist.sql`            | Crea las 9 tablas de Olist con PKs, FKs y constraints         |
-| 2     | `02_ddl_fleet.sql`            | Crea las 5 tablas de flota sintética                          |
-| 3     | `03_import_data.sql`          | Carga los CSV en la base y verifica integridad                |
-| 4     | `04_consultas_analiticas.sql` | 5 consultas de las preguntas analíticas de Etapa 1            |
-| 5     | `05_indices.sql`              | Indices compuestos, funcionales y covering para las consultas |
+| Orden | Archivo                              | Que hace                                                             |
+| ----- | ------------------------------------ | -------------------------------------------------------------------- |
+| 1     | `01_ddl_olist.sql`                   | Crea las 9 tablas de Olist con PKs, FKs y constraints               |
+| 2     | `02_ddl_fleet.sql`                   | Crea las 5 tablas de flota sintetica                                 |
+| 3     | `03b_fix_constraints.sql`            | Ajusta constraints ANTES del import (problemas conocidos de Olist)   |
+| 4     | `03_import_data.sql`                 | Carga los CSV en la base y verifica integridad                       |
+| 5     | `03c_post_import.sql`                | Diagnostico de calidad post-import — insumo para Etapa 2             |
+| 6     | `04_q1_explain.sql` ... `04_q5_explain.sql` | EXPLAIN ANALYZE SIN indices — guardar en `explain_sin_indices/` |
+| 7     | `05_indices.sql`                     | Crea los 12 indices compuestos, funcionales y covering               |
+| 8     | `04_q1_explain.sql` ... `04_q5_explain.sql` | EXPLAIN ANALYZE CON indices — guardar en `explain_con_indices/` |
+| ref   | `04_consultas_analiticas.sql`        | Referencia completa de las 5 consultas (no se ejecuta directamente)  |
 
-**Regla de oro:** siempre en ese orden. Nunca ejecutar `03` sin haber completado `01` y `02`. El `04` se corre dos veces: antes del `05` (sin indices) y después (con indices), para comparar los planes de ejecución.
+**Regla de oro:** el `03b` siempre antes del `03`. Los archivos `04_qN_explain.sql`
+se ejecutan dos veces — antes y despues del `05` — para comparar los planes de ejecucion.
+Usar siempre `-f archivo.sql`, nunca `$(cat ...)` en PowerShell (ver seccion "Encoding").
 
 ---
 
@@ -82,38 +88,76 @@ Al finalizar, el script ejecuta automáticamente dos verificaciones:
 | `fleet_maintenance`                 | ~720                |
 | `fleet_incidents`                   | ~variable (~14.000) |
 
-### 4. Capturar planes de ejecución SIN indices adicionales
+### 4. Capturar planes de ejecucion SIN indices adicionales
 
-Antes de ejecutar `05_indices.sql`, correr cada consulta analítica
-con `EXPLAIN ANALYZE` y guardar la salida en `performance/explain_sin_indices/`.
+Las consultas del `04` deben correrse con `EXPLAIN ANALYZE` usando `-f archivo`,
+nunca con `$(cat ...)` en PowerShell (ver seccion "Encoding en Windows" mas abajo).
 
-```bash
-psql -U postgres -d olist_logistics_db \
-  -c "EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT) <pegar consulta aqui>" \
-  > performance/explain_sin_indices/q1_sin_idx.txt
+Cada consulta tiene su propio archivo listo en la carpeta `sql/`:
+
+| Archivo           | Consulta | Pregunta                                              |
+| ----------------- | -------- | ----------------------------------------------------- |
+| `04_q1_explain.sql` | Q1     | Factores de demora por estado y tipo de vehiculo      |
+| `04_q2_explain.sql` | Q2     | behavior_score vs review_score por conductor          |
+| `04_q3_explain.sql` | Q3     | Pico estacional de mantenimientos vs demoras          |
+| `04_q4_explain.sql` | Q4     | Tipos de incidente: impacto y cobertura               |
+| `04_q5_explain.sql` | Q5     | Costo de mantenimiento vs rendimiento por tipo        |
+
+Ejecutar cada uno y redirigir la salida:
+
+```powershell
+psql -U postgres -d olist_logistics_db -f 04_q1_explain.sql `
+  > ..\performance\explain_sin_indices\q1_sin_idx.txt
+
+psql -U postgres -d olist_logistics_db -f 04_q2_explain.sql `
+  > ..\performance\explain_sin_indices\q2_sin_idx.txt
+
+psql -U postgres -d olist_logistics_db -f 04_q3_explain.sql `
+  > ..\performance\explain_sin_indices\q3_sin_idx.txt
+
+psql -U postgres -d olist_logistics_db -f 04_q4_explain.sql `
+  > ..\performance\explain_sin_indices\q4_sin_idx.txt
+
+psql -U postgres -d olist_logistics_db -f 04_q5_explain.sql `
+  > ..\performance\explain_sin_indices\q5_sin_idx.txt
 ```
 
-Repetir para `q2_sin_idx.txt` ... `q5_sin_idx.txt`.
-
 Campos a registrar en la tabla comparativa (ver al final de `04_consultas_analiticas.sql`):
-- Tiempo de ejecución (ms)
-- Filas leídas (Rows Removed / actual rows)
-- Operación principal (Seq Scan / Hash Join / Nested Loop)
-- Índice utilizado (si aplica)
+- Tiempo de ejecucion (ms) — campo `Actual Time` en el plan
+- Filas leidas vs retornadas — campos `Rows Removed` y `actual rows`
+- Operacion principal — `Seq Scan`, `Index Scan`, `Hash Join`, `Nested Loop`
+- Indice utilizado (si aplica) — campo `Index Name`
 
 ### 5. Crear los indices adicionales
 
-```bash
-psql -U postgres -d olist_logistics_db -f 05_indices.sql
+```powershell
+psql -U postgres -d olist_logistics_db -f 05_indices.sql `
+  > ..\performance\05_indices.log
 ```
 
-Al finalizar, el script imprime el listado completo de indices con su tamaño en disco.
-Guardar esa salida — va a la presentación para mostrar el trade-off espacio/velocidad.
+Al finalizar, el script imprime el listado completo de indices con su tamano en disco.
+Guardar esa salida — va a la presentacion para mostrar el trade-off espacio/velocidad.
 
-### 6. Capturar planes de ejecución CON indices
+### 6. Capturar planes de ejecucion CON indices
 
-Repetir el paso 4 con las mismas consultas y guardar en `performance/explain_con_indices/`:
-`q1_con_idx.txt` ... `q5_con_idx.txt`.
+Repetir exactamente los mismos comandos del paso 4, cambiando la carpeta de salida:
+
+```powershell
+psql -U postgres -d olist_logistics_db -f 04_q1_explain.sql `
+  > ..\performance\explain_con_indices\q1_con_idx.txt
+
+psql -U postgres -d olist_logistics_db -f 04_q2_explain.sql `
+  > ..\performance\explain_con_indices\q2_con_idx.txt
+
+psql -U postgres -d olist_logistics_db -f 04_q3_explain.sql `
+  > ..\performance\explain_con_indices\q3_con_idx.txt
+
+psql -U postgres -d olist_logistics_db -f 04_q4_explain.sql `
+  > ..\performance\explain_con_indices\q4_con_idx.txt
+
+psql -U postgres -d olist_logistics_db -f 04_q5_explain.sql `
+  > ..\performance\explain_con_indices\q5_con_idx.txt
+```
 
 Completar la tabla comparativa del `04_consultas_analiticas.sql` con ambas mediciones.
 
@@ -156,6 +200,28 @@ y no desde la secuencia de PostgreSQL.
 La verificación final comprueba la integridad referencial clave:
 que no haya ninguna orden `delivered` de Olist sin su registro en `fleet_deliveries`.
 
+### Encoding en Windows — por que usar -f y no $(cat ...)
+
+**Error que aparece:** `ERROR: secuencia de bytes no valida para codificacion UTF8: 0x97`
+
+**Causa:** En PowerShell, la sustitucion `$(cat archivo.sql)` lee el archivo
+con la codificacion del terminal (cp1252 o cp850), no como UTF-8. Los bytes
+multi-byte de caracteres Unicode se corrompen antes de llegar a psql.
+
+**Regla:** usar siempre `-f archivo.sql`. El `-f` le pasa el path directamente
+a psql, que lo lee con su propia logica de encoding — funciona sin importar
+la configuracion del terminal.
+
+```powershell
+# CORRECTO
+psql -U postgres -d olist_logistics_db -f 04_q1_explain.sql
+
+# INCORRECTO en Windows
+psql -U postgres -d olist_logistics_db -c "$(cat 04_q1.sql)"
+```
+
+---
+
 ### 04_consultas_analiticas.sql — 5 consultas analíticas
 
 | Consulta | Pregunta                                                    | Tablas involucradas       | Resultado                            |
@@ -166,9 +232,23 @@ que no haya ninguna orden `delivered` de Olist sin su registro en `fleet_deliver
 | Q4       | Tipos de incidente: impacto en horas y cobertura            | 2 tablas + CROSS JOIN CTE | 5 filas (una por tipo)               |
 | Q5       | Costo de mantenimiento vs. rendimiento por tipo de vehículo | Solo tablas de flota      | 3 filas (moto / van / truck)         |
 
-Cada consulta usa CTEs nombradas para facilitar la explicación en la presentación.
-Q5 es completamente interna a la flota, útil para comparar su tiempo de ejecución
+Cada consulta usa CTEs nombradas para facilitar la explicacion en la presentacion.
+Q5 es completamente interna a la flota, util para comparar su tiempo de ejecucion
 contra Q1 (que cruza Olist) y demostrar el costo de los JOINs entre fuentes.
+
+**Archivos de EXPLAIN por consulta** (carpeta `sql/`):
+
+Cada archivo `04_qN_explain.sql` contiene exactamente la misma consulta del `04`
+pero con `EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)` antepuesto. Son 100% ASCII puro
+para evitar errores de encoding en Windows. Ejecutar siempre con `-f`.
+
+| Archivo               | Tablas principales                                      | Filas resultado esperado          |
+| --------------------- | ------------------------------------------------------- | --------------------------------- |
+| `04_q1_explain.sql`   | olist_orders, olist_customers, fleet_deliveries, fleet_vehicles, fleet_drivers | 1 por (estado x tipo_vehiculo) |
+| `04_q2_explain.sql`   | fleet_deliveries, fleet_drivers, olist_order_reviews    | 1 por conductor (~40 filas)       |
+| `04_q3_explain.sql`   | fleet_maintenance, fleet_deliveries, olist_orders       | 1 por (ano x mes) — 36 filas      |
+| `04_q4_explain.sql`   | fleet_incidents, fleet_deliveries, fleet_vehicles       | 5 filas (una por tipo)            |
+| `04_q5_explain.sql`   | fleet_maintenance, fleet_vehicles, fleet_deliveries     | 3 filas (moto / van / truck)      |
 
 ### 05_indices.sql — 12 indices adicionales en 6 secciones
 

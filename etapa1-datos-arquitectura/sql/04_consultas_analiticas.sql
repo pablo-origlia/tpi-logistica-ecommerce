@@ -1,8 +1,9 @@
+SET client_encoding = 'UTF8';
 -- =============================================================
 -- 04_consultas_analiticas.sql
--- Preguntas analiticas — Etapa 1
+-- Preguntas analiticas  -  Etapa 1
 -- Base de datos: olist_logistics_db (PostgreSQL 15+)
--- Proyecto TPI — Analisis de Datos Masivos, UCASAL 2026
+-- Proyecto TPI  -  Analisis de Datos Masivos, UCASAL 2026
 -- =============================================================
 -- Cada consulta responde una pregunta analitica definida en la
 -- propuesta. Para capturar el plan de ejecucion, anteponer:
@@ -11,16 +12,16 @@
 -- =============================================================
 
 
--- ┌─────────────────────────────────────────────────────────────┐
--- │ CONSULTA 1                                                   │
--- │ ¿Cuales son los principales factores operativos de la flota │
--- │ asociados a las entregas demoradas, por estado de Brasil?    │
--- └─────────────────────────────────────────────────────────────┘
+-- +-------------------------------------------------------------+
+-- | CONSULTA 1                                                  |
+-- | Cuales son los principales factores operativos de la flota |
+-- | asociados a las entregas demoradas, por estado de Brasil?   |
+-- +-------------------------------------------------------------+
 -- Tablas: olist_orders, olist_customers, fleet_deliveries,
 --         fleet_vehicles, fleet_drivers
 -- Metricas registradas:
 --   - Tiempo de ejecucion
---   - Filas procesadas vs retornadas (27 estados → 27 filas)
+--   - Filas procesadas vs retornadas (27 estados -> 27 filas)
 --   - Tipo de JOIN (Hash Join vs Nested Loop)
 --   - Uso de indices idx_ord_status, idx_del_status
 
@@ -59,15 +60,15 @@ ORDER BY
 -- La columna eta_variacion_promedio_h cuantifica el impacto en horas.
 
 
--- ┌─────────────────────────────────────────────────────────────┐
--- │ CONSULTA 2                                                   │
--- │ ¿Existe relacion entre el driver_behavior_score de un       │
--- │ conductor y el review_score promedio de sus entregas?        │
--- └─────────────────────────────────────────────────────────────┘
+-- +-------------------------------------------------------------+
+-- | CONSULTA 2                                                  |
+-- | Existe relacion entre el driver_behavior_score de un       |
+-- | conductor y el review_score promedio de sus entregas?       |
+-- +-------------------------------------------------------------+
 -- Tablas: fleet_deliveries, fleet_drivers, olist_order_reviews
 -- Metricas registradas:
 --   - Comparar tiempo con y sin idx_rev_order
---   - Filas: ~40 conductores → 40 filas con review promedio
+--   - Filas: ~40 conductores -> 40 filas con review promedio
 --   - Plan: esperamos Index Scan en olist_order_reviews
 
 WITH conductor_performance AS (
@@ -121,21 +122,21 @@ ORDER BY driver_behavior_score DESC;
 -- y el KPI #12 (Indice de eficiencia por conductor).
 
 
--- ┌─────────────────────────────────────────────────────────────┐
--- │ CONSULTA 3                                                   │
--- │ ¿En que meses se concentran mas los mantenimientos          │
--- │ correctivos y coincide con el pico de demoras en Olist?     │
--- └─────────────────────────────────────────────────────────────┘
+-- +-------------------------------------------------------------+
+-- | CONSULTA 3                                                  |
+-- | En que meses se concentran mas los mantenimientos          |
+-- | correctivos y coincide con el pico de demoras en Olist?     |
+-- +-------------------------------------------------------------+
 -- Tablas: fleet_maintenance, fleet_vehicles, fleet_deliveries, olist_orders
 -- Metricas registradas:
---   - Uso de EXTRACT — ver si el planner usa idx_mnt_month_type
+--   - Uso de EXTRACT  -  ver si el planner usa idx_mnt_month_type
 --   - Comparar Seq Scan vs Index Scan en fleet_maintenance
---   - Filas: 36 filas (12 meses × 3 anos)
+--   - Filas: 36 filas (12 meses x 3 anos)
 
 WITH mantenimiento_mensual AS (
     SELECT
-        EXTRACT(YEAR  FROM m.date)::INTEGER             AS anio,
-        EXTRACT(MONTH FROM m.date)::INTEGER             AS mes,
+        CAST(EXTRACT(YEAR FROM m.date) AS INTEGER)             AS anio,
+        CAST(EXTRACT(MONTH FROM m.date) AS INTEGER)             AS mes,
         COUNT(*) FILTER (WHERE m.type = 'correctivo')   AS correctivos,
         COUNT(*) FILTER (WHERE m.type = 'preventivo')   AS preventivos,
         COUNT(*)                                        AS total_mantenimientos,
@@ -150,8 +151,8 @@ WITH mantenimiento_mensual AS (
 ),
 demoras_mensuales AS (
     SELECT
-        EXTRACT(YEAR  FROM o.order_purchase_timestamp)::INTEGER  AS anio,
-        EXTRACT(MONTH FROM o.order_purchase_timestamp)::INTEGER  AS mes,
+        CAST(EXTRACT(YEAR FROM o.order_purchase_timestamp) AS INTEGER)  AS anio,
+        CAST(EXTRACT(MONTH FROM o.order_purchase_timestamp) AS INTEGER)  AS mes,
         COUNT(*)                                                  AS total_ordenes,
         COUNT(*) FILTER (WHERE fd.delivery_status = 'delayed')   AS ordenes_demoradas,
         ROUND(
@@ -183,17 +184,17 @@ LEFT JOIN demoras_mensuales dm
 ORDER BY mm.anio, mm.mes;
 
 -- Interpretacion esperada:
--- Nov-Dic: pico de mantenimientos correctivos (weight × 1.5-1.6 en el script)
+-- Nov-Dic: pico de mantenimientos correctivos (weight x 1.5-1.6 en el script)
 -- y coincidencia con mayor % de ordenes demoradas en Olist.
 -- Valida el patron estacional y la hipotesis del problema.
 
 
--- ┌─────────────────────────────────────────────────────────────┐
--- │ CONSULTA 4                                                   │
--- │ ¿Que tipos de incidente generan mayor impacto en horas      │
--- │ de demora y que porcentaje de las demoradas tienen          │
--- │ incidente registrado?                                        │
--- └─────────────────────────────────────────────────────────────┘
+-- +-------------------------------------------------------------+
+-- | CONSULTA 4                                                  |
+-- | Que tipos de incidente generan mayor impacto en horas      |
+-- | de demora y que porcentaje de las demoradas tienen          |
+-- | incidente registrado?                                       |
+-- +-------------------------------------------------------------+
 -- Tablas: fleet_incidents, fleet_deliveries, fleet_vehicles
 -- Metricas registradas:
 --   - Filas procesadas: todos los incidentes (~14.000) vs 5 filas resultado
@@ -220,7 +221,7 @@ WITH resumen_incidentes AS (
     GROUP BY fi.type
 ),
 cobertura AS (
-    -- ¿Que % de las ordenes demoradas tienen incidente registrado?
+    -- Que % de las ordenes demoradas tienen incidente registrado?
     SELECT
         COUNT(DISTINCT fd.delivery_id)                  AS total_demoradas,
         COUNT(DISTINCT fi.order_id)                     AS demoradas_con_incidente,
@@ -255,14 +256,14 @@ ORDER BY ri.impacto_promedio_h DESC;
 -- Interpretacion esperada:
 -- accidente: mayor impacto promedio (8-48h)
 -- retraso_trafico: mas frecuente (40% de los incidentes)
--- pct_con_incidente ≈ 15% (por diseno del script)
+-- pct_con_incidente ~ 15% (por diseno del script)
 
 
--- ┌─────────────────────────────────────────────────────────────┐
--- │ CONSULTA 5                                                   │
--- │ ¿El costo de mantenimiento correctivo por tipo de vehiculo  │
--- │ se justifica con el rendimiento logistico de cada tipo?     │
--- └─────────────────────────────────────────────────────────────┘
+-- +-------------------------------------------------------------+
+-- | CONSULTA 5                                                  |
+-- | El costo de mantenimiento correctivo por tipo de vehiculo  |
+-- | se justifica con el rendimiento logistico de cada tipo?     |
+-- +-------------------------------------------------------------+
 -- Tablas: fleet_maintenance, fleet_vehicles, fleet_deliveries
 -- Metricas registradas:
 --   - JOIN entre 3 tablas propias de la flota: medir costo
@@ -373,17 +374,17 @@ SELECT
 */
 
 -- Campos a registrar en la presentacion (Etapa 1):
--- ┌────────────┬──────────────┬──────────────┬──────────────────────┬──────────────┐
--- │ Consulta   │ Tiempo (ms)  │ Filas leidas │ Operacion principal  │ Indice usado │
--- ├────────────┼──────────────┼──────────────┼──────────────────────┼──────────────┤
--- │ Q1 sin idx │              │              │                      │              │
--- │ Q1 con idx │              │              │                      │              │
--- │ Q2 sin idx │              │              │                      │              │
--- │ Q2 con idx │              │              │                      │              │
--- │ Q3 sin idx │              │              │                      │              │
--- │ Q3 con idx │              │              │                      │              │
--- │ Q4 sin idx │              │              │                      │              │
--- │ Q4 con idx │              │              │                      │              │
--- │ Q5 sin idx │              │              │                      │              │
--- │ Q5 con idx │              │              │                      │              │
--- └────────────┴──────────────┴──────────────┴──────────────────────┴──────────────┘
+-- +--------------------------------------------------------------------------------+
+-- | Consulta   | Tiempo (ms)  | Filas leidas | Operacion principal  | Indice usado |
+-- +------------+--------------+--------------+----------------------+--------------+
+-- | Q1 sin idx |              |              |                      |              |
+-- | Q1 con idx |              |              |                      |              |
+-- | Q2 sin idx |              |              |                      |              |
+-- | Q2 con idx |              |              |                      |              |
+-- | Q3 sin idx |              |              |                      |              |
+-- | Q3 con idx |              |              |                      |              |
+-- | Q4 sin idx |              |              |                      |              |
+-- | Q4 con idx |              |              |                      |              |
+-- | Q5 sin idx |              |              |                      |              |
+-- | Q5 con idx |              |              |                      |              |
+-- +--------------------------------------------------------------------------------+

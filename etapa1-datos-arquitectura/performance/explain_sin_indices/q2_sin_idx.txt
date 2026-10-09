@@ -1,0 +1,85 @@
+SET
+SET
+                                                                                                                                                                                                                                                                                                                                                                                   QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                                    
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=7725.65..7725.88 rows=90 width=450) (actual time=137.032..144.782 rows=40.00 loops=1)
+   Output: conductor_performance.conductor, conductor_performance.region_assigned, (round((conductor_performance.driver_behavior_score)::numeric, 3)), (round((conductor_performance.fatigue_score_avg)::numeric, 3)), conductor_performance.total_entregas, conductor_performance.entregas_demoradas, (round((((conductor_performance.entregas_demoradas)::numeric * 100.0) / (NULLIF(conductor_performance.total_entregas, 0))::numeric), 1)), conductor_performance.review_score_promedio, conductor_performance.eta_variation_promedio_h, (CASE WHEN (conductor_performance.driver_behavior_score >= 0.7) THEN 'alto'::text WHEN (conductor_performance.driver_behavior_score >= 0.4) THEN 'medio'::text ELSE 'bajo'::text END), conductor_performance.driver_behavior_score
+   Sort Key: conductor_performance.driver_behavior_score DESC
+   Sort Method: quicksort  Memory: 28kB
+   Buffers: shared hit=3612
+   ->  Subquery Scan on conductor_performance  (cost=7655.21..7722.73 rows=90 width=450) (actual time=136.889..144.740 rows=40.00 loops=1)
+         Output: conductor_performance.conductor, conductor_performance.region_assigned, round((conductor_performance.driver_behavior_score)::numeric, 3), round((conductor_performance.fatigue_score_avg)::numeric, 3), conductor_performance.total_entregas, conductor_performance.entregas_demoradas, round((((conductor_performance.entregas_demoradas)::numeric * 100.0) / (NULLIF(conductor_performance.total_entregas, 0))::numeric), 1), conductor_performance.review_score_promedio, conductor_performance.eta_variation_promedio_h, CASE WHEN (conductor_performance.driver_behavior_score >= 0.7) THEN 'alto'::text WHEN (conductor_performance.driver_behavior_score >= 0.4) THEN 'medio'::text ELSE 'bajo'::text END, conductor_performance.driver_behavior_score
+         Buffers: shared hit=3609
+         ->  Finalize GroupAggregate  (cost=7655.21..7719.58 rows=90 width=338) (actual time=136.883..144.708 rows=40.00 loops=1)
+               Output: fdr.driver_id, fdr.name, fdr.region_assigned, fdr.driver_behavior_score, fdr.fatigue_score_avg, count(fd.delivery_id), count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)), round(avg(r.review_score), 2), round(avg(fd.eta_variation_hours), 2)
+               Group Key: fdr.driver_id
+               Filter: (count(fd.delivery_id) >= 5)
+               Buffers: shared hit=3609
+               ->  Gather Merge  (cost=7655.21..7707.52 rows=459 width=338) (actual time=136.852..144.615 rows=80.00 loops=1)
+                     Output: fdr.driver_id, fdr.name, fdr.region_assigned, fdr.driver_behavior_score, fdr.fatigue_score_avg, (PARTIAL count(fd.delivery_id)), (PARTIAL count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text))), (PARTIAL avg(r.review_score)), (PARTIAL avg(fd.eta_variation_hours))
+                     Workers Planned: 1
+                     Workers Launched: 1
+                     Buffers: shared hit=3609
+                     ->  Sort  (cost=6655.20..6655.87 rows=270 width=338) (actual time=106.971..106.978 rows=40.00 loops=2)
+                           Output: fdr.driver_id, fdr.name, fdr.region_assigned, fdr.driver_behavior_score, fdr.fatigue_score_avg, (PARTIAL count(fd.delivery_id)), (PARTIAL count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text))), (PARTIAL avg(r.review_score)), (PARTIAL avg(fd.eta_variation_hours))
+                           Sort Key: fdr.driver_id
+                           Sort Method: quicksort  Memory: 31kB
+                           Buffers: shared hit=3609
+                           Worker 0:  actual time=91.425..91.431 rows=40.00 loops=1
+                             Sort Method: quicksort  Memory: 31kB
+                             Buffers: shared hit=929
+                           ->  Partial HashAggregate  (cost=6640.92..6644.30 rows=270 width=338) (actual time=106.902..106.929 rows=40.00 loops=2)
+                                 Output: fdr.driver_id, fdr.name, fdr.region_assigned, fdr.driver_behavior_score, fdr.fatigue_score_avg, PARTIAL count(fd.delivery_id), PARTIAL count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)), PARTIAL avg(r.review_score), PARTIAL avg(fd.eta_variation_hours)
+                                 Group Key: fdr.driver_id
+                                 Batches: 1  Memory Usage: 56kB
+                                 Buffers: shared hit=3602
+                                 Worker 0:  actual time=91.345..91.379 rows=40.00 loops=1
+                                   Batches: 1  Memory Usage: 56kB
+                                   Buffers: shared hit=922
+                                 ->  Hash Join  (cost=2964.88..5782.38 rows=57236 width=278) (actual time=25.736..89.870 rows=48499.50 loops=2)
+                                       Output: fdr.driver_id, fdr.name, fdr.region_assigned, fdr.driver_behavior_score, fdr.fatigue_score_avg, fd.delivery_id, fd.delivery_status, r.review_score, fd.eta_variation_hours
+                                       Inner Unique: true
+                                       Hash Cond: (fd.driver_id = fdr.driver_id)
+                                       Buffers: shared hit=3602
+                                       Worker 0:  actual time=3.326..74.616 rows=44434.00 loops=1
+                                         Buffers: shared hit=922
+                                       ->  Parallel Hash Right Join  (cost=2948.81..5613.70 rows=57236 width=24) (actual time=25.221..75.434 rows=48499.50 loops=2)
+                                             Output: fd.delivery_id, fd.delivery_status, fd.eta_variation_hours, fd.driver_id, r.review_score
+                                             Inner Unique: true
+                                             Hash Cond: ((r.order_id)::text = (fd.order_id)::text)
+                                             Buffers: shared hit=3600
+                                             Worker 0:  actual time=2.359..60.401 rows=44434.00 loops=1
+                                               Buffers: shared hit=921
+                                             ->  Parallel Seq Scan on public.olist_order_reviews r  (cost=0.00..2511.67 rows=58367 width=35) (actual time=0.016..7.894 rows=49612.00 loops=2)
+                                                   Output: r.review_id, r.order_id, r.review_score, r.review_comment_title, r.review_comment_message, r.review_creation_date, r.review_answer_timestamp, r.review_pk
+                                                   Buffers: shared hit=1928
+                                                   Worker 0:  actual time=0.017..7.600 rows=45100.00 loops=1
+                                                     Buffers: shared hit=863
+                                             ->  Parallel Hash  (cost=2239.47..2239.47 rows=56747 width=55) (actual time=24.908..24.909 rows=48235.00 loops=2)
+                                                   Output: fd.delivery_id, fd.delivery_status, fd.eta_variation_hours, fd.driver_id, fd.order_id
+                                                   Buckets: 131072  Batches: 1  Memory Usage: 10112kB
+                                                   Buffers: shared hit=1672
+                                                   Worker 0:  actual time=2.326..2.326 rows=3016.00 loops=1
+                                                     Buffers: shared hit=58
+                                                   ->  Parallel Seq Scan on public.fleet_deliveries fd  (cost=0.00..2239.47 rows=56747 width=55) (actual time=0.021..10.025 rows=48235.00 loops=2)
+                                                         Output: fd.delivery_id, fd.delivery_status, fd.eta_variation_hours, fd.driver_id, fd.order_id
+                                                         Buffers: shared hit=1672
+                                                         Worker 0:  actual time=0.035..0.732 rows=3016.00 loops=1
+                                                           Buffers: shared hit=58
+                                       ->  Hash  (cost=12.70..12.70 rows=270 width=258) (actual time=0.505..0.505 rows=40.00 loops=2)
+                                             Output: fdr.driver_id, fdr.name, fdr.region_assigned, fdr.driver_behavior_score, fdr.fatigue_score_avg
+                                             Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                             Buffers: shared hit=2
+                                             Worker 0:  actual time=0.953..0.954 rows=40.00 loops=1
+                                               Buffers: shared hit=1
+                                             ->  Seq Scan on public.fleet_drivers fdr  (cost=0.00..12.70 rows=270 width=258) (actual time=0.476..0.482 rows=40.00 loops=2)
+                                                   Output: fdr.driver_id, fdr.name, fdr.region_assigned, fdr.driver_behavior_score, fdr.fatigue_score_avg
+                                                   Buffers: shared hit=2
+                                                   Worker 0:  actual time=0.913..0.920 rows=40.00 loops=1
+                                                     Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=544
+ Planning Time: 10.718 ms
+ Execution Time: 145.022 ms
+(79 rows)
+

@@ -1,0 +1,132 @@
+SET
+SET
+                                                                                                                                                                                                                                      QUERY PLAN                                                                                                                                                                                                                                       
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=11209.82..11209.88 rows=27 width=183) (actual time=155.725..163.675 rows=80.00 loops=1)
+   Output: c.customer_state, fv.type, (count(fd.delivery_id)), (count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text))), (round((((count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)))::numeric * 100.0) / (NULLIF(count(fd.delivery_id), 0))::numeric), 1)), (round(avg(fd.eta_variation_hours), 2)), (round(avg(fd.route_risk_level), 2)), (round(avg(fdr.driver_behavior_score), 3)), (round(avg(fd.distance_km), 1))
+   Sort Key: (round((((count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)))::numeric * 100.0) / (NULLIF(count(fd.delivery_id), 0))::numeric), 1)) DESC, (count(fd.delivery_id)) DESC
+   Sort Method: quicksort  Memory: 31kB
+   Buffers: shared hit=3686 read=1347
+   I/O Timings: shared read=0.439
+   ->  Finalize GroupAggregate  (cost=11186.81..11209.17 rows=27 width=183) (actual time=155.347..163.613 rows=80.00 loops=1)
+         Output: c.customer_state, fv.type, count(fd.delivery_id), count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)), round((((count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)))::numeric * 100.0) / (NULLIF(count(fd.delivery_id), 0))::numeric), 1), round(avg(fd.eta_variation_hours), 2), round(avg(fd.route_risk_level), 2), round(avg(fdr.driver_behavior_score), 3), round(avg(fd.distance_km), 1)
+         Group Key: c.customer_state, fv.type
+         Filter: (count(fd.delivery_id) >= 10)
+         Rows Removed by Filter: 1
+         Buffers: shared hit=3680 read=1347
+         I/O Timings: shared read=0.439
+         ->  Gather Merge  (cost=11186.81..11202.54 rows=138 width=151) (actual time=155.316..163.322 rows=162.00 loops=1)
+               Output: c.customer_state, fv.type, (PARTIAL count(fd.delivery_id)), (PARTIAL count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text))), (PARTIAL avg(fd.eta_variation_hours)), (PARTIAL avg(fd.route_risk_level)), (PARTIAL avg(fdr.driver_behavior_score)), (PARTIAL avg(fd.distance_km))
+               Workers Planned: 1
+               Workers Launched: 1
+               Buffers: shared hit=3680 read=1347
+               I/O Timings: shared read=0.439
+               ->  Sort  (cost=10186.80..10187.00 rows=81 width=151) (actual time=131.663..131.670 rows=81.00 loops=2)
+                     Output: c.customer_state, fv.type, (PARTIAL count(fd.delivery_id)), (PARTIAL count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text))), (PARTIAL avg(fd.eta_variation_hours)), (PARTIAL avg(fd.route_risk_level)), (PARTIAL avg(fdr.driver_behavior_score)), (PARTIAL avg(fd.distance_km))
+                     Sort Key: c.customer_state, fv.type
+                     Sort Method: quicksort  Memory: 49kB
+                     Buffers: shared hit=3680 read=1347
+                     I/O Timings: shared read=0.439
+                     Worker 0:  actual time=108.892..108.898 rows=81.00 loops=1
+                       Sort Method: quicksort  Memory: 49kB
+                       Buffers: shared hit=1760
+                     ->  Partial HashAggregate  (cost=10182.61..10184.23 rows=81 width=151) (actual time=131.457..131.509 rows=81.00 loops=2)
+                           Output: c.customer_state, fv.type, PARTIAL count(fd.delivery_id), PARTIAL count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)), PARTIAL avg(fd.eta_variation_hours), PARTIAL avg(fd.route_risk_level), PARTIAL avg(fdr.driver_behavior_score), PARTIAL avg(fd.distance_km)
+                           Group Key: c.customer_state, fv.type
+                           Batches: 1  Memory Usage: 160kB
+                           Buffers: shared hit=3665 read=1347
+                           I/O Timings: shared read=0.439
+                           Worker 0:  actual time=108.684..108.735 rows=81.00 loops=1
+                             Batches: 1  Memory Usage: 160kB
+                             Buffers: shared hit=1745
+                           ->  Hash Join  (cost=6110.61..8944.77 rows=55015 width=49) (actual time=44.496..109.377 rows=48235.00 loops=2)
+                                 Output: c.customer_state, fv.type, fd.delivery_id, fd.delivery_status, fd.eta_variation_hours, fd.route_risk_level, fdr.driver_behavior_score, fd.distance_km
+                                 Inner Unique: true
+                                 Hash Cond: (fd.driver_id = fdr.driver_id)
+                                 Buffers: shared hit=3665 read=1347
+                                 I/O Timings: shared read=0.439
+                                 Worker 0:  actual time=21.643..87.406 rows=46226.00 loops=1
+                                   Buffers: shared hit=1745
+                                 ->  Hash Join  (cost=6094.53..8782.01 rows=55015 width=41) (actual time=44.187..100.701 rows=48235.00 loops=2)
+                                       Output: c.customer_state, fd.delivery_id, fd.delivery_status, fd.eta_variation_hours, fd.route_risk_level, fd.distance_km, fd.driver_id, fv.type
+                                       Inner Unique: true
+                                       Hash Cond: (fd.vehicle_id = fv.vehicle_id)
+                                       Buffers: shared hit=3663 read=1347
+                                       I/O Timings: shared read=0.439
+                                       Worker 0:  actual time=21.072..78.328 rows=46226.00 loops=1
+                                         Buffers: shared hit=1744
+                                       ->  Parallel Hash Join  (cost=6092.18..8625.05 rows=55015 width=41) (actual time=43.850..92.097 rows=48235.00 loops=2)
+                                             Output: c.customer_state, fd.delivery_id, fd.delivery_status, fd.eta_variation_hours, fd.route_risk_level, fd.distance_km, fd.vehicle_id, fd.driver_id
+                                             Inner Unique: true
+                                             Hash Cond: ((o.customer_id)::text = (c.customer_id)::text)
+                                             Buffers: shared hit=3661 read=1347
+                                             I/O Timings: shared read=0.439
+                                             Worker 0:  actual time=20.502..69.952 rows=46226.00 loops=1
+                                               Buffers: shared hit=1743
+                                             ->  Parallel Hash Join  (cost=3280.05..5668.49 rows=55015 width=71) (actual time=19.960..47.405 rows=48235.00 loops=2)
+                                                   Output: o.customer_id, fd.delivery_id, fd.delivery_status, fd.eta_variation_hours, fd.route_risk_level, fd.distance_km, fd.vehicle_id, fd.driver_id
+                                                   Inner Unique: true
+                                                   Hash Cond: ((fd.order_id)::text = (o.order_id)::text)
+                                                   Buffers: shared hit=3512
+                                                   Worker 0:  actual time=19.980..46.602 rows=46226.00 loops=1
+                                                     Buffers: shared hit=1723
+                                                   ->  Parallel Seq Scan on public.fleet_deliveries fd  (cost=0.00..2239.47 rows=56747 width=71) (actual time=0.005..4.189 rows=48235.00 loops=2)
+                                                         Output: fd.delivery_id, fd.order_id, fd.vehicle_id, fd.driver_id, fd.pickup_date, fd.carrier_pickup_date, fd.delivery_date, fd.distance_km, fd.route_state, fd.delivery_status, fd.eta_variation_hours, fd.loading_unloading_time_h, fd.route_risk_level
+                                                         Buffers: shared hit=1672
+                                                         Worker 0:  actual time=0.005..4.115 rows=46226.00 loops=1
+                                                           Buffers: shared hit=798
+                                                   ->  Parallel Hash  (cost=2571.18..2571.18 rows=56709 width=66) (actual time=19.664..19.665 rows=48239.00 loops=2)
+                                                         Output: o.customer_id, o.order_id
+                                                         Buckets: 131072  Batches: 1  Memory Usage: 10880kB
+                                                         Buffers: shared hit=1840
+                                                         Worker 0:  actual time=19.407..19.407 rows=48471.00 loops=1
+                                                           Buffers: shared hit=925
+                                                         ->  Parallel Seq Scan on public.olist_orders o  (cost=0.00..2571.18 rows=56709 width=66) (actual time=0.013..8.920 rows=48239.00 loops=2)
+                                                               Output: o.customer_id, o.order_id
+                                                               Filter: ((o.order_status)::text = 'delivered'::text)
+                                                               Rows Removed by Filter: 1482
+                                                               Buffers: shared hit=1840
+                                                               Worker 0:  actual time=0.014..9.050 rows=48471.00 loops=1
+                                                                 Buffers: shared hit=925
+                                             ->  Parallel Hash  (cost=2080.95..2080.95 rows=58495 width=36) (actual time=23.547..23.547 rows=49720.50 loops=2)
+                                                   Output: c.customer_state, c.customer_id
+                                                   Buckets: 131072  Batches: 1  Memory Usage: 8064kB
+                                                   Buffers: shared hit=149 read=1347
+                                                   I/O Timings: shared read=0.439
+                                                   Worker 0:  actual time=0.494..0.495 rows=0.00 loops=1
+                                                     Buffers: shared hit=20
+                                                   ->  Parallel Seq Scan on public.olist_customers c  (cost=0.00..2080.95 rows=58495 width=36) (actual time=0.087..9.519 rows=49720.50 loops=2)
+                                                         Output: c.customer_state, c.customer_id
+                                                         Buffers: shared hit=149 read=1347
+                                                         I/O Timings: shared read=0.439
+                                                         Worker 0:  actual time=0.076..0.076 rows=0.00 loops=1
+                                                           Buffers: shared hit=20
+                                       ->  Hash  (cost=1.60..1.60 rows=60 width=8) (actual time=0.291..0.292 rows=60.00 loops=2)
+                                             Output: fv.type, fv.vehicle_id
+                                             Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                             Buffers: shared hit=2
+                                             Worker 0:  actual time=0.559..0.559 rows=60.00 loops=1
+                                               Buffers: shared hit=1
+                                             ->  Seq Scan on public.fleet_vehicles fv  (cost=0.00..1.60 rows=60 width=8) (actual time=0.272..0.277 rows=60.00 loops=2)
+                                                   Output: fv.type, fv.vehicle_id
+                                                   Buffers: shared hit=2
+                                                   Worker 0:  actual time=0.535..0.540 rows=60.00 loops=1
+                                                     Buffers: shared hit=1
+                                 ->  Hash  (cost=12.70..12.70 rows=270 width=16) (actual time=0.299..0.299 rows=40.00 loops=2)
+                                       Output: fdr.driver_behavior_score, fdr.driver_id
+                                       Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                       Buffers: shared hit=2
+                                       Worker 0:  actual time=0.562..0.562 rows=40.00 loops=1
+                                         Buffers: shared hit=1
+                                       ->  Seq Scan on public.fleet_drivers fdr  (cost=0.00..12.70 rows=270 width=16) (actual time=0.279..0.283 rows=40.00 loops=2)
+                                             Output: fdr.driver_behavior_score, fdr.driver_id
+                                             Buffers: shared hit=2
+                                             Worker 0:  actual time=0.537..0.541 rows=40.00 loops=1
+                                               Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=955 read=33
+   I/O Timings: shared read=0.684
+ Planning Time: 24.508 ms
+ Execution Time: 163.925 ms
+(126 rows)
+

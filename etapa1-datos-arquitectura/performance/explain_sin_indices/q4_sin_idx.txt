@@ -1,0 +1,83 @@
+SET
+SET
+                                                                                                                                                                                                                                                                                                                                                                         QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=4763.30..4763.31 rows=5 width=231) (actual time=41.725..41.729 rows=5.00 loops=1)
+   Output: fi_1.type, (count(fi_1.incident_id)), (round(((((count(fi_1.incident_id)))::numeric * 100.0) / sum((count(fi_1.incident_id))) OVER w1), 1)), (round(avg(fi_1.impact_on_delivery_h), 1)), (round(max(fi_1.impact_on_delivery_h), 1)), (round(avg(fi_1.disruption_likelihood), 3)), (count(DISTINCT fi_1.vehicle_id)), (count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'moto'::text))), (count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'van'::text))), (count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'truck'::text))), (count(DISTINCT fd.delivery_id)), (count(DISTINCT fi.order_id)), (round((((count(DISTINCT fi.order_id))::numeric * 100.0) / (NULLIF(count(DISTINCT fd.delivery_id), 0))::numeric), 1))
+   Sort Key: (round(avg(fi_1.impact_on_delivery_h), 1)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=1788 read=2
+   I/O Timings: shared read=0.095
+   ->  WindowAgg  (cost=4739.91..4763.24 rows=5 width=231) (actual time=41.676..41.684 rows=5.00 loops=1)
+         Output: fi_1.type, (count(fi_1.incident_id)), round(((((count(fi_1.incident_id)))::numeric * 100.0) / sum((count(fi_1.incident_id))) OVER w1), 1), (round(avg(fi_1.impact_on_delivery_h), 1)), (round(max(fi_1.impact_on_delivery_h), 1)), (round(avg(fi_1.disruption_likelihood), 3)), (count(DISTINCT fi_1.vehicle_id)), (count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'moto'::text))), (count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'van'::text))), (count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'truck'::text))), (count(DISTINCT fd.delivery_id)), (count(DISTINCT fi.order_id)), (round((((count(DISTINCT fi.order_id))::numeric * 100.0) / (NULLIF(count(DISTINCT fd.delivery_id), 0))::numeric), 1))
+         Window: w1 AS ()
+         Storage: Memory  Maximum Storage: 17kB
+         Buffers: shared hit=1785 read=2
+         I/O Timings: shared read=0.095
+         ->  Nested Loop  (cost=4646.78..4763.12 rows=5 width=199) (actual time=40.167..41.659 rows=5.00 loops=1)
+               Output: fi_1.type, (count(fi_1.incident_id)), (round(avg(fi_1.impact_on_delivery_h), 1)), (round(max(fi_1.impact_on_delivery_h), 1)), (round(avg(fi_1.disruption_likelihood), 3)), (count(DISTINCT fi_1.vehicle_id)), (count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'moto'::text))), (count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'van'::text))), (count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'truck'::text))), (count(DISTINCT fd.delivery_id)), (count(DISTINCT fi.order_id)), (round((((count(DISTINCT fi.order_id))::numeric * 100.0) / (NULLIF(count(DISTINCT fd.delivery_id), 0))::numeric), 1))
+               Buffers: shared hit=1785 read=2
+               I/O Timings: shared read=0.095
+               ->  Aggregate  (cost=4339.72..4339.74 rows=1 width=48) (actual time=35.063..35.065 rows=1.00 loops=1)
+                     Output: count(DISTINCT fd.delivery_id), count(DISTINCT fi.order_id), round((((count(DISTINCT fi.order_id))::numeric * 100.0) / (NULLIF(count(DISTINCT fd.delivery_id), 0))::numeric), 1)
+                     Buffers: shared hit=1736 read=2
+                     I/O Timings: shared read=0.095
+                     ->  Sort  (cost=4163.21..4222.04 rows=23535 width=37) (actual time=18.658..19.466 rows=23827.00 loops=1)
+                           Output: fd.delivery_id, fi.order_id
+                           Sort Key: fd.delivery_id
+                           Sort Method: quicksort  Memory: 1439kB
+                           Buffers: shared hit=1733 read=2
+                           I/O Timings: shared read=0.095
+                           ->  Hash Left Join  (cost=391.10..2454.27 rows=23535 width=37) (actual time=2.112..15.997 rows=23827.00 loops=1)
+                                 Output: fd.delivery_id, fi.order_id
+                                 Hash Cond: ((fd.order_id)::text = (fi.order_id)::text)
+                                 Buffers: shared hit=1730 read=2
+                                 I/O Timings: shared read=0.095
+                                 ->  Bitmap Heap Scan on public.fleet_deliveries fd  (cost=262.69..2228.88 rows=23535 width=37) (actual time=0.982..10.662 rows=23827.00 loops=1)
+                                       Output: fd.delivery_id, fd.order_id, fd.vehicle_id, fd.driver_id, fd.pickup_date, fd.carrier_pickup_date, fd.delivery_date, fd.distance_km, fd.route_state, fd.delivery_status, fd.eta_variation_hours, fd.loading_unloading_time_h, fd.route_risk_level
+                                       Recheck Cond: ((fd.delivery_status)::text = 'delayed'::text)
+                                       Heap Blocks: exact=1664
+                                       Buffers: shared hit=1684
+                                       ->  Bitmap Index Scan on idx_del_status  (cost=0.00..256.81 rows=23535 width=0) (actual time=0.806..0.806 rows=23827.00 loops=1)
+                                             Index Cond: ((fd.delivery_status)::text = 'delayed'::text)
+                                             Index Searches: 1
+                                             Buffers: shared hit=20
+                                 ->  Hash  (cost=83.74..83.74 rows=3574 width=33) (actual time=1.122..1.123 rows=3574.00 loops=1)
+                                       Output: fi.order_id
+                                       Buckets: 4096  Batches: 1  Memory Usage: 259kB
+                                       Buffers: shared hit=46 read=2
+                                       I/O Timings: shared read=0.095
+                                       ->  Seq Scan on public.fleet_incidents fi  (cost=0.00..83.74 rows=3574 width=33) (actual time=0.017..0.641 rows=3574.00 loops=1)
+                                             Output: fi.order_id
+                                             Buffers: shared hit=46 read=2
+                                             I/O Timings: shared read=0.095
+               ->  GroupAggregate  (cost=307.06..423.33 rows=5 width=151) (actual time=5.101..6.589 rows=5.00 loops=1)
+                     Output: fi_1.type, count(fi_1.incident_id), round(avg(fi_1.impact_on_delivery_h), 1), round(max(fi_1.impact_on_delivery_h), 1), round(avg(fi_1.disruption_likelihood), 3), count(DISTINCT fi_1.vehicle_id), count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'moto'::text)), count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'van'::text)), count(fi_1.incident_id) FILTER (WHERE ((fv.type)::text = 'truck'::text))
+                     Group Key: fi_1.type
+                     Buffers: shared hit=49
+                     ->  Sort  (cost=307.06..316.00 rows=3574 width=37) (actual time=5.001..5.192 rows=3574.00 loops=1)
+                           Output: fi_1.type, fi_1.incident_id, fi_1.impact_on_delivery_h, fi_1.disruption_likelihood, fi_1.vehicle_id, fv.type
+                           Sort Key: fi_1.type, fi_1.vehicle_id
+                           Sort Method: quicksort  Memory: 305kB
+                           Buffers: shared hit=49
+                           ->  Hash Join  (cost=2.35..96.14 rows=3574 width=37) (actual time=0.052..1.114 rows=3574.00 loops=1)
+                                 Output: fi_1.type, fi_1.incident_id, fi_1.impact_on_delivery_h, fi_1.disruption_likelihood, fi_1.vehicle_id, fv.type
+                                 Inner Unique: true
+                                 Hash Cond: (fi_1.vehicle_id = fv.vehicle_id)
+                                 Buffers: shared hit=49
+                                 ->  Seq Scan on public.fleet_incidents fi_1  (cost=0.00..83.74 rows=3574 width=33) (actual time=0.024..0.207 rows=3574.00 loops=1)
+                                       Output: fi_1.incident_id, fi_1.vehicle_id, fi_1.date, fi_1.type, fi_1.disruption_likelihood, fi_1.impact_on_delivery_h, fi_1.order_id
+                                       Buffers: shared hit=48
+                                 ->  Hash  (cost=1.60..1.60 rows=60 width=8) (actual time=0.024..0.025 rows=60.00 loops=1)
+                                       Output: fv.type, fv.vehicle_id
+                                       Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                       Buffers: shared hit=1
+                                       ->  Seq Scan on public.fleet_vehicles fv  (cost=0.00..1.60 rows=60 width=8) (actual time=0.011..0.016 rows=60.00 loops=1)
+                                             Output: fv.type, fv.vehicle_id
+                                             Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=552 dirtied=1
+ Planning Time: 15.703 ms
+ Execution Time: 42.732 ms
+(77 rows)
+

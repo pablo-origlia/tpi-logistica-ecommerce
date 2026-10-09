@@ -3,12 +3,12 @@ SET client_encoding = 'UTF8';
 -- 03c_post_import.sql
 -- Validacion y limpieza minima post-import
 -- Base de datos: olist_logistics_db (PostgreSQL 15+)
--- Proyecto TPI — Analisis de Datos Masivos, UCASAL 2026
+-- Proyecto TPI - Analisis de Datos Masivos, UCASAL 2026
 -- =============================================================
 -- CUANDO EJECUTAR: despues de 03_import_data.sql
 -- PROPOSITO: diagnosticar la calidad real de los datos ingresados
 --   y dejar registros de los problemas encontrados para Etapa 2.
---   NO modifica datos — solo reporta y documenta.
+--   NO modifica datos - solo reporta y documenta.
 -- =============================================================
 
 
@@ -131,7 +131,7 @@ ORDER BY o.order_purchase_timestamp;
 
 
 -- =============================================================
--- 6. RESUMEN DE CALIDAD — tabla de referencia para Etapa 2
+-- 6. RESUMEN DE CALIDAD - tabla de referencia para Etapa 2
 -- =============================================================
 SELECT problema, detalle, accion_etapa2 FROM (
     VALUES
@@ -139,15 +139,15 @@ SELECT problema, detalle, accion_etapa2 FROM (
      'Coordenadas fuera de Brasil en olist_geolocation (aprox. 0.03%)',
      'Filtrar en notebook limpieza: usar solo coords dentro del bounding box'),
     ('weight_cero_products',
-     'Productos con product_weight_g = 0 — dato sucio del CSV original',
+     'Productos con product_weight_g = 0 - dato sucio del CSV original',
      'Imputar con mediana de la categoria o excluir del dataset analitico'),
     ('items_producto_desconocido',
-     'order_items con producto no presente en catalogo — placeholder insertado',
+     'order_items con producto no presente en catalogo - placeholder insertado',
      'Excluir del dataset analitico los items con product_id=unknown'),
     ('review_id_duplicados',
-     'review_ids repetidos en el CSV — bug conocido del dataset Olist',
+     'review_ids repetidos en el CSV - bug conocido del dataset Olist',
      'Agrupar por order_id para reviews; no usar review_id como join key'),
     ('delivered_sin_flota',
      '8 ordenes delivered sin registro en fleet_deliveries (0.008%)',
-     'Excluir del dataset analitico — LEFT JOIN absorbe la diferencia')
+     'Excluir del dataset analitico - LEFT JOIN absorbe la diferencia')
 ) AS t(problema, detalle, accion_etapa2);
