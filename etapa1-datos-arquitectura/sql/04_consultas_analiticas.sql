@@ -373,18 +373,22 @@ SELECT
     ...
 */
 
--- Campos a registrar en la presentacion (Etapa 1):
--- +--------------------------------------------------------------------------------+
--- | Consulta   | Tiempo (ms)  | Filas leidas | Operacion principal  | Indice usado |
--- +------------+--------------+--------------+----------------------+--------------+
--- | Q1 sin idx |              |              |                      |              |
--- | Q1 con idx |              |              |                      |              |
--- | Q2 sin idx |              |              |                      |              |
--- | Q2 con idx |              |              |                      |              |
--- | Q3 sin idx |              |              |                      |              |
--- | Q3 con idx |              |              |                      |              |
--- | Q4 sin idx |              |              |                      |              |
--- | Q4 con idx |              |              |                      |              |
--- | Q5 sin idx |              |              |                      |              |
--- | Q5 con idx |              |              |                      |              |
--- +--------------------------------------------------------------------------------+
+-- TABLA COMPARATIVA COMPLETA - resultados reales (ver performance_analysis.md)
+--
+-- Consulta   |PlanT| ExecT | Total |Sh.hit |Sh.read|IO ms|Temp|Work|Filas| Operacion    | Indice usado
+-- Q1 sin idx |16.8 | 184.0 | 200.8 |  3537 |  1496 |0.937|  0 |  1 |  80 | Sort+ParHash | ninguno
+-- Q1 con idx |24.5 | 163.9 | 188.4 |  3686 |  1347 |0.439|  0 |  1 |  80 | Sort+ParHash | ninguno (cache hit)
+-- Q2 sin idx |10.7 | 145.0 | 155.7 |  3612 |     0 |0.000|  0 |  1 |  40 | Sort+ParHash | ninguno
+-- Q2 con idx |15.0 | 106.6 | 121.6 |  3612 |     0 |0.149|  0 |  1 |  40 | Sort+ParHash | ninguno (cache hit)
+-- Q3 sin idx |12.3 | 217.9 | 230.2 |  3523 |     0 |0.000|718 |  0 |  33 | Sort+HashJn  | ninguno (SPILL disco)
+-- Q3 con idx |15.0 | 173.4 | 188.4 |  3523 |     0 |0.112|718 |  0 |  33 | Sort+HashJn  | ninguno (SPILL disco)
+-- Q4 sin idx |15.7 |  42.7 |  58.4 |  1788 |     2 |0.095|  0 |  0 |   5 | Sort+NstLp   | idx_del_status (Bitmap)
+-- Q4 con idx |13.5 |  35.5 |  48.9 |  1780 |    10 |0.128|  0 |  0 |   5 | Sort+NstLp   | idx_del_status (Bitmap)
+-- Q5 sin idx |11.1 |  57.0 |  68.1 |     9 |     0 |0.000|  0 |  1 |   3 | Merge Join   | ninguno
+-- Q5 con idx |14.3 |  61.7 |  76.1 |     9 |     0 |0.000|  0 |  1 |   3 | Merge Join   | ninguno (REGRESION +8%)
+--
+-- Mejoras en Execution Time con indices adicionales:
+--   Q1: -10.9% | Q2: -26.5% | Q3: -20.4% | Q4: -17.0% | Q5: +8.3% (regresion)
+-- Unico indice activo en estas consultas: idx_del_status (Q4, Bitmap Index Scan)
+-- Los covering indexes Secciones A-E entran en accion en Etapa 2 (dataset analitico)
+-- Spill a disco en Q3: SET work_mem='16MB' para eliminarlo (~10-15 ms de mejora extra)
