@@ -1,0 +1,1407 @@
+{
+ "purpose": "Contexto compacto del dataset Logistics and Supply Chain para conversaciones futuras. Para el detalle (perfil por columna, matrices, medias por hora/mes), pedir el JSON completo.",
+ "usage_instructions": [
+  "Responder con las cifras de este archivo; si falta una, decir que hace falta el JSON completo o el CSV.",
+  "Distinguir siempre lo documentado (overview) de lo observado (datos).",
+  "Tratar las conclusiones operativas con cautela si realism_indicators.verdict apunta a datos simulados."
+ ],
+ "metadata": {
+  "generated_at": "2026-10-09T22:40:51",
+  "file": "dynamic_supply_chain_logistics_dataset.csv",
+  "file_size_mb": 15.49,
+  "rows": 32065,
+  "cols": 26,
+  "time_range": {
+   "first": "2021-01-01T00:00:00",
+   "last": "2024-08-29T00:00:00"
+  },
+  "notes": [],
+  "methodology": {
+   "declared_vs_observed": "lo declarado sale del overview de Kaggle; lo observado, de los datos",
+   "realism_indicators": "pistas de si los datos parecen simulados; no son prueba",
+   "ml_baseline": "corte temporal; targets excluidos de los features; solo mide señal predictiva",
+   "caveats": [
+    "Un solo CSV horario; no hay identificador de vehículo, pedido ni ruta.",
+    "Las filas consecutivas pueden no corresponder a la misma entidad (ver geography y realism)."
+   ]
+  }
+ },
+ "dataset_context": {
+  "name": "Logistics and Supply Chain Dataset",
+  "author_on_kaggle": "datasetengineer",
+  "source": "https://www.kaggle.com/datasets/datasetengineer/logistics-and-supply-chain-dataset",
+  "license": "No consta en el overview; verificar en la página de Kaggle.",
+  "summary": "Registros horarios (según el overview, ene-2021 a ene-2024; ver temporal.declared_period) de operaciones logísticas: transporte, almacén, planificación de rutas y monitoreo. Incluye 22 variables de entrada y 4 variables objetivo.",
+  "declared_origin": "El overview indica recolección desde GPS, sensores IoT, sistemas de gestión de almacén y proveedores externos de datos, en una red logística del Sur de California, con modos camión, dron y tren. Los datos se describen como anonimizados y procesados.",
+  "declared_use_cases": [
+   "Modelado predictivo de riesgo y disrupciones",
+   "Optimización de rutas y programación",
+   "Mantenimiento predictivo de vehículos",
+   "Impacto del tráfico y clima en la entrega",
+   "Gestión de almacén e inventario"
+  ],
+  "grain": "1 fila por registro horario; no hay ID de vehículo, pedido, ruta ni modo de transporte.",
+  "columns": {
+   "timestamp": {
+    "description": "Fecha y hora del registro (resolución horaria)",
+    "unit": "datetime",
+    "declared_range": null,
+    "kind": "timestamp",
+    "role": "feature",
+    "group": "tiempo"
+   },
+   "vehicle_gps_latitude": {
+    "description": "Latitud GPS del vehículo",
+    "unit": "grados",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "ubicación"
+   },
+   "vehicle_gps_longitude": {
+    "description": "Longitud GPS del vehículo",
+    "unit": "grados",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "ubicación"
+   },
+   "fuel_consumption_rate": {
+    "description": "Tasa de consumo de combustible",
+    "unit": "litros/hora",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "vehículo"
+   },
+   "eta_variation_hours": {
+    "description": "Diferencia entre llegada estimada y real",
+    "unit": "horas",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "entrega"
+   },
+   "traffic_congestion_level": {
+    "description": "Nivel de congestión de tráfico",
+    "unit": "escala 0-10",
+    "declared_range": [
+     0,
+     10
+    ],
+    "kind": "continuous",
+    "role": "feature",
+    "group": "entorno"
+   },
+   "warehouse_inventory_level": {
+    "description": "Nivel de inventario en bodega",
+    "unit": "unidades",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "almacén"
+   },
+   "loading_unloading_time": {
+    "description": "Tiempo de carga/descarga",
+    "unit": "horas",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "almacén"
+   },
+   "handling_equipment_availability": {
+    "description": "Disponibilidad de equipos (0 no, 1 sí)",
+    "unit": "0/1",
+    "declared_range": [
+     0,
+     1
+    ],
+    "kind": "binary",
+    "role": "feature",
+    "group": "almacén"
+   },
+   "order_fulfillment_status": {
+    "description": "Pedido cumplido a tiempo (0 no, 1 sí)",
+    "unit": "0/1",
+    "declared_range": [
+     0,
+     1
+    ],
+    "kind": "binary",
+    "role": "feature",
+    "group": "entrega"
+   },
+   "weather_condition_severity": {
+    "description": "Severidad del clima",
+    "unit": "escala 0-1",
+    "declared_range": [
+     0,
+     1
+    ],
+    "kind": "continuous",
+    "role": "feature",
+    "group": "entorno"
+   },
+   "port_congestion_level": {
+    "description": "Congestión del puerto",
+    "unit": "escala 0-10",
+    "declared_range": [
+     0,
+     10
+    ],
+    "kind": "continuous",
+    "role": "feature",
+    "group": "entorno"
+   },
+   "shipping_costs": {
+    "description": "Costos de envío",
+    "unit": "USD",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "costos"
+   },
+   "supplier_reliability_score": {
+    "description": "Confiabilidad del proveedor",
+    "unit": "escala 0-1",
+    "declared_range": [
+     0,
+     1
+    ],
+    "kind": "continuous",
+    "role": "feature",
+    "group": "proveedor"
+   },
+   "lead_time_days": {
+    "description": "Tiempo promedio de entrega del proveedor",
+    "unit": "días",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "proveedor"
+   },
+   "historical_demand": {
+    "description": "Demanda histórica de servicios logísticos",
+    "unit": "unidades",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "almacén"
+   },
+   "iot_temperature": {
+    "description": "Temperatura medida por sensores IoT",
+    "unit": "°C",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "carga"
+   },
+   "cargo_condition_status": {
+    "description": "Condición de la carga por IoT (0 mala, 1 buena)",
+    "unit": "0/1",
+    "declared_range": [
+     0,
+     1
+    ],
+    "kind": "binary",
+    "role": "feature",
+    "group": "carga"
+   },
+   "route_risk_level": {
+    "description": "Nivel de riesgo de la ruta",
+    "unit": "escala 0-10",
+    "declared_range": [
+     0,
+     10
+    ],
+    "kind": "continuous",
+    "role": "feature",
+    "group": "entorno"
+   },
+   "customs_clearance_time": {
+    "description": "Tiempo de despacho aduanero (unidad no especificada, probablemente horas)",
+    "unit": "no especificada",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "feature",
+    "group": "entrega"
+   },
+   "driver_behavior_score": {
+    "description": "Comportamiento del conductor",
+    "unit": "escala 0-1",
+    "declared_range": [
+     0,
+     1
+    ],
+    "kind": "continuous",
+    "role": "feature",
+    "group": "conductor"
+   },
+   "fatigue_monitoring_score": {
+    "description": "Nivel de fatiga del conductor",
+    "unit": "escala 0-1",
+    "declared_range": [
+     0,
+     1
+    ],
+    "kind": "continuous",
+    "role": "feature",
+    "group": "conductor"
+   },
+   "disruption_likelihood_score": {
+    "description": "Probabilidad de disrupción",
+    "unit": "escala 0-1",
+    "declared_range": [
+     0,
+     1
+    ],
+    "kind": "continuous",
+    "role": "target",
+    "group": null
+   },
+   "delay_probability": {
+    "description": "Probabilidad de retraso del envío",
+    "unit": "escala 0-1",
+    "declared_range": [
+     0,
+     1
+    ],
+    "kind": "continuous",
+    "role": "target",
+    "group": null
+   },
+   "risk_classification": {
+    "description": "Clasificación de riesgo",
+    "unit": "Low/Moderate/High Risk",
+    "declared_range": null,
+    "kind": "categorical",
+    "role": "target",
+    "group": null
+   },
+   "delivery_time_deviation": {
+    "description": "Desviación del tiempo de entrega vs. esperado",
+    "unit": "horas",
+    "declared_range": null,
+    "kind": "continuous",
+    "role": "target",
+    "group": null
+   }
+  },
+  "targets": {
+   "regression": [
+    "disruption_likelihood_score",
+    "delay_probability",
+    "delivery_time_deviation"
+   ],
+   "classification": "risk_classification",
+   "risk_classes": [
+    "Low Risk",
+    "Moderate Risk",
+    "High Risk"
+   ]
+  },
+  "observed_in_provided_sample": [
+   "En un fragmento de 15 filas, las coordenadas abarcan ~30-50°N y ~-70 a -120°O (no solo Sur de California) y cambian de forma abrupta entre horas consecutivas; el script lo verifica con todo el archivo.",
+   "Variables documentadas como 0/1 (handling_equipment_availability, order_fulfillment_status, cargo_condition_status) aparecen con valores continuos (p. ej. 0.48, 0.76, 0.57).",
+   "En la muestra, customs_clearance_time llega a ~4.7 (columna sin escala documentada); driver_behavior_score se mantiene en 0-1.",
+   "Varias columnas muestran valores pegados a un límite (iot_temperature ~ -10, eta_variation_hours ~ 5.0), lo que sugiere recorte (clipping).",
+   "risk_classification es mayoritariamente 'High Risk' en esa muestra."
+  ],
+  "gotchas": [
+   "Verificar rangos y tipos contra declared_vs_observed antes de modelar; el overview no se cumple al pie de la letra.",
+   "Los targets pueden depender entre sí (delay_probability, disruption_likelihood_score, risk_classification); no usarlos como features de otro target salvo que sea intencional.",
+   "Usar validación con corte temporal, no aleatoria.",
+   "Verificar si risk_classification es función de disruption_likelihood_score (ver targets.risk_class_vs_disruption_score); si lo es, usar uno como feature del otro es fuga de información.",
+   "Verificar el período real contra el declarado (temporal.declared_period).",
+   "customs_clearance_time no tiene unidad documentada.",
+   "Sin identificador de entidad: no se puede reconstruir trayectorias ni hacer análisis por vehículo/pedido.",
+   "Si los indicadores de realismo apuntan a datos simulados, las relaciones 'de negocio' pueden no existir."
+  ],
+  "definitions": {
+   "missing_hours": "horas del rango temporal sin ninguna fila",
+   "pct_at_edge": "% de filas a menos de 0.1% del rango respecto del mínimo o máximo observado",
+   "eta2": "fracción de varianza explicada por una variable categórica (hora/día/mes/deciles)",
+   "hypothesis_verdict": "consistent = signo esperado y |rho|>=0.05; opposite = signo contrario; no_relationship = |rho|<0.05",
+   "realism_flags": "sin autocorrelación temporal; features casi no correlacionadas; GPS uniforme; sin trayectoria plausible de un vehículo"
+  }
+ },
+ "key_findings": [
+  "32,065 filas; 0 horas faltantes de 32,065 esperadas en el rango temporal.",
+  "El archivo llega hasta 2024-08-29: 5,041 filas posteriores al período declarado (hasta ene-2024).",
+  "risk_classification es función determinista de disruption_likelihood_score (clases sin solape).",
+  "Columnas con distribución casi idéntica: vehicle_gps_latitude, loading_unloading_time, shipping_costs, customs_clearance_time; vehicle_gps_longitude, order_fulfillment_status, historical_demand, fatigue_monitoring_score, delivery_time_deviation; fuel_consumption_rate, iot_temperature; eta_variation_hours, port_congestion_level, route_risk_level, delay_probability; traffic_congestion_level, weather_condition_severity, supplier_reliability_score, driver_behavior_score; warehouse_inventory_level, handling_equipment_availability, lead_time_days, cargo_condition_status.",
+  "Distribución de risk_classification: High Risk 74.7%, Moderate Risk 15.6%, Low Risk 9.7%.",
+  "Documentadas como binarias pero con valores continuos: handling_equipment_availability, order_fulfillment_status, cargo_condition_status.",
+  "Solo 2.0% de los registros cae en el bbox del Sur de California; 94.2% en EE.UU. contiguo.",
+  "Hipótesis de dominio: 0 consistentes, 0 opuestas y 21 sin relación (de 21).",
+  "Correlación media absoluta entre features (Spearman): 0.005.",
+  "Efecto calendario máximo (hora/día/mes): eta² = 0.0015.",
+  "Baseline ML (R² test): disruption_likelihood_score -0.002, delay_probability -0.004, delivery_time_deviation -0.003; accuracy risk_classification 0.751 vs mayoritaria 0.751.",
+  "Indicadores de simulación: 3 de 4 presentes."
+ ],
+ "data_quality_highlights": {
+  "duplicate_rows": 0,
+  "duplicate_timestamps": 0,
+  "constant_columns": [],
+  "columns_edge_saturation_over_2pct": {
+   "vehicle_gps_latitude": 4.63,
+   "vehicle_gps_longitude": 4.82,
+   "fuel_consumption_rate": 23.55,
+   "eta_variation_hours": 10.82,
+   "traffic_congestion_level": 2.03,
+   "warehouse_inventory_level": 10.84,
+   "loading_unloading_time": 4.77,
+   "handling_equipment_availability": 10.65,
+   "order_fulfillment_status": 4.81,
+   "weather_condition_severity": 2.08,
+   "port_congestion_level": 10.95,
+   "shipping_costs": 4.8,
+   "lead_time_days": 10.54,
+   "historical_demand": 4.58,
+   "iot_temperature": 23.49,
+   "cargo_condition_status": 10.67,
+   "route_risk_level": 10.99,
+   "customs_clearance_time": 4.57,
+   "driver_behavior_score": 2.06,
+   "fatigue_monitoring_score": 4.62,
+   "disruption_likelihood_score": 23.83,
+   "delay_probability": 10.51,
+   "delivery_time_deviation": 4.86
+  },
+  "nulls_nonzero": {},
+  "declared_vs_observed_issues": {
+   "out_of_range": {},
+   "binary_but_continuous": [
+    "handling_equipment_availability",
+    "order_fulfillment_status",
+    "cargo_condition_status"
+   ],
+   "unexpected_categories": {}
+  },
+  "rows_with_any_out_of_declared_range": 0
+ },
+ "key_metrics": {
+  "temporal": {
+   "first": "2021-01-01T00:00:00",
+   "last": "2024-08-29T00:00:00",
+   "expected_hourly_rows_in_range": 32065,
+   "missing_hours": 0,
+   "missing_hours_pct": 0.0,
+   "pct_gaps_exactly_1h": 100.0,
+   "duplicate_timestamps": 0,
+   "rows_per_year": {
+    "2021": 8760,
+    "2022": 8760,
+    "2023": 8760,
+    "2024": 5785
+   },
+   "declared_period": {
+    "declared": "2021-01 a 2024-01 (overview)",
+    "rows_outside_declared_period": 5041,
+    "rows_after_declared_end": 5041,
+    "months_beyond_declared_end": 6.9,
+    "last_timestamp": "2024-08-29T00:00:00"
+   }
+  },
+  "calendar_effects_max_eta2": {
+   "vehicle_gps_latitude": 0.001,
+   "vehicle_gps_longitude": 0.002,
+   "fuel_consumption_rate": 0.0,
+   "eta_variation_hours": 0.001,
+   "traffic_congestion_level": 0.001,
+   "warehouse_inventory_level": 0.001,
+   "loading_unloading_time": 0.001,
+   "handling_equipment_availability": 0.0,
+   "order_fulfillment_status": 0.001,
+   "weather_condition_severity": 0.001,
+   "port_congestion_level": 0.001,
+   "shipping_costs": 0.001,
+   "supplier_reliability_score": 0.001,
+   "lead_time_days": 0.001,
+   "historical_demand": 0.001,
+   "iot_temperature": 0.001,
+   "cargo_condition_status": 0.001,
+   "route_risk_level": 0.001,
+   "customs_clearance_time": 0.0,
+   "driver_behavior_score": 0.001,
+   "fatigue_monitoring_score": 0.001,
+   "disruption_likelihood_score": 0.001,
+   "delay_probability": 0.001,
+   "delivery_time_deviation": 0.001
+  },
+  "trend_spearman_vs_time": {
+   "vehicle_gps_latitude": -0.002,
+   "vehicle_gps_longitude": 0.008,
+   "fuel_consumption_rate": -0.001,
+   "eta_variation_hours": -0.001,
+   "traffic_congestion_level": -0.004,
+   "warehouse_inventory_level": 0.003,
+   "loading_unloading_time": 0.012,
+   "handling_equipment_availability": -0.003,
+   "order_fulfillment_status": -0.0,
+   "weather_condition_severity": -0.005,
+   "port_congestion_level": -0.003,
+   "shipping_costs": 0.006,
+   "supplier_reliability_score": 0.001,
+   "lead_time_days": 0.001,
+   "historical_demand": -0.0,
+   "iot_temperature": 0.002,
+   "cargo_condition_status": 0.002,
+   "route_risk_level": 0.008,
+   "customs_clearance_time": -0.001,
+   "driver_behavior_score": -0.003,
+   "fatigue_monitoring_score": -0.001,
+   "disruption_likelihood_score": 0.008,
+   "delay_probability": -0.011,
+   "delivery_time_deviation": -0.009
+  },
+  "geography": {
+   "pct_inside_southern_california_bbox": 1.971,
+   "pct_inside_contiguous_us_bbox": 94.246,
+   "pct_outside_us_bbox": 5.754,
+   "pct_consecutive_jumps_le_120km": 0.836,
+   "n_one_degree_cells": 1071
+  },
+  "feature_stats": {
+   "vehicle_gps_latitude": {
+    "mean": 38.024,
+    "std": 6.918,
+    "min": 30.0,
+    "median": 36.414,
+    "max": 50.0,
+    "skew": 0.383
+   },
+   "vehicle_gps_longitude": {
+    "mean": -90.117,
+    "std": 17.369,
+    "min": -120.0,
+    "median": -86.293,
+    "max": -70.0,
+    "skew": -0.373
+   },
+   "fuel_consumption_rate": {
+    "mean": 8.012,
+    "std": 4.265,
+    "min": 5.0,
+    "median": 5.636,
+    "max": 20.0,
+    "skew": 1.416
+   },
+   "eta_variation_hours": {
+    "mean": 2.893,
+    "std": 2.274,
+    "min": -2.0,
+    "median": 3.882,
+    "max": 5.0,
+    "skew": -0.82
+   },
+   "traffic_congestion_level": {
+    "mean": 4.991,
+    "std": 3.532,
+    "min": 0.0,
+    "median": 4.981,
+    "max": 10.0,
+    "skew": 0.008
+   },
+   "warehouse_inventory_level": {
+    "mean": 299.255,
+    "std": 323.444,
+    "min": 0.0,
+    "median": 157.288,
+    "max": 999.999,
+    "skew": 0.828
+   },
+   "loading_unloading_time": {
+    "mean": 2.292,
+    "std": 1.554,
+    "min": 0.5,
+    "median": 1.917,
+    "max": 5.0,
+    "skew": 0.391
+   },
+   "handling_equipment_availability": {
+    "mean": 0.303,
+    "std": 0.326,
+    "min": 0.0,
+    "median": 0.16,
+    "max": 1.0,
+    "skew": 0.808
+   },
+   "order_fulfillment_status": {
+    "mean": 0.601,
+    "std": 0.346,
+    "min": 0.0,
+    "median": 0.681,
+    "max": 1.0,
+    "skew": -0.386
+   },
+   "weather_condition_severity": {
+    "mean": 0.498,
+    "std": 0.353,
+    "min": 0.0,
+    "median": 0.496,
+    "max": 1.0,
+    "skew": 0.009
+   },
+   "port_congestion_level": {
+    "mean": 6.978,
+    "std": 3.251,
+    "min": 0.0,
+    "median": 8.383,
+    "max": 10.0,
+    "skew": -0.813
+   },
+   "shipping_costs": {
+    "mean": 459.374,
+    "std": 312.183,
+    "min": 100.0,
+    "median": 388.997,
+    "max": 1000.0,
+    "skew": 0.387
+   },
+   "supplier_reliability_score": {
+    "mean": 0.501,
+    "std": 0.354,
+    "min": 0.0,
+    "median": 0.503,
+    "max": 1.0,
+    "skew": -0.009
+   },
+   "lead_time_days": {
+    "mean": 5.228,
+    "std": 4.523,
+    "min": 1.0,
+    "median": 3.298,
+    "max": 15.0,
+    "skew": 0.808
+   },
+   "historical_demand": {
+    "mean": 6022.001,
+    "std": 3427.638,
+    "min": 100.003,
+    "median": 6785.123,
+    "max": 10000.0,
+    "skew": -0.376
+   },
+   "iot_temperature": {
+    "mean": 0.045,
+    "std": 14.187,
+    "min": -10.0,
+    "median": -7.859,
+    "max": 40.0,
+    "skew": 1.405
+   },
+   "cargo_condition_status": {
+    "mean": 0.297,
+    "std": 0.322,
+    "min": 0.0,
+    "median": 0.155,
+    "max": 1.0,
+    "skew": 0.835
+   },
+   "route_risk_level": {
+    "mean": 7.001,
+    "std": 3.236,
+    "min": 0.0,
+    "median": 8.386,
+    "max": 10.0,
+    "skew": -0.828
+   },
+   "customs_clearance_time": {
+    "mean": 2.296,
+    "std": 1.556,
+    "min": 0.5,
+    "median": 1.938,
+    "max": 5.0,
+    "skew": 0.386
+   },
+   "driver_behavior_score": {
+    "mean": 0.498,
+    "std": 0.354,
+    "min": 0.0,
+    "median": 0.499,
+    "max": 1.0,
+    "skew": 0.003
+   },
+   "fatigue_monitoring_score": {
+    "mean": 0.601,
+    "std": 0.346,
+    "min": 0.0,
+    "median": 0.683,
+    "max": 1.0,
+    "skew": -0.39
+   },
+   "disruption_likelihood_score": {
+    "mean": 0.804,
+    "std": 0.279,
+    "min": 0.0,
+    "median": 0.958,
+    "max": 1.0,
+    "skew": -1.436
+   },
+   "delay_probability": {
+    "mean": 0.699,
+    "std": 0.325,
+    "min": 0.0,
+    "median": 0.84,
+    "max": 1.0,
+    "skew": -0.829
+   },
+   "delivery_time_deviation": {
+    "mean": 5.178,
+    "std": 4.158,
+    "min": -2.0,
+    "median": 6.114,
+    "max": 10.0,
+    "skew": -0.379
+   }
+  },
+  "targets": {
+   "numeric": {
+    "disruption_likelihood_score": {
+     "mean": 0.804,
+     "std": 0.279,
+     "min": 0.0,
+     "median": 0.958,
+     "max": 1.0
+    },
+    "delay_probability": {
+     "mean": 0.699,
+     "std": 0.325,
+     "min": 0.0,
+     "median": 0.84,
+     "max": 1.0
+    },
+    "delivery_time_deviation": {
+     "mean": 5.178,
+     "std": 4.158,
+     "min": -2.0,
+     "median": 6.114,
+     "max": 10.0
+    }
+   },
+   "risk_distribution": {
+    "High Risk": {
+     "n": 23944,
+     "pct": 74.67
+    },
+    "Moderate Risk": {
+     "n": 5011,
+     "pct": 15.63
+    },
+    "Low Risk": {
+     "n": 3110,
+     "pct": 9.7
+    }
+   },
+   "by_class": {
+    "High Risk": {
+     "disruption_likelihood_score": {
+      "mean": 0.949,
+      "std": 0.076,
+      "min": 0.7,
+      "median": 0.99,
+      "max": 1.0
+     },
+     "delay_probability": {
+      "mean": 0.699,
+      "std": 0.324,
+      "min": 0.0,
+      "median": 0.838,
+      "max": 1.0
+     },
+     "delivery_time_deviation": {
+      "mean": 5.184,
+      "std": 4.161,
+      "min": -2.0,
+      "median": 6.144,
+      "max": 10.0
+     },
+     "rows": 23944
+    },
+    "Low Risk": {
+     "disruption_likelihood_score": {
+      "mean": 0.143,
+      "std": 0.089,
+      "min": 0.0,
+      "median": 0.142,
+      "max": 0.3
+     },
+     "delay_probability": {
+      "mean": 0.707,
+      "std": 0.322,
+      "min": 0.0,
+      "median": 0.847,
+      "max": 1.0
+     },
+     "delivery_time_deviation": {
+      "mean": 5.118,
+      "std": 4.141,
+      "min": -2.0,
+      "median": 5.984,
+      "max": 10.0
+     },
+     "rows": 3110
+    },
+    "Moderate Risk": {
+     "disruption_likelihood_score": {
+      "mean": 0.519,
+      "std": 0.115,
+      "min": 0.3,
+      "median": 0.531,
+      "max": 0.7
+     },
+     "delay_probability": {
+      "mean": 0.696,
+      "std": 0.328,
+      "min": 0.0,
+      "median": 0.842,
+      "max": 1.0
+     },
+     "delivery_time_deviation": {
+      "mean": 5.184,
+      "std": 4.154,
+      "min": -2.0,
+      "median": 5.995,
+      "max": 10.0
+     },
+     "rows": 5011
+    }
+   },
+   "correlations": {
+    "disruption_likelihood_score": {
+     "disruption_likelihood_score": 1.0,
+     "delay_probability": -0.006,
+     "delivery_time_deviation": 0.003,
+     "risk_ordinal": 0.761
+    },
+    "delay_probability": {
+     "disruption_likelihood_score": -0.006,
+     "delay_probability": 1.0,
+     "delivery_time_deviation": 0.007,
+     "risk_ordinal": -0.006
+    },
+    "delivery_time_deviation": {
+     "disruption_likelihood_score": 0.003,
+     "delay_probability": 0.007,
+     "delivery_time_deviation": 1.0,
+     "risk_ordinal": 0.003
+    },
+    "risk_ordinal": {
+     "disruption_likelihood_score": 0.761,
+     "delay_probability": -0.006,
+     "delivery_time_deviation": 0.003,
+     "risk_ordinal": 1.0
+    }
+   },
+   "risk_class_vs_disruption_score": {
+    "score_range_by_class": {
+     "High Risk": [
+      0.7,
+      1.0
+     ],
+     "Low Risk": [
+      0.0,
+      0.3
+     ],
+     "Moderate Risk": [
+      0.3,
+      0.7
+     ]
+    },
+    "classes_do_not_overlap": true,
+    "approx_cut_points": [
+     0.3,
+     0.7
+    ],
+    "conclusion": "risk_classification es una función determinista (por umbrales) de disruption_likelihood_score: usar el score como feature sería fuga de información."
+   }
+  },
+  "top_features_by_target": {
+   "disruption_likelihood_score": [
+    {
+     "feature": "warehouse_inventory_level",
+     "spearman": -0.011,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "eta_variation_hours",
+     "spearman": 0.01,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "iot_temperature",
+     "spearman": -0.007,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "port_congestion_level",
+     "spearman": 0.007,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "order_fulfillment_status",
+     "spearman": -0.006,
+     "eta2_deciles": 0.0
+    }
+   ],
+   "delay_probability": [
+    {
+     "feature": "fuel_consumption_rate",
+     "spearman": -0.014,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "eta_variation_hours",
+     "spearman": -0.012,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "order_fulfillment_status",
+     "spearman": 0.008,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "vehicle_gps_longitude",
+     "spearman": -0.007,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "route_risk_level",
+     "spearman": -0.007,
+     "eta2_deciles": 0.0
+    }
+   ],
+   "delivery_time_deviation": [
+    {
+     "feature": "port_congestion_level",
+     "spearman": 0.012,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "fuel_consumption_rate",
+     "spearman": 0.011,
+     "eta2_deciles": 0.001
+    },
+    {
+     "feature": "customs_clearance_time",
+     "spearman": -0.006,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "warehouse_inventory_level",
+     "spearman": -0.006,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "eta_variation_hours",
+     "spearman": 0.006,
+     "eta2_deciles": 0.0
+    }
+   ],
+   "risk_ordinal": [
+    {
+     "feature": "warehouse_inventory_level",
+     "spearman": -0.009,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "cargo_condition_status",
+     "spearman": 0.008,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "order_fulfillment_status",
+     "spearman": -0.007,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "iot_temperature",
+     "spearman": -0.007,
+     "eta2_deciles": 0.0
+    },
+    {
+     "feature": "handling_equipment_availability",
+     "spearman": 0.006,
+     "eta2_deciles": 0.0
+    }
+   ]
+  },
+  "top_feature_pairs": [
+   {
+    "a": "disruption_likelihood_score",
+    "b": "risk_ordinal",
+    "spearman": 0.761
+   },
+   {
+    "a": "traffic_congestion_level",
+    "b": "loading_unloading_time",
+    "spearman": -0.015
+   },
+   {
+    "a": "fuel_consumption_rate",
+    "b": "delay_probability",
+    "spearman": -0.014
+   },
+   {
+    "a": "fuel_consumption_rate",
+    "b": "lead_time_days",
+    "spearman": -0.014
+   },
+   {
+    "a": "vehicle_gps_longitude",
+    "b": "historical_demand",
+    "spearman": -0.014
+   }
+  ],
+  "mean_abs_feature_feature_spearman": 0.005,
+  "hypotheses": {
+   "summary": {
+    "consistent": 0,
+    "opposite": 0,
+    "no_relationship": 21
+   },
+   "not_consistent": [
+    {
+     "a": "traffic_congestion_level",
+     "b": "delay_probability",
+     "expected_sign": "+",
+     "spearman": -0.004,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "traffic_congestion_level",
+     "b": "delivery_time_deviation",
+     "expected_sign": "+",
+     "spearman": -0.003,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "traffic_congestion_level",
+     "b": "fuel_consumption_rate",
+     "expected_sign": "+",
+     "spearman": 0.009,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "traffic_congestion_level",
+     "b": "shipping_costs",
+     "expected_sign": "+",
+     "spearman": -0.001,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "weather_condition_severity",
+     "b": "delay_probability",
+     "expected_sign": "+",
+     "spearman": 0.001,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "weather_condition_severity",
+     "b": "disruption_likelihood_score",
+     "expected_sign": "+",
+     "spearman": -0.005,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "route_risk_level",
+     "b": "disruption_likelihood_score",
+     "expected_sign": "+",
+     "spearman": 0.0,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "port_congestion_level",
+     "b": "customs_clearance_time",
+     "expected_sign": "+",
+     "spearman": 0.005,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "port_congestion_level",
+     "b": "delay_probability",
+     "expected_sign": "+",
+     "spearman": 0.007,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "fatigue_monitoring_score",
+     "b": "driver_behavior_score",
+     "expected_sign": "-",
+     "spearman": 0.006,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "fatigue_monitoring_score",
+     "b": "delay_probability",
+     "expected_sign": "+",
+     "spearman": 0.005,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "driver_behavior_score",
+     "b": "disruption_likelihood_score",
+     "expected_sign": "-",
+     "spearman": 0.004,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "supplier_reliability_score",
+     "b": "lead_time_days",
+     "expected_sign": "-",
+     "spearman": -0.012,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "supplier_reliability_score",
+     "b": "delay_probability",
+     "expected_sign": "-",
+     "spearman": -0.0,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "handling_equipment_availability",
+     "b": "loading_unloading_time",
+     "expected_sign": "-",
+     "spearman": 0.003,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "loading_unloading_time",
+     "b": "delivery_time_deviation",
+     "expected_sign": "+",
+     "spearman": 0.004,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "customs_clearance_time",
+     "b": "delivery_time_deviation",
+     "expected_sign": "+",
+     "spearman": -0.006,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "lead_time_days",
+     "b": "delivery_time_deviation",
+     "expected_sign": "+",
+     "spearman": -0.003,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "historical_demand",
+     "b": "warehouse_inventory_level",
+     "expected_sign": "-",
+     "spearman": 0.003,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "order_fulfillment_status",
+     "b": "delay_probability",
+     "expected_sign": "-",
+     "spearman": 0.008,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "eta_variation_hours",
+     "b": "delivery_time_deviation",
+     "expected_sign": "+",
+     "spearman": 0.006,
+     "verdict": "no_relationship"
+    }
+   ],
+   "strongest": [
+    {
+     "a": "supplier_reliability_score",
+     "b": "lead_time_days",
+     "spearman": -0.012,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "traffic_congestion_level",
+     "b": "fuel_consumption_rate",
+     "spearman": 0.009,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "order_fulfillment_status",
+     "b": "delay_probability",
+     "spearman": 0.008,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "port_congestion_level",
+     "b": "delay_probability",
+     "spearman": 0.007,
+     "verdict": "no_relationship"
+    },
+    {
+     "a": "customs_clearance_time",
+     "b": "delivery_time_deviation",
+     "spearman": -0.006,
+     "verdict": "no_relationship"
+    }
+   ]
+  },
+  "realism": {
+   "flags": {
+    "no_temporal_autocorrelation": true,
+    "features_nearly_uncorrelated": true,
+    "gps_uniform_in_box": false,
+    "no_plausible_vehicle_track": true
+   },
+   "flags_true": 3,
+   "verdict": "compatible con datos sintéticos/simulados",
+   "mean_abs_lag1": 0.004,
+   "columns_with_values_piled_at_bounds_pct_gt_2": {
+    "vehicle_gps_latitude": 4.63,
+    "vehicle_gps_longitude": 4.82,
+    "fuel_consumption_rate": 23.55,
+    "eta_variation_hours": 10.82,
+    "traffic_congestion_level": 2.03,
+    "warehouse_inventory_level": 10.84,
+    "loading_unloading_time": 4.77,
+    "handling_equipment_availability": 10.65,
+    "order_fulfillment_status": 4.81,
+    "weather_condition_severity": 2.08,
+    "port_congestion_level": 10.95,
+    "shipping_costs": 4.8,
+    "lead_time_days": 10.54,
+    "historical_demand": 4.58,
+    "iot_temperature": 23.49,
+    "cargo_condition_status": 10.67,
+    "route_risk_level": 10.99,
+    "customs_clearance_time": 4.57,
+    "driver_behavior_score": 2.06,
+    "fatigue_monitoring_score": 4.62,
+    "disruption_likelihood_score": 23.83,
+    "delay_probability": 10.51,
+    "delivery_time_deviation": 4.86
+   },
+   "distribution_twin_groups": [
+    [
+     "vehicle_gps_latitude",
+     "loading_unloading_time",
+     "shipping_costs",
+     "customs_clearance_time"
+    ],
+    [
+     "vehicle_gps_longitude",
+     "order_fulfillment_status",
+     "historical_demand",
+     "fatigue_monitoring_score",
+     "delivery_time_deviation"
+    ],
+    [
+     "fuel_consumption_rate",
+     "iot_temperature"
+    ],
+    [
+     "eta_variation_hours",
+     "port_congestion_level",
+     "route_risk_level",
+     "delay_probability"
+    ],
+    [
+     "traffic_congestion_level",
+     "weather_condition_severity",
+     "supplier_reliability_score",
+     "driver_behavior_score"
+    ],
+    [
+     "warehouse_inventory_level",
+     "handling_equipment_availability",
+     "lead_time_days",
+     "cargo_condition_status"
+    ]
+   ]
+  },
+  "ml_baseline": {
+   "split": "temporal: train < 2023-01-01 <= test",
+   "regression": {
+    "disruption_likelihood_score": {
+     "r2_test": -0.002,
+     "mae_test": 0.223,
+     "mae_baseline_median": 0.188,
+     "signal": "sin señal detectable (R² < 0.02)"
+    },
+    "delay_probability": {
+     "r2_test": -0.004,
+     "mae_test": 0.281,
+     "mae_baseline_median": 0.265,
+     "signal": "sin señal detectable (R² < 0.02)"
+    },
+    "delivery_time_deviation": {
+     "r2_test": -0.003,
+     "mae_test": 3.701,
+     "mae_baseline_median": 3.654,
+     "signal": "sin señal detectable (R² < 0.02)"
+    }
+   },
+   "classification": {
+    "accuracy_test": 0.751,
+    "macro_f1_test": 0.286,
+    "baseline_majority_accuracy": 0.751,
+    "pct_predictions_equal_majority_class": 100.0
+   },
+   "top_features": {
+    "disruption_likelihood_score": [
+     "warehouse_inventory_level",
+     "weather_condition_severity",
+     "traffic_congestion_level",
+     "supplier_reliability_score",
+     "port_congestion_level"
+    ],
+    "delay_probability": [
+     "historical_demand",
+     "order_fulfillment_status",
+     "driver_behavior_score",
+     "cargo_condition_status",
+     "fuel_consumption_rate"
+    ],
+    "delivery_time_deviation": [
+     "warehouse_inventory_level",
+     "fuel_consumption_rate",
+     "port_congestion_level",
+     "lead_time_days",
+     "traffic_congestion_level"
+    ]
+   }
+  }
+ },
+ "samples_2_rows": {
+  "first_rows": [
+   {
+    "timestamp": "2021-01-01T00:00:00",
+    "vehicle_gps_latitude": 40.376,
+    "vehicle_gps_longitude": -77.014,
+    "fuel_consumption_rate": 5.137,
+    "eta_variation_hours": 4.998,
+    "traffic_congestion_level": 5.928,
+    "warehouse_inventory_level": 985.717,
+    "loading_unloading_time": 4.951,
+    "handling_equipment_availability": 0.481,
+    "order_fulfillment_status": 0.761,
+    "weather_condition_severity": 0.359,
+    "port_congestion_level": 4.289,
+    "shipping_costs": 456.504,
+    "supplier_reliability_score": 0.986,
+    "lead_time_days": 2.128,
+    "historical_demand": 100.773,
+    "iot_temperature": 0.574,
+    "cargo_condition_status": 0.777,
+    "route_risk_level": 1.182,
+    "customs_clearance_time": 0.502,
+    "driver_behavior_score": 0.034,
+    "fatigue_monitoring_score": 0.979,
+    "disruption_likelihood_score": 0.506,
+    "delay_probability": 0.885,
+    "risk_classification": "Moderate Risk",
+    "delivery_time_deviation": 9.111
+   },
+   {
+    "timestamp": "2021-01-01T01:00:00",
+    "vehicle_gps_latitude": 33.508,
+    "vehicle_gps_longitude": -117.037,
+    "fuel_consumption_rate": 5.102,
+    "eta_variation_hours": 0.985,
+    "traffic_congestion_level": 1.592,
+    "warehouse_inventory_level": 396.7,
+    "loading_unloading_time": 1.03,
+    "handling_equipment_availability": 0.621,
+    "order_fulfillment_status": 0.197,
+    "weather_condition_severity": 0.231,
+    "port_congestion_level": 7.018,
+    "shipping_costs": 640.408,
+    "supplier_reliability_score": 0.463,
+    "lead_time_days": 12.608,
+    "historical_demand": 5313.738,
+    "iot_temperature": -9.753,
+    "cargo_condition_status": 0.092,
+    "route_risk_level": 9.612,
+    "customs_clearance_time": 0.967,
+    "driver_behavior_score": 0.202,
+    "fatigue_monitoring_score": 0.919,
+    "disruption_likelihood_score": 0.981,
+    "delay_probability": 0.544,
+    "risk_classification": "High Risk",
+    "delivery_time_deviation": 8.175
+   }
+  ],
+  "random_rows": [
+   {
+    "timestamp": "2023-10-29T14:00:00",
+    "vehicle_gps_latitude": 30.65,
+    "vehicle_gps_longitude": -70.054,
+    "fuel_consumption_rate": 7.998,
+    "eta_variation_hours": 4.427,
+    "traffic_congestion_level": 9.933,
+    "warehouse_inventory_level": 82.653,
+    "loading_unloading_time": 1.845,
+    "handling_equipment_availability": 0.88,
+    "order_fulfillment_status": 0.989,
+    "weather_condition_severity": 0.34,
+    "port_congestion_level": 6.217,
+    "shipping_costs": 103.211,
+    "supplier_reliability_score": 0.912,
+    "lead_time_days": 2.037,
+    "historical_demand": 9922.118,
+    "iot_temperature": 16.558,
+    "cargo_condition_status": 0.151,
+    "route_risk_level": 6.65,
+    "customs_clearance_time": 4.161,
+    "driver_behavior_score": 0.959,
+    "fatigue_monitoring_score": 0.495,
+    "disruption_likelihood_score": 0.635,
+    "delay_probability": 0.814,
+    "risk_classification": "Moderate Risk",
+    "delivery_time_deviation": 9.489
+   },
+   {
+    "timestamp": "2024-08-26T15:00:00",
+    "vehicle_gps_latitude": 46.364,
+    "vehicle_gps_longitude": -90.863,
+    "fuel_consumption_rate": 5.0,
+    "eta_variation_hours": 4.755,
+    "traffic_congestion_level": 8.582,
+    "warehouse_inventory_level": 3.317,
+    "loading_unloading_time": 0.917,
+    "handling_equipment_availability": 0.065,
+    "order_fulfillment_status": 0.485,
+    "weather_condition_severity": 0.095,
+    "port_congestion_level": 0.821,
+    "shipping_costs": 100.621,
+    "supplier_reliability_score": 0.972,
+    "lead_time_days": 14.016,
+    "historical_demand": 9568.742,
+    "iot_temperature": 38.409,
+    "cargo_condition_status": 0.037,
+    "route_risk_level": 6.913,
+    "customs_clearance_time": 1.681,
+    "driver_behavior_score": 0.655,
+    "fatigue_monitoring_score": 0.715,
+    "disruption_likelihood_score": 0.955,
+    "delay_probability": 0.014,
+    "risk_classification": "High Risk",
+    "delivery_time_deviation": 9.954
+   }
+  ]
+ },
+ "analysis_index": {
+  "metadata": "tamaño, rango temporal, metodología",
+  "dataset_context": "descripción, columnas, trampas, definiciones",
+  "reproducibility": "versiones y parámetros",
+  "samples": "filas de ejemplo",
+  "data_quality": "perfil por columna, saturación en límites, duplicados",
+  "declared_vs_observed": "rangos/tipos documentados contra lo observado",
+  "temporal": "cobertura horaria, huecos, estacionalidad (eta²), tendencia, medias por hora/día/mes/año",
+  "geography": "cobertura geográfica vs Sur de California, continuidad de trayectoria",
+  "targets": "distribuciones, clases de riesgo y relaciones entre targets",
+  "correlations": "matrices Pearson/Spearman, pares top, features vs targets, VIF",
+  "hypothesis_checks": "21 hipótesis de dominio contrastadas",
+  "realism_indicators": "pistas de datos simulados",
+  "ml_baseline": "señal predictiva con corte temporal",
+  "outliers": "fuera de rango y extremos",
+  "key_findings": "resumen en frases"
+ }
+}

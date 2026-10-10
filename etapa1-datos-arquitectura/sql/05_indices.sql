@@ -60,11 +60,26 @@ COMMENT ON INDEX idx_cust_id_state IS
 
 -- A3. Indice compuesto en fleet_deliveries para el JOIN + filtros combinados
 --     Consulta 1 filtra por vehicle_id y agrupa por delivery_status.
---     El indice compuesto cubre ambas columnas en un solo scan.
+--     INCLUDE ampliado con las dos nuevas columnas de contexto externo.
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_del_vehicle_status
     ON fleet_deliveries (vehicle_id, delivery_status)
-    INCLUDE (eta_variation_hours, route_risk_level, driver_id, distance_km);
+    INCLUDE (eta_variation_hours, route_risk_level, driver_id, distance_km,
+             traffic_congestion_level, weather_condition_severity);
+
+-- A4. Indice sobre traffic_congestion_level para filtros y agregaciones
+--     Q1: AVG(traffic_congestion_level) GROUP BY estado/tipo
+--     Q3: AVG(traffic_congestion_level) GROUP BY anio/mes
+--     Tambien util para Etapa 3: correlacion congestion vs delay_probability
+CREATE INDEX CONCURRENTLY IF NOT EXISTS
+    idx_del_traffic_status
+    ON fleet_deliveries (traffic_congestion_level, delivery_status)
+    INCLUDE (eta_variation_hours, weather_condition_severity);
+
+COMMENT ON INDEX idx_del_traffic_status IS
+    'Indice covering para Q1 y Q3: cubre traffic_congestion_level + delivery_status '
+    'e incluye eta_variation_hours y weather_condition_severity. '
+    'Permite comparar congestion promedio en entregas demoradas vs a tiempo.';
 
 COMMENT ON INDEX idx_del_vehicle_status IS
     'Covering index para Q1 y Q5: cubre vehicle_id + delivery_status + '

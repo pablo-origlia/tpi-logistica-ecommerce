@@ -257,24 +257,325 @@ COMMENT ON TABLE olist_order_payments IS
     'métodos (boleto + voucher). payment_value es el monto efectivamente pagado.';
 
 -- =============================================================
--- VERIFICACIÓN RAPIDA POST-IMPORT
--- Ejecutar después de cargar los CSV con 03_import_data.sql
+-- CORRECCIONES DE CALIDAD DEL DATASET OLIST
 -- =============================================================
--- SELECT 'olist_geolocation'              AS tabla, COUNT(*) AS filas FROM olist_geolocation
--- UNION ALL
--- SELECT 'olist_customers',                          COUNT(*) FROM olist_customers
--- UNION ALL
--- SELECT 'olist_sellers',                            COUNT(*) FROM olist_sellers
--- UNION ALL
--- SELECT 'olist_products',                           COUNT(*) FROM olist_products
--- UNION ALL
--- SELECT 'product_category_name_translation',        COUNT(*) FROM product_category_name_translation
--- UNION ALL
--- SELECT 'olist_orders',                             COUNT(*) FROM olist_orders
--- UNION ALL
--- SELECT 'olist_order_items',                        COUNT(*) FROM olist_order_items
--- UNION ALL
--- SELECT 'olist_order_reviews',                      COUNT(*) FROM olist_order_reviews
--- UNION ALL
--- SELECT 'olist_order_payments',                     COUNT(*) FROM olist_order_payments
--- ORDER BY tabla;
+-- El dataset Olist tiene 4 problemas conocidos que rompen los
+-- constraints del DDL original. Se corrigen aqui — antes del
+-- import — para que 03_import_data.sql corra sin errores.
+-- Documentacion detallada: docs/diccionario_datos_v2.xlsx
+-- =============================================================
+
+-- =============================================================
+-- FIX 1: olist_geolocation — coordenadas fuera del bounding box Brasil
+-- =============================================================
+-- PROBLEMA:
+--   El dataset Olist contiene coordenadas geograficas erroneas (ej: zip SP
+--   con lat=28, lng=-15 que apunta a Islas Canarias, Espana).
+--   Es un problema conocido y documentado del dataset original.
+--
+-- SOLUCION ELEGIDA: eliminar el CHECK geografico
+--   Razon: la validacion geografica es una tarea de LIMPIEZA (Etapa 2),
+--   no de integridad estructural. La BD acepta los datos crudos y el
+--   notebook de limpieza filtra/imputa las coordenadas invalidas.
+--   Una alternativa (BETWEEN -90 AND 90) acepta cualquier coordenada del
+--   planeta sin agregar valor — preferimos documentar el problema.
+--
+-- IMPACTO: ninguno en joins ni en logica de negocio.
+--   Los analisis geoespaciales de Etapa 2 excluiran coordenadas invalidas.
+
+ALTER TABLE olist_geolocation DROP CONSTRAINT IF EXISTS chk_geo_lat;
+ALTER TABLE olist_geolocation DROP CONSTRAINT IF EXISTS chk_geo_lng;
+
+COMMENT ON TABLE olist_geolocation IS
+    'Coordenadas por prefijo de CEP brasileno. '
+    'ATENCION: el dataset original contiene coordenadas fuera del bounding '
+    'box de Brasil (problema conocido). Los checks geograficos fueron '
+    'eliminados intencionalmente — la validacion y limpieza se realiza '
+    'en Etapa 2 (notebook 01_limpieza.ipynb).';
+
+
+-- =============================================================
+-- FIX 2: olist_products — product_weight_g = 0
+-- =============================================================
+-- PROBLEMA:
+--   Algunos productos tienen product_weight_g = 0 en el CSV original.
+--   Peso = 0 es un dato sucio (no existe un producto sin peso).
+--   Nuestro CHECK original era: product_weight_g > 0 (rechazaba el 0).
+--
+-- SOLUCION ELEGIDA: permitir >= 0 y NULL, documentar para Etapa 2
+--   Razon: preferimos ingestar el dato crudo y tratar el 0 como
+--   "peso faltante o no registrado" en la limpieza.
+--   NO usamos solo IS NULL porque el CSV ya trae el 0 explicitamente.
+--
+-- EFECTO EN LOGICA DE NEGOCIO:
+--   En fleet_deliveries, weight_g=0 asignaria el vehiculo como 'moto'
+--   (la condicion < 300g incluye el 0). Esto se documenta en Etapa 2
+--   y esos productos se excluyen o imputan antes de entrenar los modelos.
+
+ALTER TABLE olist_products DROP CONSTRAINT IF EXISTS chk_prod_weight;
+ALTER TABLE olist_products
+    ADD CONSTRAINT chk_prod_weight
+    CHECK (product_weight_g >= 0 OR product_weight_g IS NULL);
+
+COMMENT ON COLUMN olist_products.product_weight_g IS
+    'Peso del producto en gramos. '
+    'El dataset original contiene registros con weight_g = 0 (dato sucio). '
+    'Tratamiento en Etapa 2: imputar con la mediana de la categoria '
+    'o excluir del dataset analitico segun criterio del analisis.';
+
+
+-- =============================================================
+-- FIX 3: olist_order_items — FK a productos inexistentes
+-- =============================================================
+-- PROBLEMA:
+--   Hay order_items que referencian product_ids que NO existen en
+--   olist_products. Son productos que Olist elimino o anonimizo
+--   despues de que las ordenes fueron registradas.
+--
+-- SOLUCION ELEGIDA: producto placeholder 'unknown'
+--   Razon: mantener la FK intacta preserva la integridad referencial.
+--   La solucion propuesta originalmente (eliminar la FK) es la peor
+--   opcion — perdemos la garantia de consistencia en todos los joins.
+--   Un placeholder documentado es la practica estandar en DW/ETL.
+--
+-- ALTERNATIVA DESCARTADA: hacer la FK DEFERRABLE o SET NULL
+--   Requeriria cambiar el tipo de columna product_id en order_items,
+--   complicando los joins sin beneficio real para el analisis.
+
+INSERT INTO olist_products (
+    product_id,
+    product_category_name,
+    product_name_lenght,
+    product_description_lenght,
+    product_photos_qty,
+    product_weight_g,
+    product_length_cm,
+    product_height_cm,
+    product_width_cm
+) VALUES (
+    'unknown_product_placeholder',   -- product_id ficticio
+    'unknown',                       -- categoria desconocida
+    NULL, NULL, NULL,                -- campos opcionales: NULL
+    NULL,                            -- weight_g: NULL (desconocido)
+    NULL, NULL, NULL
+)
+ON CONFLICT (product_id) DO NOTHING; -- idempotente: no falla si ya existe
+
+-- Hacer la FK tolerante a los product_ids fuera del catalogo:
+-- Cambiar referencias huerfanas al placeholder antes del COPY de items
+-- (esto se ejecuta DESPUES de cargar products y ANTES de cargar items)
+
+COMMENT ON TABLE olist_products IS
+    'Catalogo de productos. product_weight_g determina el tipo de '
+    'vehiculo asignado en fleet_deliveries: moto < 300g, van < 2000g, truck >= 2000g. '
+    'El registro product_id=''unknown_product_placeholder'' es un placeholder '
+    'para order_items que referencian productos eliminados del catalogo original.';
+
+
+-- =============================================================
+-- FIX 4: olist_order_reviews — review_id duplicados en el CSV
+-- =============================================================
+-- PROBLEMA:
+--   El CSV de reviews contiene review_ids duplicados (mismo review_id,
+--   distinto order_id). Es un bug conocido del dataset Olist.
+--
+-- SOLUCION PROPUESTA ORIGINAL (PK compuesta review_id + order_id):
+--   INCORRECTA — no garantiza unicidad real y complica los joins.
+--   Un review deberia identificarse por review_id solo.
+--
+-- SOLUCION ELEGIDA: quitar la PK de review_id, usar SERIAL interno
+--   Razon: el review_id del CSV no es confiable como PK.
+--   Usamos un id interno (review_pk) como PK real y guardamos
+--   review_id como dato (con indice para busqueda, no unicidad).
+--   Esto preserva todos los datos sin perder ninguna resena.
+--
+-- ALTERNATIVA DESCARTADA: cargar en staging + INSERT DISTINCT
+--   Mas complejo de implementar en psql puro. La solucion del SERIAL
+--   es mas limpia y directa.
+
+-- Eliminar la PK actual basada en review_id
+ALTER TABLE olist_order_reviews DROP CONSTRAINT IF EXISTS olist_order_reviews_pkey;
+
+-- Agregar columna de PK interna (si no existe)
+ALTER TABLE olist_order_reviews
+    ADD COLUMN IF NOT EXISTS review_pk SERIAL;
+
+-- Establecer la nueva PK en la columna interna
+ALTER TABLE olist_order_reviews
+    ADD CONSTRAINT olist_order_reviews_pkey PRIMARY KEY (review_pk);
+
+-- review_id pasa a ser un campo indexado (no unico) para busqueda
+DROP INDEX IF EXISTS idx_rev_id;
+CREATE INDEX idx_rev_review_id ON olist_order_reviews (review_id);
+
+COMMENT ON COLUMN olist_order_reviews.review_pk IS
+    'Clave primaria interna (SERIAL). '
+    'El review_id original del dataset Olist tiene duplicados — no es '
+    'confiable como PK. Se preserva como campo indexado para busqueda.';
+
+COMMENT ON COLUMN olist_order_reviews.review_id IS
+    'ID de resena del dataset Olist original. '
+    'ATENCION: el CSV contiene duplicados (bug conocido del dataset). '
+    'Usar review_pk como clave primaria para joins internos.';
+
+-- =============================================================
+-- DDL AUDIT — verificacion de estructura del schema Olist
+-- =============================================================
+-- Se ejecuta sin datos. Detecta problemas de schema ANTES del
+-- import, evitando tener que recargar 1.6M registros.
+-- Resultado esperado en cada consulta: valor = esperado.
+-- =============================================================
+
+-- 1. Tablas creadas
+SELECT
+    COUNT(*)                        AS tablas_olist_creadas,
+    9                               AS esperado,
+    CASE WHEN COUNT(*) = 9
+         THEN 'OK' ELSE 'ERROR' END AS resultado
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN (
+    'olist_geolocation','olist_customers','olist_sellers',
+    'olist_products','product_category_name_translation',
+    'olist_orders','olist_order_items',
+    'olist_order_reviews','olist_order_payments'
+  );
+
+-- 2. Indices criticos del DDL verificados por nombre
+--    (el conteo total varia si ya se ejecuto 05_indices.sql en corridas anteriores)
+SELECT
+    indexname                       AS indice,
+    'OK'                            AS resultado
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND indexname IN (
+    'idx_geo_zip','idx_geo_state',
+    'idx_cust_zip','idx_cust_state','idx_cust_uid',
+    'idx_sel_zip','idx_sel_state',
+    'idx_prod_category','idx_prod_weight',
+    'idx_ord_customer','idx_ord_status','idx_ord_purchase',
+    'idx_ord_delivered','idx_ord_delivered_only',
+    'idx_items_product','idx_items_seller',
+    'idx_rev_order','idx_rev_score','idx_rev_review_id',
+    'idx_pay_type'
+  )
+UNION ALL
+SELECT
+    'FALTANTE: ' || idx             AS indice,
+    'ERROR: indice del DDL no creado' AS resultado
+FROM (VALUES
+    ('idx_geo_zip'),('idx_geo_state'),
+    ('idx_cust_zip'),('idx_cust_state'),('idx_cust_uid'),
+    ('idx_sel_zip'),('idx_sel_state'),
+    ('idx_prod_category'),('idx_prod_weight'),
+    ('idx_ord_customer'),('idx_ord_status'),('idx_ord_purchase'),
+    ('idx_ord_delivered'),('idx_ord_delivered_only'),
+    ('idx_items_product'),('idx_items_seller'),
+    ('idx_rev_order'),('idx_rev_score'),('idx_rev_review_id'),
+    ('idx_pay_type')
+) AS esperados(idx)
+WHERE idx NOT IN (
+    SELECT indexname FROM pg_indexes WHERE schemaname = 'public'
+)
+ORDER BY resultado DESC, indice;
+-- Resultado esperado: 20 filas con resultado=OK, 0 filas con ERROR.
+
+-- 3. Verificar que chk_geo_lat y chk_geo_lng fueron ELIMINADOS
+SELECT
+    COUNT(*)                        AS checks_geo_eliminados,
+    0                               AS esperado,
+    CASE WHEN COUNT(*) = 0
+         THEN 'OK' ELSE 'ERROR: checks geograficos NO eliminados' END AS resultado
+FROM pg_constraint
+WHERE conname IN ('chk_geo_lat', 'chk_geo_lng');
+
+-- 4. Verificar definicion del CHECK de product_weight_g
+SELECT
+    conname                         AS constraint_name,
+    pg_get_constraintdef(oid)       AS definicion,
+    CASE WHEN pg_get_constraintdef(oid) LIKE '%>= 0%'
+         THEN 'OK' ELSE 'ERROR: definicion incorrecta' END AS resultado
+FROM pg_constraint
+WHERE conname = 'chk_prod_weight';
+
+-- 5. Verificar que review_pk existe como columna en olist_order_reviews
+SELECT
+    COUNT(*)                        AS columna_review_pk_existe,
+    1                               AS esperado,
+    CASE WHEN COUNT(*) = 1
+         THEN 'OK' ELSE 'ERROR: review_pk no fue creada' END AS resultado
+FROM information_schema.columns
+WHERE table_name = 'olist_order_reviews'
+  AND column_name = 'review_pk';
+
+-- 6. Verificar que review_pk es la PK de olist_order_reviews
+SELECT
+    conname                         AS pk_name,
+    pg_get_constraintdef(oid)       AS definicion,
+    CASE WHEN pg_get_constraintdef(oid) LIKE '%review_pk%'
+         THEN 'OK' ELSE 'ERROR: PK no apunta a review_pk' END AS resultado
+FROM pg_constraint
+WHERE conrelid = 'olist_order_reviews'::regclass
+  AND contype = 'p';
+
+-- 7. Verificar que unknown_product_placeholder fue insertado
+SELECT
+    COUNT(*)                        AS placeholder_existe,
+    1                               AS esperado,
+    CASE WHEN COUNT(*) = 1
+         THEN 'OK' ELSE 'ERROR: placeholder no insertado' END AS resultado
+FROM olist_products
+WHERE product_id = 'unknown_product_placeholder';
+
+-- 8. Resumen: todas las verificaciones en una vista
+SELECT
+    verificacion, esperado, resultado
+FROM (
+    VALUES
+    ('tablas_olist_creadas',
+     '9',
+     (SELECT CASE WHEN COUNT(*) = 9 THEN 'OK' ELSE 'ERROR: ' || COUNT(*)::TEXT END
+      FROM information_schema.tables
+      WHERE table_schema='public'
+        AND table_name IN ('olist_geolocation','olist_customers','olist_sellers',
+            'olist_products','product_category_name_translation','olist_orders',
+            'olist_order_items','olist_order_reviews','olist_order_payments'))),
+    ('indices_DDL_olist_presentes',
+     '20 indices clave',
+     (SELECT CASE WHEN COUNT(*) = 20 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT || ' de 20 indices DDL presentes' END
+      FROM pg_indexes WHERE schemaname='public'
+        AND indexname IN (
+            'idx_geo_zip','idx_geo_state','idx_cust_zip','idx_cust_state','idx_cust_uid',
+            'idx_sel_zip','idx_sel_state','idx_prod_category','idx_prod_weight',
+            'idx_ord_customer','idx_ord_status','idx_ord_purchase',
+            'idx_ord_delivered','idx_ord_delivered_only',
+            'idx_items_product','idx_items_seller',
+            'idx_rev_order','idx_rev_score','idx_rev_review_id','idx_pay_type'))),
+    ('checks_geo_eliminados',
+     '0',
+     (SELECT CASE WHEN COUNT(*) = 0 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT || ' checks geo activos' END
+      FROM pg_constraint WHERE conname IN ('chk_geo_lat','chk_geo_lng'))),
+    ('check_weight_correcto',
+     '>= 0 OR NULL',
+     (SELECT CASE WHEN pg_get_constraintdef(oid) LIKE '%>= 0%' THEN 'OK'
+                  ELSE 'ERROR: ' || pg_get_constraintdef(oid) END
+      FROM pg_constraint WHERE conname = 'chk_prod_weight')),
+    ('review_pk_creada',
+     'SI',
+     (SELECT CASE WHEN COUNT(*) = 1 THEN 'OK' ELSE 'ERROR: columna no existe' END
+      FROM information_schema.columns
+      WHERE table_name='olist_order_reviews' AND column_name='review_pk')),
+    ('pk_apunta_a_review_pk',
+     'SI',
+     (SELECT CASE WHEN pg_get_constraintdef(oid) LIKE '%review_pk%' THEN 'OK'
+                  ELSE 'ERROR: ' || pg_get_constraintdef(oid) END
+      FROM pg_constraint WHERE conrelid='olist_order_reviews'::regclass AND contype='p')),
+    ('placeholder_insertado',
+     'SI',
+     (SELECT CASE WHEN COUNT(*) = 1 THEN 'OK' ELSE 'ERROR: no existe' END
+      FROM olist_products WHERE product_id='unknown_product_placeholder'))
+) AS t(verificacion, esperado, resultado)
+ORDER BY verificacion;
+-- Si alguna fila muestra ERROR: NO ejecutar 03_import_data.sql hasta resolverlo.

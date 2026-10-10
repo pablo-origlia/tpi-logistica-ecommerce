@@ -1,0 +1,80 @@
+SET
+       tabla       | total_filas | coords_fuera_brasil | pct_invalidas 
+-------------------+-------------+---------------------+---------------
+ olist_geolocation |     1000163 |                  42 |          0.00
+(1 row)
+
+ geolocation_state | coords_invalidas 
+-------------------+------------------
+ PE                |               11
+ PA                |                7
+ RJ                |                5
+ BA                |                4
+ RS                |                4
+ PR                |                3
+ ES                |                2
+ MG                |                2
+ SP                |                1
+ MT                |                1
+ PB                |                1
+ AL                |                1
+(12 rows)
+
+     tabla      | total_productos | weight_cero | weight_nulo | weight_valido 
+----------------+-----------------+-------------+-------------+---------------
+ olist_products |           32952 |           4 |           3 |         32945
+(1 row)
+
+ product_category_name | sin_peso | total_categoria 
+-----------------------+----------+-----------------
+ cama_mesa_banho       |        4 |            3029
+                       |        1 |             610
+ bebes                 |        1 |             919
+ unknown               |        1 |               1
+(4 rows)
+
+             diagnostico              | registros_afectados | ordenes_afectadas 
+--------------------------------------+---------------------+-------------------
+ order_items con producto desconocido |                   0 |                 0
+(1 row)
+
+     diagnostico      | duplicados | review_ids_unicos | total_resenas 
+----------------------+------------+-------------------+---------------
+ review_id duplicados |        814 |             98410 |         99224
+(1 row)
+
+            review_id             | apariciones |                                          order_ids_asociados                                           |  scores   
+----------------------------------+-------------+--------------------------------------------------------------------------------------------------------+-----------
+ 1fb4ddc969e6bea80e38deec00393a6f |           3 | d6dde74bdeb424af6b660214881b4845 | afed4265a8b956d840bc032e54dfccd1 | 3c1098cb17277b62cfc709c7a9b500f5 | 5 | 5 | 5
+ 2172867fd5b1a55f98fe4608e1547b4b |           3 | 559d606ac642899e44550f194fec7e08 | ac6e61336e852cdc45fe59ada3763a66 | e11ba7fd8fe0728dcd89efddcda9fb11 | 5 | 5 | 5
+ 08528f70f579f0c830189efc523d2182 |           3 | 7813842ae95e8c497fc0233232ae815a | 03310aa823a66056268a3bab36e827fb | 53c71d3953507c6239ff73917ed358c9 | 1 | 1 | 1
+ 0c76e7a547a531e7bf9f0b99cba071c1 |           3 | 3525e0e57f9d276d522d570bd46cb39c | 98c977c116f7779360e9fecffd3860b6 | 16cc0fe71527d13426bdbe29205b2053 | 5 | 5 | 5
+ 2d6ac45f859465b5c185274a1c929637 |           3 | ef66cc60de5221417b5fb81b1c42de85 | 41c284ffd871324eadf06fc989583619 | 8e17072ec97ce29f0e1f111e598b0c85 | 1 | 1 | 1
+(5 rows)
+
+              diagnostico               | cantidad 
+----------------------------------------+----------
+ ordenes delivered sin fleet_deliveries |        8
+(1 row)
+
+             order_id             | order_purchase_timestamp | order_delivered_customer_date | order_estimated_delivery_date 
+----------------------------------+--------------------------+-------------------------------+-------------------------------
+ 2d858f451373b04fb5c984a1cc2defaf | 2017-05-25 23:22:43      |                               | 2017-06-23 00:00:00
+ 2d1e2d5bf4dc7227b3bfebb81328c15f | 2017-11-28 17:44:07      |                               | 2017-12-18 00:00:00
+ ab7c89dc1bf4a1ead9d6ec1ec8968a84 | 2018-06-08 12:09:39      |                               | 2018-06-26 00:00:00
+ f5dd62b788049ad9fc0526e3ad11a097 | 2018-06-20 06:58:43      |                               | 2018-07-16 00:00:00
+ 20edc82cf5400ce95e1afacc25798b31 | 2018-06-27 16:09:12      |                               | 2018-07-19 00:00:00
+ 2ebdfc4f15f23b91474edf87475f108e | 2018-07-01 17:05:11      |                               | 2018-07-30 00:00:00
+ 0d3268bad9b086af767785e3f0fc0133 | 2018-07-01 21:14:02      |                               | 2018-07-24 00:00:00
+ e69f75a717d64fc5ecdfae42b2e8e086 | 2018-07-01 22:05:55      |                               | 2018-07-30 00:00:00
+(8 rows)
+
+           problema           |                                 detalle                                  |                             accion_etapa2                              
+------------------------------+--------------------------------------------------------------------------+------------------------------------------------------------------------
+ coords_invalidas_geolocation | Coordenadas fuera de Brasil en olist_geolocation (aprox. 0.03%)          | Filtrar en notebook limpieza: usar solo coords dentro del bounding box
+ weight_cero_products         | Productos con product_weight_g = 0 - dato sucio del CSV original         | Imputar con mediana de la categoria o excluir del dataset analitico
+ items_producto_desconocido   | order_items con producto no presente en catalogo - placeholder insertado | Excluir del dataset analitico los items con product_id=unknown
+ review_id_duplicados         | review_ids repetidos en el CSV - bug conocido del dataset Olist          | Agrupar por order_id para reviews; no usar review_id como join key
+ delivered_sin_flota          | 8 ordenes delivered sin registro en fleet_deliveries (0.008%)            | Excluir del dataset analitico - LEFT JOIN absorbe la diferencia
+(5 rows)
+

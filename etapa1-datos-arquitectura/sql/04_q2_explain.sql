@@ -1,36 +1,36 @@
 SET client_encoding = 'UTF8';
--- ============================================================
 -- 04_q2_explain.sql
 -- Q2: behavior_score vs review_score por conductor
--- Tablas: fleet_deliveries, fleet_drivers, olist_order_reviews
---
--- USO:
---   SIN indices (ejecutar ANTES de 05_indices.sql):
---     psql -U postgres -d olist_logistics_db -f 04_q2_explain.sql
---       > ..\performance\explain_sin_indices\q2_sin_idx.txt
---
---   CON indices (ejecutar DESPUES de 05_indices.sql):
---     psql -U postgres -d olist_logistics_db -f 04_q2_explain.sql
---       > ..\performance\explain_con_indices\q2_con_idx.txt
---
--- REQUISITO: activar track_io_timing para medir I/O real
---   SET track_io_timing = on;
+-- Ejecutar: psql -U postgres -d olist_logistics_db -f 04_q2_explain.sql
+--   > ..\performance\explain_sin_indices\q2_sin_idx.txt
+-- (cambiar carpeta a con_indices despues de 05_indices.sql)
+-- Requiere: SET track_io_timing = on
 -- ============================================================
 
--- Activar medicion de I/O (necesario para ver tiempos de lectura de disco/cache)
 SET track_io_timing = on;
 
--- Limpiar cache de paginas de PostgreSQL para medir cold cache (opcional)
--- DISCARD ALL;  -- descomentar solo si se quiere medir cold start
-
 EXPLAIN (
-    ANALYZE,      -- ejecuta la consulta y mide tiempos reales
-    BUFFERS,      -- muestra hits/misses de shared_buffers, lecturas de disco
-    VERBOSE,      -- muestra columnas de output y schema de cada nodo
-    SETTINGS,     -- muestra parametros de configuracion relevantes (work_mem, etc.)
-    WAL,          -- muestra actividad WAL generada (escrituras)
-    FORMAT TEXT   -- salida legible para guardar en .txt
+    ANALYZE,
+    BUFFERS,
+    VERBOSE,
+    SETTINGS,
+    WAL,
+    FORMAT TEXT
 )
+-- La columna eta_variacion_promedio_h cuantifica el impacto en horas.
+
+
+-- +-------------------------------------------------------------+
+-- | CONSULTA 2                                                  |
+-- | Existe relacion entre el driver_behavior_score de un       |
+-- | conductor y el review_score promedio de sus entregas?       |
+-- +-------------------------------------------------------------+
+-- Tablas: fleet_deliveries, fleet_drivers, olist_order_reviews
+-- Metricas registradas:
+--   - Comparar tiempo con y sin idx_rev_order
+--   - Filas: ~40 conductores -> 40 filas con review promedio
+--   - Plan: esperamos Index Scan en olist_order_reviews
+
 WITH conductor_performance AS (
     SELECT
         fdr.driver_id,
@@ -76,16 +76,6 @@ SELECT
 FROM conductor_performance
 ORDER BY driver_behavior_score DESC;
 
--- ============================================================
--- CAMPOS CLAVE A REGISTRAR EN LA TABLA COMPARATIVA:
---
---  Tiempo total        -> 'Execution Time: X ms'  (ultima linea del plan)
---  Tiempo de planning  -> 'Planning Time: X ms'
---  Shared buffers hit  -> 'Buffers: shared hit=N'  (cache PostgreSQL, sin I/O)
---  Shared buffers read -> 'Buffers: shared read=N' (leido de disco)
---  I/O read time       -> 'I/O Timings: read=X ms' (requiere track_io_timing=on)
---  Filas estimadas     -> 'rows=N' en cada nodo (estimacion del planner)
---  Filas reales        -> 'actual rows=N' en cada nodo
---  Operacion principal -> primer nodo del plan (Seq Scan / Index Scan / Hash Join)
---  work_mem usado      -> visible en SETTINGS si se modifico
--- ============================================================
+-- Interpretacion esperada:
+-- Correlacion negativa entre behavior_score y pct_demoradas.
+-- Este resultado alimenta el KPI #7 (Driver behavior score promedio);

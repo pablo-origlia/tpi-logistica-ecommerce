@@ -45,11 +45,11 @@ SET
 
             review_id             | apariciones |                                          order_ids_asociados                                           |  scores   
 ----------------------------------+-------------+--------------------------------------------------------------------------------------------------------+-----------
- ddc52555ca27b0fe67d5255147682d2d |           3 | afed4265a8b956d840bc032e54dfccd1 | 3c1098cb17277b62cfc709c7a9b500f5 | d6dde74bdeb424af6b660214881b4845 | 4 | 4 | 4
- 70509c441d994fa03d6c1457930c9024 |           3 | 748f5318aa38169f5901337bfec3afea | 98567268fada7e240bf12be972e03a19 | 071ff3583bbaab9f38f020af7006a3d4 | 5 | 5 | 5
- c444278834184f72b1484dfe47de7f97 |           3 | df56136b8031ecd28e200bb18e6ddb2e | 566f53fc7d36fa366f7e221468121877 | 8557dabbdacec1a9e250f5e70afe1eab | 5 | 5 | 5
- 4d0e6dd087008d1f992d25ef6e1f619f |           3 | d415e95816c2f3a2a34e06cd519157cc | cd0343141ac675cd40fab2c7fd2e99cc | 97f95535ada31d6fa853230e815ee4e3 | 4 | 4 | 4
- 39b4603793c1c7f5f36d809b4a218664 |           3 | 2613fb342bec59126f9c5180a5bc95ec | 2d4bc14df7f5eaf36d2ef6d9a5b7c0d8 | 02e723e8edb4a123d414f56cc9c4665e | 5 | 5 | 5
+ 1fb4ddc969e6bea80e38deec00393a6f |           3 | d6dde74bdeb424af6b660214881b4845 | afed4265a8b956d840bc032e54dfccd1 | 3c1098cb17277b62cfc709c7a9b500f5 | 5 | 5 | 5
+ 2172867fd5b1a55f98fe4608e1547b4b |           3 | 559d606ac642899e44550f194fec7e08 | ac6e61336e852cdc45fe59ada3763a66 | e11ba7fd8fe0728dcd89efddcda9fb11 | 5 | 5 | 5
+ 08528f70f579f0c830189efc523d2182 |           3 | 7813842ae95e8c497fc0233232ae815a | 03310aa823a66056268a3bab36e827fb | 53c71d3953507c6239ff73917ed358c9 | 1 | 1 | 1
+ 0c76e7a547a531e7bf9f0b99cba071c1 |           3 | 3525e0e57f9d276d522d570bd46cb39c | 98c977c116f7779360e9fecffd3860b6 | 16cc0fe71527d13426bdbe29205b2053 | 5 | 5 | 5
+ 2d6ac45f859465b5c185274a1c929637 |           3 | ef66cc60de5221417b5fb81b1c42de85 | 41c284ffd871324eadf06fc989583619 | 8e17072ec97ce29f0e1f111e598b0c85 | 1 | 1 | 1
 (5 rows)
 
               diagnostico               | cantidad 

@@ -1,0 +1,100 @@
+SET
+SET
+                                                                                                                                                                                                                                                                                                                                   QUERY PLAN                                                                                                                                                                                                                                                                                                                                    
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Merge Join  (cost=4481.52..4487.87 rows=3 width=380) (actual time=82.658..89.240 rows=3.00 loops=1)
+   Output: cm.tipo_vehiculo, (SubPlan 1), cm.total_mantenimientos, cm.pct_correctivo, cm.costo_total_brl, cm.costo_correctivo_promedio, cm.downtime_total_h, cm.downtime_correctivo_promedio_h, (count(fd.delivery_id)), (round((((count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'on_time'::text)))::numeric * 100.0) / (NULLIF(count(fd.delivery_id), 0))::numeric), 1)), (round(avg(fd.eta_variation_hours), 2)), (round(avg(fd.distance_km), 1)), (round(sum(fd.distance_km), 0)), round((cm.costo_total_brl / (NULLIF((count(fd.delivery_id)), 0))::numeric), 2), round((cm.costo_total_brl / NULLIF((round(sum(fd.distance_km), 0)), '0'::numeric)), 4)
+   Inner Unique: true
+   Merge Cond: ((cm.tipo_vehiculo)::text = (fv_1.type)::text)
+   Buffers: shared hit=1886
+   ->  Sort  (cost=36.93..36.94 rows=3 width=172) (actual time=1.454..1.457 rows=3.00 loops=1)
+         Output: cm.tipo_vehiculo, cm.total_mantenimientos, cm.pct_correctivo, cm.costo_total_brl, cm.costo_correctivo_promedio, cm.downtime_total_h, cm.downtime_correctivo_promedio_h
+         Sort Key: cm.tipo_vehiculo
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=9
+         ->  Subquery Scan on cm  (cost=36.75..36.91 rows=3 width=172) (actual time=1.419..1.432 rows=3.00 loops=1)
+               Output: cm.tipo_vehiculo, cm.total_mantenimientos, cm.pct_correctivo, cm.costo_total_brl, cm.costo_correctivo_promedio, cm.downtime_total_h, cm.downtime_correctivo_promedio_h
+               Buffers: shared hit=9
+               ->  HashAggregate  (cost=36.75..36.88 rows=3 width=188) (actual time=1.417..1.429 rows=3.00 loops=1)
+                     Output: fv.type, count(m.maintenance_id), NULL::bigint, NULL::bigint, round((((count(m.maintenance_id) FILTER (WHERE ((m.type)::text = 'correctivo'::text)))::numeric * 100.0) / (NULLIF(count(m.maintenance_id), 0))::numeric), 1), round(sum(m.cost_brl), 2), round(avg(m.cost_brl) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 2), round(sum(m.downtime_hours), 1), round(avg(m.downtime_hours) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 1)
+                     Group Key: fv.type
+                     Batches: 1  Memory Usage: 32kB
+                     Buffers: shared hit=9
+                     ->  Hash Join  (cost=2.35..19.30 rows=698 width=31) (actual time=0.172..0.678 rows=698.00 loops=1)
+                           Output: fv.type, m.maintenance_id, m.type, m.cost_brl, m.downtime_hours
+                           Inner Unique: true
+                           Hash Cond: (m.vehicle_id = fv.vehicle_id)
+                           Buffers: shared hit=9
+                           ->  Seq Scan on public.fleet_maintenance m  (cost=0.00..14.98 rows=698 width=31) (actual time=0.037..0.170 rows=698.00 loops=1)
+                                 Output: m.maintenance_id, m.vehicle_id, m.date, m.type, m.component, m.cost_brl, m.downtime_hours, m.mileage_at_service
+                                 Buffers: shared hit=8
+                           ->  Hash  (cost=1.60..1.60 rows=60 width=8) (actual time=0.099..0.100 rows=60.00 loops=1)
+                                 Output: fv.type, fv.vehicle_id
+                                 Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                 Buffers: shared hit=1
+                                 ->  Seq Scan on public.fleet_vehicles fv  (cost=0.00..1.60 rows=60 width=8) (actual time=0.046..0.073 rows=60.00 loops=1)
+                                       Output: fv.type, fv.vehicle_id
+                                       Buffers: shared hit=1
+   ->  Finalize GroupAggregate  (cost=4444.59..4445.37 rows=3 width=148) (actual time=81.153..87.699 rows=3.00 loops=1)
+         Output: fv_1.type, count(fd.delivery_id), NULL::bigint, round((((count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'on_time'::text)))::numeric * 100.0) / (NULLIF(count(fd.delivery_id), 0))::numeric), 1), round(avg(fd.eta_variation_hours), 2), round(avg(fd.distance_km), 1), round(sum(fd.distance_km), 0)
+         Group Key: fv_1.type
+         Buffers: shared hit=1874
+         ->  Gather Merge  (cost=4444.59..4445.16 rows=5 width=116) (actual time=81.140..87.678 rows=6.00 loops=1)
+               Output: fv_1.type, (PARTIAL count(fd.delivery_id)), (PARTIAL count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'on_time'::text))), (PARTIAL avg(fd.eta_variation_hours)), (PARTIAL avg(fd.distance_km)), (PARTIAL sum(fd.distance_km))
+               Workers Planned: 1
+               Workers Launched: 1
+               Buffers: shared hit=1874
+               ->  Sort  (cost=3444.58..3444.59 rows=3 width=116) (actual time=53.261..53.263 rows=3.00 loops=2)
+                     Output: fv_1.type, (PARTIAL count(fd.delivery_id)), (PARTIAL count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'on_time'::text))), (PARTIAL avg(fd.eta_variation_hours)), (PARTIAL avg(fd.distance_km)), (PARTIAL sum(fd.distance_km))
+                     Sort Key: fv_1.type
+                     Sort Method: quicksort  Memory: 25kB
+                     Buffers: shared hit=1874
+                     Worker 0:  actual time=26.248..26.250 rows=3.00 loops=1
+                       Sort Method: quicksort  Memory: 25kB
+                       Buffers: shared hit=631
+                     ->  Partial HashAggregate  (cost=3444.51..3444.56 rows=3 width=116) (actual time=53.215..53.218 rows=3.00 loops=2)
+                           Output: fv_1.type, PARTIAL count(fd.delivery_id), PARTIAL count(fd.delivery_id) FILTER (WHERE ((fd.delivery_status)::text = 'on_time'::text)), PARTIAL avg(fd.eta_variation_hours), PARTIAL avg(fd.distance_km), PARTIAL sum(fd.distance_km)
+                           Group Key: fv_1.type
+                           Batches: 1  Memory Usage: 32kB
+                           Buffers: shared hit=1866
+                           Worker 0:  actual time=26.195..26.198 rows=3.00 loops=1
+                             Batches: 1  Memory Usage: 32kB
+                             Buffers: shared hit=623
+                           ->  Hash Join  (cost=2.35..2593.31 rows=56747 width=28) (actual time=0.523..27.871 rows=48235.00 loops=2)
+                                 Output: fv_1.type, fd.delivery_id, fd.delivery_status, fd.eta_variation_hours, fd.distance_km
+                                 Inner Unique: true
+                                 Hash Cond: (fd.vehicle_id = fv_1.vehicle_id)
+                                 Buffers: shared hit=1866
+                                 Worker 0:  actual time=0.915..14.647 rows=32328.00 loops=1
+                                   Buffers: shared hit=623
+                                 ->  Parallel Seq Scan on public.fleet_deliveries fd  (cost=0.00..2431.47 rows=56747 width=28) (actual time=0.023..9.553 rows=48235.00 loops=2)
+                                       Output: fd.delivery_id, fd.order_id, fd.vehicle_id, fd.driver_id, fd.pickup_date, fd.carrier_pickup_date, fd.delivery_date, fd.distance_km, fd.route_state, fd.delivery_status, fd.eta_variation_hours, fd.loading_unloading_time_h, fd.route_risk_level, fd.traffic_congestion_level, fd.weather_condition_severity
+                                       Buffers: shared hit=1864
+                                       Worker 0:  actual time=0.018..5.571 rows=32328.00 loops=1
+                                         Buffers: shared hit=622
+                                 ->  Hash  (cost=1.60..1.60 rows=60 width=8) (actual time=0.480..0.480 rows=60.00 loops=2)
+                                       Output: fv_1.type, fv_1.vehicle_id
+                                       Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                       Buffers: shared hit=2
+                                       Worker 0:  actual time=0.877..0.877 rows=60.00 loops=1
+                                         Buffers: shared hit=1
+                                       ->  Seq Scan on public.fleet_vehicles fv_1  (cost=0.00..1.60 rows=60 width=8) (actual time=0.428..0.439 rows=60.00 loops=2)
+                                             Output: fv_1.type, fv_1.vehicle_id
+                                             Buffers: shared hit=2
+                                             Worker 0:  actual time=0.822..0.828 rows=60.00 loops=1
+                                               Buffers: shared hit=1
+   SubPlan 1
+     ->  Aggregate  (cost=1.80..1.81 rows=1 width=8) (actual time=0.022..0.022 rows=1.00 loops=3)
+           Output: count(*)
+           Buffers: shared hit=3
+           ->  Seq Scan on public.fleet_vehicles fv2  (cost=0.00..1.75 rows=20 width=0) (actual time=0.011..0.016 rows=20.00 loops=3)
+                 Output: fv2.vehicle_id, fv2.plate, fv2.type, fv2.brand, fv2.model, fv2.year, fv2.capacity_kg, fv2.fuel_type, fv2.fuel_consumption_rate_lh, fv2.status
+                 Filter: ((fv2.type)::text = (cm.tipo_vehiculo)::text)
+                 Rows Removed by Filter: 40
+                 Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=839
+ Planning Time: 31.587 ms
+ Execution Time: 89.819 ms
+(94 rows)
+

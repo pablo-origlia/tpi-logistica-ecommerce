@@ -1,0 +1,111 @@
+SET
+COPY 1000163
+COPY 99441
+COPY 3095
+COPY 32951
+COPY 71
+COPY 99441
+COPY 112650
+COPY 99224
+COPY 103886
+COPY 60
+ setval 
+--------
+     60
+(1 row)
+
+COPY 40
+ setval 
+--------
+     40
+(1 row)
+
+COPY 96470
+ setval 
+--------
+  96470
+(1 row)
+
+COPY 698
+ setval 
+--------
+    698
+(1 row)
+
+COPY 3612
+ setval 
+--------
+   3612
+(1 row)
+
+ANALYZE
+               tabla               | filas_reales | filas_esperadas | resultado 
+-----------------------------------+--------------+-----------------+-----------
+ fleet_deliveries                  |        96470 |           96470 | OK
+ fleet_drivers                     |           40 |              40 | OK
+ fleet_incidents                   |         3612 |            3612 | OK
+ fleet_maintenance                 |          698 |             698 | OK
+ fleet_vehicles                    |           60 |              60 | OK
+ olist_customers                   |        99441 |           99441 | OK
+ olist_geolocation                 |      1000163 |         1000163 | OK
+ olist_order_items                 |       112650 |          112650 | OK
+ olist_order_payments              |       103886 |          103886 | OK
+ olist_order_reviews               |        99224 |           99224 | OK
+ olist_orders                      |        99441 |           99441 | OK
+ olist_products                    |        32952 |           32952 | OK
+ olist_sellers                     |         3095 |            3095 | OK
+ product_category_name_translation |           71 |              71 | OK
+(14 rows)
+
+              secuencia               | ultimo_valor | max_id_en_tabla | resultado 
+--------------------------------------+--------------+-----------------+-----------
+ fleet_deliveries_delivery_id_seq     |        96470 |           96470 | OK
+ fleet_drivers_driver_id_seq          |           40 |              40 | OK
+ fleet_incidents_incident_id_seq      |         3612 |            3612 | OK
+ fleet_maintenance_maintenance_id_seq |          698 |             698 | OK
+ fleet_vehicles_vehicle_id_seq        |           60 |              60 | OK
+(5 rows)
+
+ ordenes_delivered_sin_flota | esperado_documentado |         resultado          
+-----------------------------+----------------------+----------------------------
+                           8 |                    8 | OK (bug conocido de Olist)
+(1 row)
+
+ entregas_sin_orden_olist | esperado | resultado 
+--------------------------+----------+-----------
+                        0 |        0 | OK
+(1 row)
+
+          columna           | minimo | promedio | maximo | fuera_rango | resultado 
+----------------------------+--------+----------+--------+-------------+-----------
+ traffic_congestion_level   |   0.00 |     4.99 |  10.00 |           0 | OK
+ weather_condition_severity |  0.000 |    0.496 |  1.000 |           0 | OK
+(2 rows)
+
+ tipo_vehiculo | cantidad 
+---------------+----------
+ moto          |       25
+ truck         |       10
+ van           |       25
+(3 rows)
+
+ delivery_status | entregas | pct  
+-----------------+----------+------
+ on_time         |    72389 | 75.0
+ delayed         |    24081 | 25.0
+(2 rows)
+
+         verificacion          |  esperado   | resultado 
+-------------------------------+-------------+-----------
+ FK deliveries->orders intacta | 0 huerfanos | OK
+ fleet_deliveries cargadas     | 96470       | OK
+ fleet_incidents cargados      | 3612        | OK
+ fleet_maintenance cargada     | 698         | OK
+ olist_order_items cargadas    | 112650      | OK
+ olist_order_reviews cargadas  | 99224       | OK
+ olist_orders cargadas         | 99441       | OK
+ secuencia_fleet_deliveries    | max=96470   | OK
+ traffic_fuera_rango_0_10      | 0           | OK
+ weather_fuera_rango_0_1       | 0           | OK
+(10 rows)
+

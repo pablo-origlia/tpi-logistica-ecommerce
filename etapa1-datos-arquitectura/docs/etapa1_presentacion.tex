@@ -31,7 +31,7 @@
 %% Descomentar la siguiente linea para ver las notas en segunda pantalla
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%\setbeameroption{show notes on second screen=right}
+\setbeameroption{show notes on second screen=right}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Tema y colores
@@ -39,6 +39,8 @@
 
 \usetheme{Madrid}
 \setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{note page}[plain]
+\setbeamertemplate{footline}[frame number]
 
 \definecolor{Azul}{RGB}{30,70,130}
 \definecolor{Verde}{RGB}{35,120,80}
@@ -76,16 +78,13 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\title{Analisis de Datos Masivos}
+\title{Trabajo Practico Integrador}
 
-\subtitle{
-Trabajo Practico Integrador\\
-Etapa 1 --- Problema, datos y arquitectura
-}
+\subtitle{Etapa 1:  Problema, datos y arquitectura}
 
-\author{Lic.\ Pablo Daniel Origlia}
+\author[P. Origlia]{Lic.\ Pablo Daniel Origlia}
 
-\date{Maestria en Ciencias de Datos --- UCASAL 2026}
+\date{Profesor Dr. Rafael Visa \\ 159 Análisis de Datos Masivos \\ Maestría en Ciencias de Datos - UCASAL - Octubre 2026}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -100,9 +99,9 @@ Etapa 1 --- Problema, datos y arquitectura
 \titlepage
 
 \note{
-Presentacion de avance de la Etapa 1 del TPI. Duracion: 5-7 minutos.
+Presentación de avance de la Etapa 1 del TPI. Duración: 5-7 minutos.
 Estructura: problema que abordamos (1 slide), arquitectura de datos
-(1 slide), hallazgos del import (1 slide), las 5 preguntas analiticas
+(1 slide), hallazgos del import (1 slide), las 5 preguntas analíticas
 (1 slide), resultados de performance (2 slides) y cierre con lo que
 viene (1 slide). Total: 8 slides sin contar portada.
 }
@@ -115,37 +114,35 @@ viene (1 slide). Total: 8 slides sin contar portada.
 
 \begin{frame}
 
-\frametitle{El problema que abordamos}
+\frametitle{El problema}
 
 \begin{block}{Pregunta central}
-\textbf{i,Como impactan las condiciones operativas de la flota}
-(tipo de vehiculo, conductor, incidentes, mantenimiento)
-\textbf{sobre los tiempos de entrega y la satisfaccion del cliente}
-en un operador de e-commerce brasileno?
+\textbf{¿Cómo impactan las condiciones operativas de la flota}
+(tipo de vehículo, conductor, incidentes, mantenimiento)
+\textbf{sobre los tiempos de entrega y la satisfacción del cliente}
+en un operador de e-commerce?
 \end{block}
 
 \vspace{4mm}
 
 \begin{columns}[T]
 
-\column{0.48\textwidth}
+\column{0.6\textwidth}
 \textbf{Por que este problema}
 \begin{itemize}
-\item Olist expone el \textit{resultado} logistico (demoras, resenas)
-pero no las \textit{causas} operativas
-\item Cruzar ambas fuentes permite pasar de descripcion a causas
-\item Decisiones concretas: mantenimiento preventivo, asignacion
-de rutas, gestion de conductores
+\item Olist expone el \textit{resultado} logístico (demoras, reseñas)
+pero no las \textit{causas} operativas.
+\item Cruzar ambas fuentes permite pasar de descripción a causas.
+\item Decisiones concretas: mantenimiento preventivo, asignación
+de rutas, gestión de conductores.
 \end{itemize}
 
-\column{0.48\textwidth}
-\textbf{Tipo de analisis previsto}
+\column{0.4\textwidth}
+\textbf{Posibles tipo de análisis}
 \begin{itemize}
-\item \textbf{Descriptivo}: patrones de demora por region y vehiculo
-\item \textbf{Predictivo}: modelo de riesgo de entrega tarde
-(Etapas 3 y 4)
-\item \textbf{Prescriptivo}: recomendaciones de asignacion
-(Etapa 4)
+\item \textbf{Descriptivo}: patrones de demora por región y vehículo.
+\item \textbf{Predictivo}: modelo de riesgo de entrega tarde.
+\item \textbf{Prescriptivo}: recomendaciones de asignación.
 \end{itemize}
 
 \end{columns}
@@ -153,10 +150,10 @@ de rutas, gestion de conductores
 \note{
 El punto clave a comunicar: Olist solo nos dice "esta orden llego
 tarde y el cliente puso 2 estrellas". No nos dice POR QUE llego
-tarde. La flota sintetica que construimos nos da la capa de causas:
-tipo de vehiculo, comportamiento del conductor, nivel de riesgo de
-la ruta. La combinacion de las dos fuentes es lo que hace interesante
-el proyecto. Mencionar brevemente que el dataset de flota es sintetico
+tarde. La flota sintética que construimos nos da la capa de causas:
+tipo de vehículo, comportamiento del conductor, nivel de riesgo de
+la ruta. La combinación de las dos fuentes es lo que hace interesante
+el proyecto. Mencionar brevemente que el dataset de flota es sintético
 pero calibrado con distribuciones reales de un dataset de Kaggle
 (dynamic supply chain logistics).
 }
@@ -173,9 +170,9 @@ pero calibrado con distribuciones reales de un dataset de Kaggle
 
 \begin{columns}[T]
 
-\column{0.52\textwidth}
-
-\textbf{Fuente 1 --- Olist} \hfill {\small (real, Kaggle)}
+\column{0.5\textwidth}
+\centering
+\textbf{Fuente 1: Olist} {\small (real, Kaggle)}
 
 \vspace{1mm}
 
@@ -193,11 +190,11 @@ olist\_products & 32.952 \\
 \bottomrule
 \end{tabular}
 
-\vspace{3mm}
 
-\column{0.44\textwidth}
 
-\textbf{Fuente 2 --- Flota} \hfill {\small (sintetica calibrada)}
+\column{0.5\textwidth}
+\centering
+\textbf{Fuente 2: Flota} {\small (sintética calibrada)}
 
 \vspace{1mm}
 
@@ -213,31 +210,33 @@ fleet\_drivers & 40 \\
 \bottomrule
 \end{tabular}
 
-\vspace{3mm}
-
-\begin{block}{\small Clave de vinculacion}
-\texttt{\small fleet\_deliveries.order\_id}\\
-\texttt{\small = olist\_orders.order\_id}
-\end{block}
-
 \end{columns}
 
-\vspace{2mm}
+\centering
+
+\vspace{3mm}
 
 {\small
-\textbf{SGBD:} PostgreSQL 15 \quad
+	\textbf{Clave de vinculación:}
+	\texttt{fleet\_deliveries.order\_id = olist\_orders.order\_id}
+}
+
+\vspace{3mm}
+
+{\small
+\textbf{SGBD:} PostgreSQL 18 \quad
 \textbf{Total:} $\approx$1,6 M registros \quad
 \textbf{Indices:} 67 (DDL + covering indexes)
 }
 
 \note{
-Los datos estan en una base PostgreSQL local. La tabla central de
-vinculacion es fleet_deliveries: tiene una fila por cada orden
-de Olist con status='delivered', con el vehiculo y conductor asignado,
+Los datos están en una base PostgreSQL local. La tabla central de
+vinculación es fleet_deliveries: tiene una fila por cada orden
+de Olist con status='delivered', con el vehículo y conductor asignado,
 la distancia estimada, y las dos variables objetivo de los modelos
 predictivos (eta_variation_hours y delivery_status on_time/delayed).
 El script generate_fleet_dataset.py calibra sus distribuciones
-con el dataset de Kaggle de telemetria logistica. El total de ~1.6M
+con el dataset de Kaggle de telemetría logística. El total de ~1.6M
 registros justifica el enfoque de "datos masivos": en especial
 olist_geolocation con 1M de filas es el principal driver de I/O
 en las consultas.
@@ -251,61 +250,61 @@ en las consultas.
 
 \begin{frame}
 
-\frametitle{Calidad de datos --- hallazgos del import}
+\frametitle{Calidad de datos, hallazgos en el import}
 
-El dataset Olist presento \textbf{4 problemas conocidos} que
-requirieron fixes antes del import (\texttt{03b\_fix\_constraints.sql}):
 
-\vspace{3mm}
+El dataset presentó 4 problemas.
 
-\begin{tabular}{@{}p{3.6cm}p{4.4cm}p{4.0cm}@{}}
+\vspace{4mm}
+
+\begin{tabular}{@{}p{4.35cm}p{4.1cm}p{5cm}@{}}
 \toprule
-Problema & Causa & Solucion aplicada \\
+Problema & Descripción & Solución propuesta \\
 \midrule
 Coordenadas fuera de Brasil &
 42 de 1M registros en geolocation &
-CHECK eliminado; filtrar en Etapa 2 \\
+Filtrar por bounding box en Etapa 2 \\
 
 \addlinespace
 
 Productos con peso = 0 &
 4 registros con weight\_g = 0 &
-CHECK ampliado; imputar mediana \\
+Imputar mediana \\
 
 \addlinespace
 
-Items con producto inexistente &
-Productos eliminados del catalogo &
+Ítems con producto inexistente &
+Productos eliminados del catálogo &
 Placeholder \texttt{unknown\_product} \\
 
 \addlinespace
 
 review\_id duplicados &
-814 duplicados en CSV (bug Olist) &
+814 duplicados en CSV &
 Nueva PK interna \texttt{review\_pk} \\
 \bottomrule
 \end{tabular}
 
 \vspace{4mm}
 
-\begin{columns}[T]
-\column{0.48\textwidth}
-{\small \color{Verde}$\checkmark$} \textbf{8 ordenes} con
-\texttt{status='delivered'} pero sin fecha real de entrega
-(excluir en Etapa 2)
+%\begin{columns}[T]
+%\column{0.48\textwidth}
+%{\small \color{Verde}$\checkmark$} \textbf{8 ordenes} con
+%\texttt{status='delivered'} pero sin fecha real de entrega
+%(excluir en Etapa 2)
 
-\column{0.48\textwidth}
-{\small \color{Verde}$\checkmark$} Todos los problemas
-\textbf{documentados} en \texttt{03c\_post\_import.sql}
-y en el diccionario de datos (v2)
-\end{columns}
+%\column{0.48\textwidth}
+%{\small \color{Verde}$\checkmark$} Todos los problemas
+%\textbf{documentados} en \texttt{03c\_post\_import.sql}
+%y en el diccionario de datos (v2)
+%\end{columns}
 
 \note{
-Este slide es importante para la evaluacion: muestra que el grupo
+Este slide es importante para la evaluación: muestra que el grupo
 hizo un diagnostico de calidad de datos real, no solo cargamos
 los CSV y listo. Los 4 problemas son bugs conocidos del dataset
-Olist, no errores nuestros. Lo relevante academicamente es que
-los identificamos, documentamos la decision de fix y dejamos
+Olist, no errores nuestros. Lo relevante académicamente es que
+los identificamos, documentamos la decisión de fix y dejamos
 registro para Etapa 2. Destacar que el 03c_post_import.sql es
 el insumo directo del notebook de limpieza de Etapa 2.
 }
@@ -318,341 +317,329 @@ el insumo directo del notebook de limpieza de Etapa 2.
 
 \begin{frame}
 
-\frametitle{Las 5 preguntas analiticas}
+\frametitle{5 preguntas analíticas}
 
-\begin{enumerate}
+\begin{itemize}
 
-\item \textbf{Q1} --- i,Que factores operativos
-(\texttt{route\_risk\_level}, tipo de vehiculo,
+\item \textbf{Q1:} ¿Qué factores operativos
+(\texttt{route\_risk\_level}, tipo de vehículo,
 \texttt{driver\_behavior\_score}) se asocian a las entregas
 demoradas, por estado de Brasil?
 
 \vspace{2mm}
 
-\item \textbf{Q2} --- i,Existe relacion entre el comportamiento
-del conductor y el score promedio de resena del cliente?
+\item \textbf{Q2:} ¿Existe relación entre el comportamiento
+del conductor y el score promedio de reseña del cliente?
 
 \vspace{2mm}
 
-\item \textbf{Q3} --- i,En que meses se concentran los
+\item \textbf{Q3:} ¿En que meses se concentran los
 mantenimientos correctivos, y coincide con el pico de
-ordenes demoradas en Olist?
+órdenes demoradas en Olist?
 
 \vspace{2mm}
 
-\item \textbf{Q4} --- i,Que tipos de incidente generan mayor
+\item \textbf{Q4:} ¿Qué tipos de incidente generan mayor
 impacto en horas de demora?
 
 \vspace{2mm}
 
-\item \textbf{Q5} --- i,El costo de mantenimiento por tipo
-de vehiculo se justifica con su rendimiento logistico?
+\item \textbf{Q5:} ¿El costo de mantenimiento por tipo
+de vehículo se justifica con su rendimiento logístico?
 
-\end{enumerate}
+\end{itemize}
 
 \note{
-Mencionar brevemente que estas 5 preguntas guian tanto las consultas
+Mencionar brevemente que estas 5 preguntas guían tanto las consultas
 SQL de Etapa 1 como los modelos predictivos de Etapa 3. Q2 anticipa
-el Modelo 2 (clasificacion de delivery_status). Q3 valida la
-hipotesis de estacionalidad que construimos en el script de
-generacion: el patron nov-dic de mantenimientos correctivos deberia
-aparecer en los datos. Q5 es la unica consulta 100% interna a las
+el Modelo 2 (clasificación de delivery_status). Q3 valida la
+hipótesis de estacionalidad que construimos en el script de
+generación: el patrón nov-dic de mantenimientos correctivos debería
+aparecer en los datos. Q5 es la única consulta 100% interna a las
 tablas de flota, lo que permite compararla con Q1 (que cruza Olist)
 para demostrar el costo de los JOINs entre fuentes.
 }
 
 \end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% SLIDE 6: ANALISIS DE PERFORMANCE (tabla)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{frame}
-
-\frametitle{Analisis de performance --- EXPLAIN ANALYZE}
-
-\begin{center}
-
-\footnotesize
-
-\begin{tabular}{@{}lrrrrll@{}}
-\toprule
-Consulta &
-\makecell{Exec.\\ sin (ms)} &
-\makecell{Exec.\\ con (ms)} &
-Mejora &
-\makecell{Sh. read\\ sin} &
-Operacion principal &
-Indice usado \\
-\midrule
-Q1 Estado $\times$ vehiculo &
-184 & 164 & \textcolor{Verde}{$-$10.9\%} &
-1.496 & Sort + Parallel Hash Join & ninguno \\
-
-Q2 Conductor $\leftrightarrow$ resena &
-145 & 107 & \textcolor{Verde}{$-$26.5\%} &
-0 & Sort + Parallel Hash Join & ninguno \\
-
-Q3 Estacionalidad &
-218 & 173 & \textcolor{Verde}{$-$20.4\%} &
-0 & Sort + Hash Join & ninguno* \\
-
-Q4 Incidentes &
-43 & 36 & \textcolor{Verde}{$-$17.0\%} &
-2 & Sort + Nested Loop & \texttt{idx\_del\_status} \\
-
-Q5 Costo vs.\ rendimiento &
-57 & 62 & \textcolor{Naranja}{$+$8.3\%} &
-0 & Merge Join & ninguno \\
-\bottomrule
-\end{tabular}
-
-\end{center}
-
-\vspace{1mm}
-{\footnotesize * Q3 hace \textbf{spill a disco} (718 bloques temp):
-\texttt{SET work\_mem = '16MB'} lo elimina.}
-
-\vspace{2mm}
-
-{\footnotesize \textbf{Tamano de indices vs.\ datos:}
-\texttt{olist\_orders} 59\,MB datos / 45\,MB indices (76\,\%) \quad
-\texttt{fleet\_deliveries} 68\,MB datos / 55\,MB indices (81\,\%)}
-
-\note{
-Este slide es el corazon del analisis de performance de Etapa 1.
-Puntos clave a comunicar: (1) el planner rechazo casi todos los
-covering indexes nuevos porque las consultas necesitan el 40-97%
-de las filas: a ese volumen un Seq Scan paralelo gana. Esto es
-comportamiento correcto del optimizador, no un fallo de diseno.
-(2) La mejora en Q2 (26.5%) se debe principalmente al calentamiento
-de cache entre ejecuciones, no a los indices. (3) Q5 es la mas
-interesante conceptualmente: empeora con indices porque el overhead
-de planning supera el beneficio. Demuestra que mas indices no siempre
-es mejor. (4) El ratio indice/datos de ~80% es alto: el
-idx_del_analytical_base de 11MB es candidato a eliminar.
-}
-
-\end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% SLIDE 7: HALLAZGOS DE PERFORMANCE (conclusiones)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{frame}
-
-\frametitle{Que nos dice el planner}
-
-\begin{columns}[T]
-
-\column{0.48\textwidth}
-
-\textbf{Lo que observamos}
-
-\begin{itemize}
-
-\item El planner uso Seq Scan en 4 de 5 consultas aunque
-los covering indexes existian
-
-\item Unico indice activo: \texttt{idx\_del\_status}
-(Bitmap Scan, 624\,kB, Q4)
-
-\item Q3 hace spill a disco por \texttt{work\_mem}
-insuficiente (4\,MB default)
-
-\item Q5 \textbf{empeora} 8\,\% con mas indices
-(overhead de planning)
-
-\end{itemize}
-
-\column{0.48\textwidth}
-
-\textbf{Por que importa}
-
-\begin{itemize}
-
-\item Cuando un filtro devuelve $>$10--15\,\% de las filas,
-el Seq Scan paralelo gana al Index Scan
-
-\item Mas indices $\neq$ mejor performance
-
-\item Los covering indexes de Secciones A--E entraran en
-accion en Etapa 2 (dataset analitico, mayor selectividad)
-
-\item El indice con mejor relacion tamano/impacto
-del proyecto: \texttt{idx\_del\_status} (Bitmap Scan)
-
-\end{itemize}
-
-\end{columns}
-
-\vspace{3mm}
-
-\begin{block}{Aprendizaje central}
-El optimizador de PostgreSQL elige correctamente entre Seq Scan e
-Index Scan segun el volumen de filas a recuperar. Disenamos
-bien los indices; el dataset todavia no tiene la selectividad
-suficiente para que todos sean necesarios.
-\end{block}
-
-\note{
-Este slide responde la pregunta implicita del evaluador: "si los
-indices no se usaron, i,para que los crearon?". La respuesta es
-que (a) para las consultas analiticas de Etapa 1 el planner tomo
-la decision correcta, (b) los covering indexes de Secciones A-E
-se van a activar en Etapa 2 cuando el dataset analitico tenga
-filtros mas selectivos (ej: por region especifica o por tipo de
-vehiculo), y (c) el ejercicio de medir antes y despues es lo que
-pide el enunciado, independientemente del resultado. La regresion
-en Q5 es el hallazgo mas rico academicamente: ilustra el trade-off
-espacio/velocidad del enunciado de forma concreta.
-}
-
-\end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% SLIDE 8: ESTADO DE ENTREGABLES
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{frame}
-
-\frametitle{Entregables de Etapa 1}
-
-\begin{columns}[T]
-
-\column{0.48\textwidth}
-
-\textbf{Completados} {\small \color{Verde}$\checkmark$}
-
-\begin{itemize}
-\item Base de datos cargada (PostgreSQL 15)
-\item DDL con constraints, FKs y 67 indices
-\item Fix de 4 problemas de calidad del dataset
-\item Script de generacion de flota sintetica
-(\texttt{generate\_fleet\_dataset.py} v1.1)
-\item 5 consultas analiticas con EXPLAIN ANALYZE
-(sin y con indices)
-\item Analisis de performance documentado
-\item Diccionario de datos v2 (14 tablas, 14 KPIs,
-relaciones)
-\end{itemize}
-
-\column{0.48\textwidth}
-
-\textbf{Anticipaciones para Etapa 2}
-
-\begin{itemize}
-\item Diagnostico de calidad listo (\texttt{03c}):\\
-coordenadas invalidas, pesos nulos,\\
-duplicados en reviews, 8 ordenes sin fecha
-\item Indices F1 y F2 creados anticipadamente\\
-para el JOIN principal del dataset analitico
-\item Variables objetivo ya definidas:\\
-\texttt{eta\_variation\_hours} (regresion)\\
-\texttt{delivery\_status} (clasificacion)
-\end{itemize}
-
-\vspace{3mm}
-
-\begin{block}{\small Repositorio}
-{\footnotesize \texttt{github.com/pablo-origlia/}\\
-\texttt{tpi-logistica-ecommerce}}
-\end{block}
-
-\end{columns}
-
-\note{
-Este slide sirve para mostrar que el grupo no solo hizo lo minimo
-que pide el enunciado sino que anticipo trabajo de Etapa 2. El
-diagnostico de calidad en 03c es directamente el insumo del notebook
-01_limpieza.ipynb. Los indices F1 y F2 se crearon pensando en la
-consulta de generacion del dataset analitico, no en las consultas
-de Etapa 1. Las variables objetivo ya estan definidas y documentadas
-en el diccionario, lo que simplifica la Etapa 3.
-}
-
-\end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% SLIDE 9: CIERRE Y PROXIMOS PASOS
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{frame}
-
-\frametitle{Proximos pasos --- Etapa 2}
-
-\begin{columns}[T]
-
-\column{0.52\textwidth}
-
-\textbf{Dataset analitico}
-
-\begin{enumerate}
-
-\item Imputar pesos nulos (mediana por categoria)
-\item Filtrar coordenadas fuera de Brasil
-\item Excluir 8 ordenes sin \texttt{delivery\_date}
-\item Construir el JOIN principal:\\
-14 tablas $\rightarrow$ 1 dataset analitico
-
-\end{enumerate}
-
-\vspace{3mm}
-
-\textbf{Analisis exploratorio (EDA)}
-
-\begin{itemize}
-\item Distribucion de \texttt{eta\_variation\_hours}
-\item Correlacion conductor $\leftrightarrow$ resena
-\item Estacionalidad de mantenimientos nov--dic
-\item Segmentacion por tipo de vehiculo y region
-\end{itemize}
-
-\column{0.44\textwidth}
-
-\vspace{2mm}
-
-\begin{tikzpicture}[
-  node distance=7mm,
-  box/.style={
-    draw=Azul, rounded corners=2pt,
-    fill=AzulClaro, text width=3.4cm,
-    align=center, font=\small,
-    inner sep=4pt
-  },
-  arr/.style={->, >=Stealth, Azul, thick}
-]
-
-\node[box] (bbdd) {Base de datos\\ (Etapa 1) \checkmark};
-\node[box, below=of bbdd] (prep)
-  {Preparacion\\ y EDA (Etapa 2)};
-\node[box, below=of prep] (modelos)
-  {Modelos predictivos\\ (Etapa 3)};
-\node[box, below=of modelos, fill=GrisClaro, draw=gray]
-  (dash) {Dashboard\\ (Etapa 4)};
-
-\draw[arr] (bbdd) -- (prep);
-\draw[arr] (prep) -- (modelos);
-\draw[arr] (modelos) -- (dash);
-
-\end{tikzpicture}
-
-\end{columns}
-
-\note{
-Slide de cierre. El objetivo es mostrar que la Etapa 1 no es un
-fin en si mismo sino la base de todo lo que viene. El diagrama
-TikZ muestra el pipeline completo: ya terminamos el primer bloque
-(verde) y el proximo es Etapa 2. Frase de cierre sugerida: "La
-Etapa 1 nos dio la base de datos limpia, documentada y con los
-problemas de calidad identificados. En la Etapa 2 vamos a
-construir el dataset analitico que alimenta los modelos. Las
-variables objetivo ya estan definidas: eta_variation_hours para
-regresion y delivery_status para clasificacion."
-}
-
-\end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SLIDE 6: ANALISIS DE PERFORMANCE (tabla)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%\begin{frame}
+%
+%\frametitle{Análisis de performance --- EXPLAIN ANALYZE}
+%
+%\begin{center}
+%
+%\footnotesize
+%
+%\begin{tabular}{@{}lrrrr p{3.2cm} p{2.4cm}@{}}
+%\toprule
+%Consulta &
+%\makecell{Exec.\\ sin (ms)} & \makecell{Exec.\\ con (ms)} & Mejora & \makecell{Sh.\\read} & Operación principal & Indice usado \\
+%\midrule
+%Q1 Estado $\times$ vehículo & 184 & 164 & \textcolor{Verde}{$-$10.9\%} & 1.496 & Sort + Parallel Hash Join & ninguno \\
+%
+%Q2 Conductor $\leftrightarrow$ reseña & 145 & 107 & \textcolor{Verde}{$-$26.5\%} & 0 & Sort + Parallel Hash Join & ninguno \\
+%
+%Q3 Estacionalidad & 218 & 173 & \textcolor{Verde}{$-$20.4\%} & 0 & Sort + Hash Join & ninguno* \\
+%
+%Q4 Incidentes & 43 & 36 & \textcolor{Verde}{$-$17.0\%} & 2 & Sort + Nested Loop & \texttt{idx\_del\_status} \\
+%
+%Q5 Costo vs.\ rendimiento & 57 & 62 & \textcolor{Naranja}{$+$8.3\%} & 0 & Merge Join & ninguno \\
+%\bottomrule
+%\end{tabular}
+%
+%\end{center}
+%
+%%\vspace{1mm}
+%{\footnotesize * Q3 hace \textbf{spill a disco} (718 bloques temp): \texttt{SET work\_mem = '16MB'} lo elimina.}
+%
+%\vspace{2mm}
+%
+%{\footnotesize \textbf{Tamaño de indices vs.\ datos:} \\
+%\texttt{olist\_orders} 59\,MB datos / 45\,MB indices (76\,\%) \\
+%\texttt{fleet\_deliveries} 68\,MB datos / 55\,MB indices (81\,\%)}
+%
+%\note{
+%Este slide es el corazón del análisis de performance de Etapa 1.
+%Puntos clave a comunicar: (1) el planner rechazo casi todos los
+%covering indexes nuevos porque las consultas necesitan el 40-97%
+%de las filas: a ese volumen un Seq Scan paralelo gana. Esto es
+%comportamiento correcto del optimizador, no un fallo de diseño.
+%(2) La mejora en Q2 (26.5%) se debe principalmente al calentamiento
+%de cache entre ejecuciones, no a los indices. (3) Q5 es la mas
+%interesante conceptualmente: empeora con indices porque el overhead
+%de planning supera el beneficio. Demuestra que mas indices no siempre
+%es mejor. (4) El ratio indice/datos de ~80% es alto: el
+%idx_del_analytical_base de 11MB es candidato a eliminar.
+%}
+%
+%\end{frame}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SLIDE 7: HALLAZGOS DE PERFORMANCE (conclusiones)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%\begin{frame}
+%
+%\frametitle{Que nos dice el optimizador}
+%\footnotesize
+%\begin{columns}[T]
+%
+%\column{0.52\textwidth}
+%
+%\textbf{Lo que medimos}
+%
+%\begin{itemize}
+%
+%\item \textbf{4 de 5 consultas}: el motor eligió
+%\textbf{recorrer la tabla completa} (Seq Scan) en vez de
+%usar los indices, e \textit{hizo bien}. Si la consulta
+%necesita mas del 15\,\% de los registros, leer todo seguido
+%es mas rápido que saltar por un indice.
+%
+%\item \textbf{Único indice activo}: \texttt{idx\_del\_status}
+%en Q4, que apunta exactamente al 25\,\% de filas demoradas.
+%
+%\item \textbf{Q3 desborda la memoria de trabajo} y escribe
+%en disco (\textit{spill}): el limite por defecto (4\,MB)
+%no alcanza. Con \texttt{work\_mem = 16\,MB} se elimina.
+%
+%\item \textbf{Q5 empeora 8\,\%} con mas indices: el motor
+%pierde tiempo decidiendo si los usa y concluye que no vale.
+%
+%\end{itemize}
+%
+%\column{0.44\textwidth}
+%
+%\textbf{Por que los indices igual valen}
+%
+%\begin{itemize}
+%
+%\item Etapa 1 = análisis \textit{global} de toda la base.
+%En Etapa 2 los filtros serán específicos (región, mes,
+%tipo de vehículo): la selectividad sube y los indices
+%se activan.
+%
+%\item Los indices son \textbf{inversión para Etapa 2},
+%no un error de diseño.
+%
+%\item Medir antes y después es exactamente lo que pide
+%el enunciado: cuantificar el trade-off
+%\textbf{espacio vs.\ velocidad}.
+%
+%\end{itemize}
+%
+%\end{columns}
+%
+%\begin{block}{Síntesis}
+%\footnotesize
+%El optimizador eligió bien; los indices están bien diseñados.
+%En Etapa 2 los filtros serán selectivos y los indices se activaran.
+%\end{block}
+%
+%\note{
+%PREGUNTA IMPLÍCITA DEL EVALUADOR: "si los indices no se usaron,
+%para que los crearon?"
+%Respuesta en tres partes:
+%(a) El planner tomo la decisión correcta: con mas del 15% de
+%filas a recuperar, un Seq Scan paralelo supera al Index Scan.
+%(b) Los indices entraran en Etapa 2 con filtros selectivos
+%(por región, tipo de vehículo, mes puntual).
+%(c) Medir antes y después es lo que pide el enunciado,
+%independientemente del resultado numérico.
+%HALLAZGOS DESTACADOS: la regresión en Q5 (+8.3%) ilustra el
+%trade-off espacio/velocidad de forma concreta. El spill en Q3
+%permite hablar de configuración de memoria (work_mem).
+%}
+%
+%\end{frame}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SLIDE 8: ESTADO DE ENTREGABLES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%\begin{frame}
+%
+%\frametitle{Etapa 1}
+%
+%%\begin{columns}[T]
+%
+%%\column{0.5\textwidth}
+%
+%%\textbf{Completados} {\small \color{Verde}$\checkmark$}
+%\large
+%\begin{itemize}
+%\item Base de datos cargada (PostgreSQL 15)
+%\item DDL con constraints, FKs y 67 indices
+%%\item Fix de 4 problemas de calidad del dataset
+%\item Script de generación de flota sintética
+%(\texttt{generate\_fleet\_dataset.py})
+%\item 5 consultas analíticas con EXPLAIN ANALYZE
+%(sin y con indices)
+%\item Diccionario de datos (14 tablas, relaciones)
+%\end{itemize}
+%
+%%\column{0.5\textwidth}
+%%
+%%\textbf{Anticipaciones para Etapa 2}
+%%
+%%\begin{itemize}
+%%\item Diagnostico de calidad listo (\texttt{03c}):\\
+%%coordenadas invalidas, pesos nulos,\\
+%%duplicados en reviews, 8 ordenes sin fecha
+%%\item Indices F1 y F2 creados anticipadamente\\
+%%para el JOIN principal del dataset analitico
+%%\item Variables objetivo ya definidas:\\
+%%\texttt{eta\_variation\_hours} (regresion)\\
+%%\texttt{delivery\_status} (clasificacion)
+%%\end{itemize}
+%%
+%%\vspace{3mm}
+%%
+%%\begin{block}{\small Repositorio}
+%%{\footnotesize \texttt{github.com/pablo-origlia/}\\
+%%\texttt{tpi-logistica-ecommerce}}
+%%\end{block}
+%%
+%%\end{columns}
+%
+%\note{
+%Este slide sirve para mostrar que el grupo no solo hizo lo mínimo
+%que pide el enunciado sino que anticipo trabajo de Etapa 2. El
+%diagnostico de calidad en 03c es directamente el insumo del notebook
+%01_limpieza.ipynb. Los indices F1 y F2 se crearon pensando en la
+%consulta de generación del dataset analítico, no en las consultas
+%de Etapa 1. Las variables objetivo ya están definidas y documentadas
+%en el diccionario, lo que simplifica la Etapa 3.
+%}
+%
+%\end{frame}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SLIDE 9: CIERRE Y PROXIMOS PASOS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%\begin{frame}
+%
+%\frametitle{Próxima Etapa}
+%
+%%\begin{columns}[T]
+%
+%%\column{0.52\textwidth}
+%\large
+%\textbf{Dataset analítico}
+%
+%\begin{enumerate}
+%
+%\item Imputar pesos nulos. %(mediana por categoria)
+%\item Filtrar coordenadas fuera de Brasil.
+%\item Excluir órdenes sin \texttt{delivery\_date}.
+%\item Construir el JOIN principal: de 14 tablas a 1 dataset analítico.
+%
+%\end{enumerate}
+%
+%\vspace{3mm}
+%
+%\textbf{Análisis exploratorio de datos (EDA)}
+%
+%\begin{itemize}
+%\item Distribución de \texttt{eta\_variation\_hours}.
+%\item Correlación conductor - reseña.
+%\item Estacionalidad de mantenimientos.
+%\item Segmentación por tipo de vehículo y región.
+%\item Impacto de \texttt{traffic\_congestion\_level} y
+%\texttt{weather\_condition\_severity} sobre las demoras
+%(predictores incorporados en el schema de Etapa 1).
+%\end{itemize}
+%
+%%\column{0.44\textwidth}
+%
+%%\vspace{2mm}
+%
+%%\begin{tikzpicture}[
+%%  node distance=7mm,
+%%  box/.style={
+%%    draw=Azul, rounded corners=2pt,
+%%    fill=AzulClaro, text width=3.4cm,
+%%    align=center, font=\small,
+%%    inner sep=4pt
+%%  },
+%%  arr/.style={->, >=Stealth, Azul, thick}
+%%]
+%%
+%%\node[box] (bbdd) {Base de datos\\ (Etapa 1) \checkmark};
+%%\node[box, below=of bbdd] (prep)
+%%  {Preparacion\\ y EDA (Etapa 2)};
+%%\node[box, below=of prep] (modelos)
+%%  {Modelos predictivos\\ (Etapa 3)};
+%%\node[box, below=of modelos, fill=GrisClaro, draw=gray]
+%%  (dash) {Dashboard\\ (Etapa 4)};
+%%
+%%\draw[arr] (bbdd) -- (prep);
+%%\draw[arr] (prep) -- (modelos);
+%%\draw[arr] (modelos) -- (dash);
+%%
+%%\end{tikzpicture}
+%
+%%\end{columns}
+%
+%\note{
+%Slide de cierre. El objetivo es mostrar que la Etapa 1 no es un
+%fin en si mismo sino la base de todo lo que viene. El diagrama
+%TikZ muestra el pipeline completo: ya terminamos el primer bloque
+%(verde) y el próximo es Etapa 2. Frase de cierre sugerida: "La
+%Etapa 1 nos dio la base de datos limpia, documentada y con los
+%problemas de calidad identificados. En la Etapa 2 vamos a
+%construir el dataset analítico que alimenta los modelos. Las
+%variables objetivo ya están definidas: eta_variation_hours para
+%regresión y delivery_status para clasificación."
+%}
+%
+%\end{frame}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \end{document}

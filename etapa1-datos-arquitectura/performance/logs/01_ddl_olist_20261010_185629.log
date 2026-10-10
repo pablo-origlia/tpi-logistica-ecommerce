@@ -1,0 +1,137 @@
+SET
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:21: NOTICE:  la tabla ┬½olist_order_payments┬╗ no existe, omitiendo
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:22: NOTICE:  la tabla ┬½olist_order_reviews┬╗ no existe, omitiendo
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:23: NOTICE:  la tabla ┬½olist_order_items┬╗ no existe, omitiendo
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:24: NOTICE:  la tabla ┬½olist_orders┬╗ no existe, omitiendo
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:25: NOTICE:  la tabla ┬½product_category_name_translation┬╗ no existe, omitiendo
+DROP TABLE
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:26: NOTICE:  la tabla ┬½olist_products┬╗ no existe, omitiendo
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:27: NOTICE:  la tabla ┬½olist_sellers┬╗ no existe, omitiendo
+DROP TABLE
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:28: NOTICE:  la tabla ┬½olist_customers┬╗ no existe, omitiendo
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:29: NOTICE:  la tabla ┬½olist_geolocation┬╗ no existe, omitiendo
+DROP TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+CREATE TABLE
+CREATE INDEX
+COMMENT
+ALTER TABLE
+ALTER TABLE
+COMMENT
+ALTER TABLE
+ALTER TABLE
+COMMENT
+INSERT 0 1
+COMMENT
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/01_ddl_olist.sql:408: NOTICE:  el ├¡ndice ┬½idx_rev_id┬╗ no existe, omitiendo
+DROP INDEX
+CREATE INDEX
+COMMENT
+COMMENT
+ tablas_olist_creadas | esperado | resultado 
+----------------------+----------+-----------
+                    9 |        9 | OK
+(1 row)
+
+         indice         | resultado 
+------------------------+-----------
+ idx_cust_state         | OK
+ idx_cust_uid           | OK
+ idx_cust_zip           | OK
+ idx_geo_state          | OK
+ idx_geo_zip            | OK
+ idx_items_product      | OK
+ idx_items_seller       | OK
+ idx_ord_customer       | OK
+ idx_ord_delivered      | OK
+ idx_ord_delivered_only | OK
+ idx_ord_purchase       | OK
+ idx_ord_status         | OK
+ idx_pay_type           | OK
+ idx_prod_category      | OK
+ idx_prod_weight        | OK
+ idx_rev_order          | OK
+ idx_rev_review_id      | OK
+ idx_rev_score          | OK
+ idx_sel_state          | OK
+ idx_sel_zip            | OK
+(20 rows)
+
+ checks_geo_eliminados | esperado | resultado 
+-----------------------+----------+-----------
+                     0 |        0 | OK
+(1 row)
+
+ constraint_name |                           definicion                            | resultado 
+-----------------+-----------------------------------------------------------------+-----------
+ chk_prod_weight | CHECK (((product_weight_g >= 0) OR (product_weight_g IS NULL))) | OK
+(1 row)
+
+ columna_review_pk_existe | esperado | resultado 
+--------------------------+----------+-----------
+                        1 |        1 | OK
+(1 row)
+
+         pk_name          |       definicion        | resultado 
+--------------------------+-------------------------+-----------
+ olist_order_reviews_pkey | PRIMARY KEY (review_pk) | OK
+(1 row)
+
+ placeholder_existe | esperado | resultado 
+--------------------+----------+-----------
+                  1 |        1 | OK
+(1 row)
+
+        verificacion         |     esperado     | resultado 
+-----------------------------+------------------+-----------
+ check_weight_correcto       | >= 0 OR NULL     | OK
+ checks_geo_eliminados       | 0                | OK
+ indices_DDL_olist_presentes | 20 indices clave | OK
+ pk_apunta_a_review_pk       | SI               | OK
+ placeholder_insertado       | SI               | OK
+ review_pk_creada            | SI               | OK
+ tablas_olist_creadas        | 9                | OK
+(7 rows)
+

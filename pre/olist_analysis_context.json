@@ -1,0 +1,1456 @@
+{
+ "purpose": "Contexto compacto del dataset Olist para conversaciones futuras. Para el detalle completo (perfil por columna, listas, tablas), pedir el JSON completo (ver analysis_index).",
+ "usage_instructions": [
+  "Responder con las cifras de este archivo; si una cifra no está, decir que hace falta el JSON completo o los CSV en vez de estimarla.",
+  "Respetar definiciones y trampas (dataset_context.definitions / gotchas) al proponer nuevos cálculos.",
+  "Los eventos externos son conocimiento no derivado de los datos: citarlos como hipótesis."
+ ],
+ "metadata": {
+  "generated_at": "2026-10-09T22:15:44",
+  "tables_loaded": {
+   "orders": {
+    "rows": 99441,
+    "cols": 8
+   },
+   "order_items": {
+    "rows": 112650,
+    "cols": 7
+   },
+   "order_payments": {
+    "rows": 103886,
+    "cols": 5
+   },
+   "order_reviews": {
+    "rows": 99224,
+    "cols": 7
+   },
+   "customers": {
+    "rows": 99441,
+    "cols": 5
+   },
+   "sellers": {
+    "rows": 3095,
+    "cols": 4
+   },
+   "products": {
+    "rows": 32951,
+    "cols": 9
+   },
+   "geolocation": {
+    "rows": 1000163,
+    "cols": 5
+   },
+   "translation": {
+    "rows": 71,
+    "cols": 2
+   }
+  },
+  "notes": [],
+  "methodology": {
+   "valid_orders": "status distinto de canceled/unavailable",
+   "revenue": "suma de order_items.price (sin flete)",
+   "delivery_metrics": "solo pedidos delivered con fecha real de entrega",
+   "reviews": "review más reciente por pedido",
+   "unique_customer": "customer_unique_id",
+   "caveats": [
+    "Los meses de 2016 y fines de 2018 tienen muy pocos pedidos (cobertura parcial).",
+    "Los textos de reviews están en portugués; las categorías se traducen con la tabla de traducción."
+   ]
+  }
+ },
+ "dataset_context": {
+  "name": "Brazilian E-Commerce Public Dataset by Olist",
+  "source": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+  "license": "Ver la página de Kaggle (a la fecha de esta documentación figura como CC BY-NC-SA 4.0; verificar).",
+  "summary": "~100k pedidos reales (2016-2018) de Olist Store en marketplaces brasileños. Permite ver un pedido por estado, precio, pago, flete, ubicación del cliente, atributos del producto y reviews.",
+  "business_model": "Olist conecta pequeños comercios con marketplaces mediante un único contrato; el vendedor recibe la notificación, despacha con logística de Olist y, al recibir el producto (o vencer la fecha estimada), el cliente recibe una encuesta de satisfacción por email.",
+  "anonymization": "Datos reales anonimizados. Los nombres de tiendas/socios en los textos de reviews se reemplazaron por casas de Game of Thrones (Lannister, Stark, Targaryen...). Los IDs son hashes. No incluye texto libre identificable.",
+  "related_data": "Existe un Marketing Funnel Dataset de Olist que se puede unir por seller_id. El 'classified dataset' fue retirado en la versión 6.",
+  "cardinality_notes": [
+   "Un pedido puede tener varios ítems.",
+   "Cada ítem puede ser de un vendedor distinto."
+  ],
+  "tables": {
+   "orders": {
+    "file": "olist_orders_dataset.csv",
+    "grain": "1 fila por pedido",
+    "pk": [
+     "order_id"
+    ],
+    "columns": {
+     "order_id": "ID único del pedido",
+     "customer_id": "FK->customers.customer_id; cambia en cada pedido (no identifica a la persona)",
+     "order_status": "created|approved|invoiced|processing|shipped|delivered|unavailable|canceled",
+     "order_purchase_timestamp": "momento de la compra",
+     "order_approved_at": "aprobación del pago",
+     "order_delivered_carrier_date": "entrega del vendedor al transportista",
+     "order_delivered_customer_date": "entrega real al cliente (nula si no se entregó)",
+     "order_estimated_delivery_date": "fecha estimada informada al cliente al comprar"
+    }
+   },
+   "order_items": {
+    "file": "olist_order_items_dataset.csv",
+    "grain": "1 fila por ítem de pedido",
+    "pk": [
+     "order_id",
+     "order_item_id"
+    ],
+    "columns": {
+     "order_id": "FK->orders",
+     "order_item_id": "número de secuencia del ítem dentro del pedido",
+     "product_id": "FK->products",
+     "seller_id": "FK->sellers",
+     "shipping_limit_date": "fecha límite del vendedor para entregar al transportista",
+     "price": "precio del ítem en BRL (sin flete)",
+     "freight_value": "flete del ítem en BRL; para flete por pedido hay que sumar los ítems"
+    }
+   },
+   "order_payments": {
+    "file": "olist_order_payments_dataset.csv",
+    "grain": "1 fila por pago (un pedido puede tener varios)",
+    "pk": [
+     "order_id",
+     "payment_sequential"
+    ],
+    "columns": {
+     "order_id": "FK->orders",
+     "payment_sequential": "secuencia cuando se combinan medios",
+     "payment_type": "credit_card|boleto|voucher|debit_card|not_defined",
+     "payment_installments": "cantidad de cuotas",
+     "payment_value": "monto pagado en BRL"
+    }
+   },
+   "order_reviews": {
+    "file": "olist_order_reviews_dataset.csv",
+    "grain": "1 fila por review",
+    "pk": [
+     "review_id",
+     "order_id"
+    ],
+    "columns": {
+     "review_id": "ID de review (NO es único: se repite en algunos pedidos)",
+     "order_id": "FK->orders (algunos pedidos tienen más de una review)",
+     "review_score": "1 a 5",
+     "review_comment_title": "título opcional (portugués)",
+     "review_comment_message": "comentario opcional (portugués)",
+     "review_creation_date": "envío de la encuesta",
+     "review_answer_timestamp": "momento en que respondió"
+    }
+   },
+   "customers": {
+    "file": "olist_customers_dataset.csv",
+    "grain": "1 fila por customer_id (= 1 por pedido)",
+    "pk": [
+     "customer_id"
+    ],
+    "columns": {
+     "customer_id": "clave de unión con orders; una persona tiene varios si compra varias veces",
+     "customer_unique_id": "identifica a la persona; usar para recompra y clientes únicos",
+     "customer_zip_code_prefix": "primeros 5 dígitos del CP",
+     "customer_city": "ciudad",
+     "customer_state": "UF (sigla del estado)"
+    }
+   },
+   "sellers": {
+    "file": "olist_sellers_dataset.csv",
+    "grain": "1 fila por vendedor",
+    "pk": [
+     "seller_id"
+    ],
+    "columns": {
+     "seller_id": "ID del vendedor",
+     "seller_zip_code_prefix": "prefijo de CP (5 dígitos)",
+     "seller_city": "ciudad",
+     "seller_state": "UF"
+    }
+   },
+   "products": {
+    "file": "olist_products_dataset.csv",
+    "grain": "1 fila por producto",
+    "pk": [
+     "product_id"
+    ],
+    "columns": {
+     "product_id": "ID del producto",
+     "product_category_name": "categoría en portugués (nula en ~2% de productos)",
+     "product_name_lenght": "cantidad de caracteres del nombre (typo 'lenght' original)",
+     "product_description_lenght": "caracteres de la descripción (typo original)",
+     "product_photos_qty": "cantidad de fotos",
+     "product_weight_g": "peso en gramos",
+     "product_length_cm": "largo en cm",
+     "product_height_cm": "alto en cm",
+     "product_width_cm": "ancho en cm"
+    }
+   },
+   "geolocation": {
+    "file": "olist_geolocation_dataset.csv",
+    "grain": "VARIAS filas por prefijo de CP (muchas duplicadas)",
+    "pk": null,
+    "columns": {
+     "geolocation_zip_code_prefix": "prefijo de CP (une con customers y sellers)",
+     "geolocation_lat": "latitud",
+     "geolocation_lng": "longitud",
+     "geolocation_city": "ciudad",
+     "geolocation_state": "UF"
+    }
+   },
+   "translation": {
+    "file": "product_category_name_translation.csv",
+    "grain": "1 fila por categoría",
+    "pk": [
+     "product_category_name"
+    ],
+    "columns": {
+     "product_category_name": "categoría en portugués",
+     "product_category_name_english": "categoría en inglés"
+    }
+   }
+  },
+  "joins": [
+   "orders.customer_id = customers.customer_id",
+   "order_items.order_id = orders.order_id",
+   "order_items.product_id = products.product_id",
+   "order_items.seller_id = sellers.seller_id",
+   "order_payments.order_id = orders.order_id",
+   "order_reviews.order_id = orders.order_id",
+   "products.product_category_name = translation.product_category_name",
+   "customers.customer_zip_code_prefix = geolocation.geolocation_zip_code_prefix (agregar antes: 1 fila por CP)",
+   "sellers.seller_zip_code_prefix = geolocation.geolocation_zip_code_prefix (agregar antes: 1 fila por CP)"
+  ],
+  "gotchas": [
+   "Clientes únicos y recompra: usar customer_unique_id, nunca customer_id.",
+   "geolocation tiene varias filas por CP: agregar (centroide/mediana) antes de unir o se multiplican filas.",
+   "Unir order_items con order_payments directamente duplica montos: agregar primero a nivel pedido.",
+   "review_id se repite y hay pedidos con más de una review: dedupe por order_id (más reciente).",
+   "order_item_id es un contador dentro del pedido, no un ID de ítem.",
+   "freight_value está por ítem; el flete del pedido es la suma.",
+   "Categorías sin traducción en la tabla translation: ver products_and_categories.categories_without_translation.",
+   "Los nulos en fechas de entrega dependen del estado del pedido: ver nulls_by_status.",
+   "Hay pedidos con fechas incoherentes (p. ej. carrier antes de la compra): ver orders.temporal_anomalies.",
+   "Cobertura temporal irregular: los primeros y últimos meses tienen muy pocos pedidos y hay meses sin datos; ver sales.monthly[].partial_coverage. No calcular crecimientos con esos meses.",
+   "Los textos están en portugués; los nombres de casas de Game of Thrones son ruido de anonimización.",
+   "Las métricas de entrega/atraso solo consideran pedidos delivered con fecha real (no incluyen pedidos cancelados ni en tránsito)."
+  ],
+  "definitions": {
+   "valid_orders": "todos salvo canceled y unavailable",
+   "revenue_gmv": "suma de order_items.price (sin flete)",
+   "is_late": "order_delivered_customer_date > order_estimated_delivery_date",
+   "delay_days": "entrega real - estimada, en días (positivo = tarde)",
+   "delivery_days": "entrega real - compra, en días",
+   "late_to_carrier": "order_delivered_carrier_date > shipping_limit_date",
+   "dist_km": "haversine entre centroides de CP vendedor y cliente",
+   "review": "la más reciente por pedido"
+  },
+  "known_events_external_knowledge": {
+   "warning": "Conocimiento externo NO derivado de los datos; verificar. Coincidir en fechas no prueba causalidad.",
+   "events": [
+    {
+     "period": "2017-11",
+     "event": "Black Friday (24-nov-2017); el dataset muestra pico de pedidos y de atrasos ese mes"
+    },
+    {
+     "period": "2018-02",
+     "event": "Carnaval en Brasil (feb-2018)"
+    },
+    {
+     "period": "2018-05",
+     "event": "Huelga de camioneros en Brasil (fines de mayo de 2018)"
+    },
+    {
+     "period": "2018-06/07",
+     "event": "Mundial de fútbol 2018"
+    }
+   ],
+   "data_observation": "Los atrasos altos de feb-mar 2018 no quedan explicados por estos eventos; causa no determinada con estos datos."
+  }
+ },
+ "key_findings": [
+  "99,441 pedidos totales, 98,207 válidos; 94,990 clientes únicos.",
+  "GMV (sin flete): 13,494,401 BRL; flete total: 2,241,126 BRL.",
+  "8.1% de los pedidos entregados llegó después de la fecha estimada; entrega promedio 12.6 días.",
+  "Review promedio 4.09; 14.7% son 1-2 estrellas.",
+  "El estado SP concentra 38.3% de los ingresos.",
+  "Categoría líder: health_beauty (9.3% de los ingresos).",
+  "Los 10 mayores vendedores aportan 13.2% de los ingresos (de 3,053 activos).",
+  "Solo 3.0% de los clientes únicos compró más de una vez.",
+  "Medio de pago más usado: credit_card.",
+  "Distancia media vendedor-cliente: 597 km; correlación (Spearman) distancia-flete 0.65 y distancia-días de entrega 0.54.",
+  "Un modelo log-log (distancia, peso, volumen, precio) explica R²=0.51 del flete.",
+  "9.3% de los ítems se entregó al transportista después del límite del vendedor."
+ ],
+ "data_quality_highlights": {
+  "temporal_anomalies": {
+   "approved_before_purchase": 0,
+   "carrier_before_purchase": 166,
+   "delivered_before_carrier": 23,
+   "delivered_before_purchase": 0,
+   "delivered_status_without_delivery_date": 8,
+   "non_delivered_with_delivery_date": 6
+  },
+  "null_pct": {
+   "orders.order_approved_at": 0.16,
+   "orders.order_delivered_carrier_date": 1.79,
+   "orders.order_delivered_customer_date": 2.98,
+   "reviews.comment_title": 88.34,
+   "reviews.comment_message": 58.7,
+   "products.category": 1.85
+  },
+  "orphans_nonzero": {
+   "products.category -> translation": {
+    "child_rows_checked": 32341,
+    "orphans": 13,
+    "orphan_pct": 0.04
+   }
+  },
+  "parents_without_children_pct": {
+   "orders sin items": 0.78,
+   "orders sin pagos": 0.0,
+   "orders sin review": 0.77
+  },
+  "duplicated_review_ids": 814,
+  "orders_with_multiple_reviews": 547,
+  "orders_with_review_pct": 99.23,
+  "geolocation": {
+   "rows": 1000163,
+   "unique_zip_prefixes": 19015,
+   "duplicate_rows": 261831,
+   "coords_outside_brazil_bbox": 42,
+   "customer_zips_missing_in_geo_pct": 0.28,
+   "seller_zips_missing_in_geo_pct": 0.23
+  },
+  "zero_value_payments": 9,
+  "zero_weight_products": 4,
+  "products_without_valid_sales": 222,
+  "products_without_valid_sales_note": "Sin ventas en pedidos válidos (excluye canceled/unavailable); no significa que no existan en order_items.",
+  "reconciliation": {
+   "order_items_rows_total": 112650,
+   "order_items_rows_in_valid_orders": 112101,
+   "orders_total": 99441,
+   "orders_valid": 98207,
+   "orders_delivered_status": 96478,
+   "orders_delivered_with_date_analyzed": 96470,
+   "customer_ids": 99441,
+   "unique_customers": 96096,
+   "reviews_raw_rows": 99224,
+   "orders_with_review": 98673,
+   "explanation": "Valid = excluye canceled/unavailable. Delivered analizado exige fecha real de entrega. Reviews: se usa la más reciente por pedido."
+  }
+ },
+ "key_metrics": {
+  "volume": {
+   "orders": 99441,
+   "valid_orders": 98207,
+   "date_range": {
+    "first_purchase": "2016-09-04T21:15:19",
+    "last_purchase": "2018-10-17T17:30:18"
+   },
+   "unique_customers_valid": 94990,
+   "gmv_items": 13494400.74,
+   "freight_total": 2241126.29,
+   "freight_pct_of_gmv": 16.61,
+   "avg_item_price": 120.38,
+   "order_value_median": 86.9,
+   "order_value_mean": 137.42,
+   "yearly": {
+    "2016": {
+     "orders": 296,
+     "revenue": 44726.06,
+     "months_with_data": 3
+    },
+    "2017": {
+     "orders": 44379,
+     "revenue": 6108492.27,
+     "months_with_data": 12
+    },
+    "2018": {
+     "orders": 53532,
+     "revenue": 7341182.41,
+     "months_with_data": 9
+    }
+   }
+  },
+  "status_distribution": {
+   "delivered": {
+    "n": 96478,
+    "pct": 97.02
+   },
+   "shipped": {
+    "n": 1107,
+    "pct": 1.11
+   },
+   "canceled": {
+    "n": 625,
+    "pct": 0.63
+   },
+   "unavailable": {
+    "n": 609,
+    "pct": 0.61
+   },
+   "invoiced": {
+    "n": 314,
+    "pct": 0.32
+   },
+   "processing": {
+    "n": 301,
+    "pct": 0.3
+   },
+   "created": {
+    "n": 5,
+    "pct": 0.01
+   },
+   "approved": {
+    "n": 2,
+    "pct": 0.0
+   }
+  },
+  "monthly_columns": [
+   "month",
+   "orders",
+   "revenue",
+   "late_pct",
+   "avg_review",
+   "partial_coverage"
+  ],
+  "monthly": [
+   [
+    "2016-09",
+    2,
+    207.86,
+    50.0,
+    1.0,
+    true
+   ],
+   [
+    "2016-10",
+    293,
+    44507.3,
+    1.02,
+    3.79,
+    false
+   ],
+   [
+    "2016-12",
+    1,
+    10.9,
+    0.0,
+    5.0,
+    true
+   ],
+   [
+    "2017-01",
+    787,
+    120098.27,
+    2.92,
+    4.09,
+    false
+   ],
+   [
+    "2017-02",
+    1718,
+    244959.35,
+    3.08,
+    4.1,
+    false
+   ],
+   [
+    "2017-03",
+    2617,
+    368341.32,
+    5.43,
+    4.13,
+    false
+   ],
+   [
+    "2017-04",
+    2377,
+    353842.98,
+    7.62,
+    4.07,
+    false
+   ],
+   [
+    "2017-05",
+    3640,
+    503159.19,
+    3.52,
+    4.18,
+    false
+   ],
+   [
+    "2017-06",
+    3205,
+    429916.61,
+    3.77,
+    4.18,
+    false
+   ],
+   [
+    "2017-07",
+    3946,
+    492287.3,
+    3.37,
+    4.23,
+    false
+   ],
+   [
+    "2017-08",
+    4272,
+    568245.79,
+    3.25,
+    4.27,
+    false
+   ],
+   [
+    "2017-09",
+    4227,
+    621415.91,
+    5.11,
+    4.22,
+    false
+   ],
+   [
+    "2017-10",
+    4547,
+    660179.62,
+    5.21,
+    4.17,
+    false
+   ],
+   [
+    "2017-11",
+    7423,
+    1003862.14,
+    14.05,
+    3.95,
+    false
+   ],
+   [
+    "2017-12",
+    5620,
+    742183.79,
+    8.22,
+    4.04,
+    false
+   ],
+   [
+    "2018-01",
+    7187,
+    945456.29,
+    6.46,
+    4.07,
+    false
+   ],
+   [
+    "2018-02",
+    6625,
+    837895.43,
+    15.82,
+    3.86,
+    false
+   ],
+   [
+    "2018-03",
+    7168,
+    981051.06,
+    20.87,
+    3.76,
+    false
+   ],
+   [
+    "2018-04",
+    6919,
+    993592.98,
+    5.22,
+    4.17,
+    false
+   ],
+   [
+    "2018-05",
+    6833,
+    992871.75,
+    8.14,
+    4.21,
+    false
+   ],
+   [
+    "2018-06",
+    6145,
+    863265.53,
+    1.35,
+    4.29,
+    false
+   ],
+   [
+    "2018-07",
+    6233,
+    878044.27,
+    4.43,
+    4.29,
+    false
+   ],
+   [
+    "2018-08",
+    6421,
+    848860.1,
+    10.28,
+    4.29,
+    false
+   ],
+   [
+    "2018-09",
+    1,
+    145.0,
+    0.0,
+    1.0,
+    true
+   ]
+  ],
+  "monthly_notes": {
+   "partial_coverage_months": [
+    "2016-09",
+    "2016-12",
+    "2018-09"
+   ],
+   "calendar_months_missing": [
+    "2016-11"
+   ],
+   "median_mom_growth_pct": 6.24,
+   "mean_mom_growth_pct": 14.17,
+   "note": "Meses con partial_coverage=true no son comparables (avg_review y late_pct no significativos)."
+  },
+  "delivery": {
+   "avg_delivery_days": 12.56,
+   "median_delivery_days": 10.22,
+   "avg_estimated_days": 23.74,
+   "late_orders_pct": 8.11,
+   "avg_delay_when_late_days": 9.55,
+   "delay_buckets": [
+    {
+     "delay_bucket": "a_tiempo_o_antes",
+     "pct_orders": 91.89,
+     "avg_review": 4.29,
+     "pct_score_1_2": 9.17
+    },
+    {
+     "delay_bucket": "1-3d_tarde",
+     "pct_orders": 2.76,
+     "avg_review": 3.77,
+     "pct_score_1_2": 18.93
+    },
+    {
+     "delay_bucket": "4-7d_tarde",
+     "pct_orders": 1.89,
+     "avg_review": 2.32,
+     "pct_score_1_2": 59.76
+    },
+    {
+     "delay_bucket": "8-14d_tarde",
+     "pct_orders": 1.85,
+     "avg_review": 1.74,
+     "pct_score_1_2": 76.31
+    },
+    {
+     "delay_bucket": ">14d_tarde",
+     "pct_orders": 1.61,
+     "avg_review": 1.71,
+     "pct_score_1_2": 76.21
+    }
+   ],
+   "worst_late_states": [
+    "AL",
+    "MA",
+    "PI",
+    "CE",
+    "SE"
+   ],
+   "slowest_states": [
+    "AP",
+    "AM",
+    "AL",
+    "PA",
+    "MA"
+   ],
+   "fastest_states": [
+    "SP",
+    "PR",
+    "MG",
+    "DF",
+    "SC"
+   ],
+   "corr_review": {
+    "pearson_delivery_days_vs_score": -0.33,
+    "spearman_delivery_days_vs_score": -0.23,
+    "pearson_delay_days_vs_score": -0.27
+   }
+  },
+  "reviews": {
+   "avg_score": 4.09,
+   "distribution": {
+    "5": {
+     "n": 57008,
+     "pct": 57.77
+    },
+    "4": {
+     "n": 19038,
+     "pct": 19.29
+    },
+    "1": {
+     "n": 11363,
+     "pct": 11.52
+    },
+    "3": {
+     "n": 8133,
+     "pct": 8.24
+    },
+    "2": {
+     "n": 3131,
+     "pct": 3.17
+    }
+   },
+   "pct_with_message": 41.32,
+   "low_score_pct_late_vs_ontime": {
+    "late": 54.07,
+    "on_time": 9.22
+   },
+   "low_score_pct_by_freight_quartile": {
+    "(-0.001, 13.84]": 9.11,
+    "(13.84, 17.16]": 11.78,
+    "(17.16, 23.99]": 12.14,
+    "(23.99, 1794.96]": 18.19
+   },
+   "top_bigrams_negative": [
+    "não recebi",
+    "ainda não",
+    "produto não",
+    "meu produto",
+    "não chegou",
+    "até agora",
+    "estou aguardando",
+    "produto veio",
+    "não recomendo",
+    "nota fiscal",
+    "agora não",
+    "não gostei"
+   ],
+   "top_bigrams_positive": [
+    "muito bom",
+    "chegou antes",
+    "produto chegou",
+    "bem antes",
+    "produto entregue",
+    "entregue antes",
+    "bem embalado",
+    "entrega rápida"
+   ]
+  },
+  "geography": {
+   "top_states_by_revenue": [
+    {
+     "customer_state": "SP",
+     "orders": 41127,
+     "revenue_share_pct": 38.27,
+     "avg_freight": 17.37
+    },
+    {
+     "customer_state": "RJ",
+     "orders": 12698,
+     "revenue_share_pct": 13.43,
+     "avg_freight": 23.95
+    },
+    {
+     "customer_state": "MG",
+     "orders": 11496,
+     "revenue_share_pct": 11.66,
+     "avg_freight": 23.45
+    },
+    {
+     "customer_state": "RS",
+     "orders": 5417,
+     "revenue_share_pct": 5.5,
+     "avg_freight": 24.88
+    },
+    {
+     "customer_state": "PR",
+     "orders": 4983,
+     "revenue_share_pct": 5.02,
+     "avg_freight": 23.55
+    },
+    {
+     "customer_state": "SC",
+     "orders": 3600,
+     "revenue_share_pct": 3.84,
+     "avg_freight": 24.85
+    }
+   ],
+   "state_delivery_table_columns": [
+    "state",
+    "orders",
+    "avg_delivery_days",
+    "late_pct",
+    "avg_review"
+   ],
+   "state_delivery_all": [
+    [
+     "SP",
+     40494,
+     8.76,
+     5.89,
+     4.25
+    ],
+    [
+     "RJ",
+     12350,
+     15.31,
+     13.47,
+     3.96
+    ],
+    [
+     "MG",
+     11354,
+     12.01,
+     5.61,
+     4.19
+    ],
+    [
+     "RS",
+     5344,
+     15.3,
+     7.15,
+     4.18
+    ],
+    [
+     "PR",
+     4923,
+     11.99,
+     5.0,
+     4.24
+    ],
+    [
+     "SC",
+     3546,
+     14.96,
+     9.76,
+     4.13
+    ],
+    [
+     "BA",
+     3256,
+     19.34,
+     14.04,
+     3.93
+    ],
+    [
+     "DF",
+     2080,
+     12.97,
+     7.07,
+     4.13
+    ],
+    [
+     "ES",
+     1995,
+     15.79,
+     12.23,
+     4.08
+    ],
+    [
+     "GO",
+     1957,
+     15.61,
+     8.18,
+     4.11
+    ],
+    [
+     "PE",
+     1593,
+     18.45,
+     10.8,
+     4.08
+    ],
+    [
+     "CE",
+     1279,
+     21.27,
+     15.32,
+     3.94
+    ],
+    [
+     "PA",
+     946,
+     23.77,
+     12.37,
+     3.91
+    ],
+    [
+     "MT",
+     886,
+     18.06,
+     6.77,
+     4.15
+    ],
+    [
+     "MA",
+     717,
+     21.57,
+     19.66,
+     3.83
+    ],
+    [
+     "MS",
+     701,
+     15.62,
+     11.55,
+     4.16
+    ],
+    [
+     "PB",
+     517,
+     20.43,
+     11.03,
+     4.08
+    ],
+    [
+     "PI",
+     476,
+     19.46,
+     15.97,
+     3.99
+    ],
+    [
+     "RN",
+     474,
+     19.28,
+     10.76,
+     4.15
+    ],
+    [
+     "AL",
+     397,
+     24.54,
+     23.93,
+     3.85
+    ],
+    [
+     "SE",
+     335,
+     21.52,
+     15.22,
+     3.91
+    ],
+    [
+     "TO",
+     274,
+     17.66,
+     12.77,
+     4.15
+    ],
+    [
+     "RO",
+     243,
+     19.37,
+     2.88,
+     4.17
+    ],
+    [
+     "AM",
+     145,
+     26.43,
+     4.14,
+     4.24
+    ],
+    [
+     "AC",
+     80,
+     21.04,
+     3.75,
+     4.09
+    ],
+    [
+     "AP",
+     67,
+     27.18,
+     4.48,
+     4.24
+    ],
+    [
+     "RR",
+     41,
+     29.39,
+     12.2,
+     3.9
+    ]
+   ],
+   "cross_state_items_pct": 63.91,
+   "avg_distance_km": 597.48
+  },
+  "distance_and_freight": {
+   "spearman_dist_vs": {
+    "dist_km": 1.0,
+    "freight_value": 0.65,
+    "delivery_days": 0.54,
+    "delay_days": -0.18,
+    "review_score": -0.06
+   },
+   "freight_model_r2": 0.51,
+   "freight_r2_single": {
+    "log1p_dist_km": 0.28,
+    "log_weight_g": 0.23,
+    "log_volume_cm3": 0.16,
+    "log_price": 0.19
+   },
+   "free_shipping_items_pct": 0.34
+  },
+  "seller_compliance": {
+   "late_to_carrier_pct": 9.35,
+   "customer_outcomes": {
+    "on_time_to_carrier": {
+     "items": 100967,
+     "customer_late_pct": 6.18,
+     "avg_review": 4.11,
+     "avg_delivery_days": 11.75
+    },
+    "late_to_carrier": {
+     "items": 10413,
+     "customer_late_pct": 23.76,
+     "avg_review": 3.61,
+     "avg_delivery_days": 19.5
+    }
+   },
+   "sellers_min30_items": {
+    "count": 684,
+    "pct_with_over_20pct_late_to_carrier": 14.77
+   }
+  },
+  "payments": {
+   "by_type": [
+    {
+     "payment_type": "boleto",
+     "payments_share_pct": 19.04,
+     "value_share_pct": 17.92,
+     "avg_installments": 1.0
+    },
+    {
+     "payment_type": "credit_card",
+     "payments_share_pct": 73.92,
+     "value_share_pct": 78.34,
+     "avg_installments": 3.51
+    },
+    {
+     "payment_type": "debit_card",
+     "payments_share_pct": 1.47,
+     "value_share_pct": 1.36,
+     "avg_installments": 1.0
+    },
+    {
+     "payment_type": "not_defined",
+     "payments_share_pct": 0.0,
+     "value_share_pct": 0.0,
+     "avg_installments": 1.0
+    },
+    {
+     "payment_type": "voucher",
+     "payments_share_pct": 5.56,
+     "value_share_pct": 2.37,
+     "avg_installments": 1.0
+    }
+   ],
+   "credit_card_pct_installments_gt1": 66.85,
+   "payment_vs_items_plus_freight_within_1_cent_pct": 99.61
+  },
+  "categories": {
+   "n_categories": 74,
+   "top10_by_revenue": [
+    {
+     "category": "health_beauty",
+     "revenue_share_pct": 9.3,
+     "avg_price": 130.34,
+     "avg_review": 4.15,
+     "late_pct": 8.9
+    },
+    {
+     "category": "watches_gifts",
+     "revenue_share_pct": 8.88,
+     "avg_price": 200.7,
+     "avg_review": 4.03,
+     "late_pct": 8.12
+    },
+    {
+     "category": "bed_bath_table",
+     "revenue_share_pct": 7.68,
+     "avg_price": 93.36,
+     "avg_review": 3.9,
+     "late_pct": 8.29
+    },
+    {
+     "category": "sports_leisure",
+     "revenue_share_pct": 7.26,
+     "avg_price": 114.06,
+     "avg_review": 4.12,
+     "late_pct": 7.28
+    },
+    {
+     "category": "computers_accessories",
+     "revenue_share_pct": 6.7,
+     "avg_price": 116.22,
+     "avg_review": 3.95,
+     "late_pct": 7.63
+    },
+    {
+     "category": "furniture_decor",
+     "revenue_share_pct": 5.39,
+     "avg_price": 87.67,
+     "avg_review": 3.92,
+     "late_pct": 8.29
+    },
+    {
+     "category": "housewares",
+     "revenue_share_pct": 4.64,
+     "avg_price": 90.65,
+     "avg_review": 4.07,
+     "late_pct": 6.38
+    },
+    {
+     "category": "cool_stuff",
+     "revenue_share_pct": 4.6,
+     "avg_price": 164.27,
+     "avg_review": 4.16,
+     "late_pct": 6.64
+    },
+    {
+     "category": "auto",
+     "revenue_share_pct": 4.35,
+     "avg_price": 139.53,
+     "avg_review": 4.08,
+     "late_pct": 8.16
+    },
+    {
+     "category": "garden_tools",
+     "revenue_share_pct": 3.56,
+     "avg_price": 111.14,
+     "avg_review": 4.06,
+     "late_pct": 7.86
+    }
+   ],
+   "worst_rated_min100_orders": [
+    {
+     "category": "office_furniture",
+     "orders": 1272,
+     "avg_review": 3.49
+    },
+    {
+     "category": "fashion_male_clothing",
+     "orders": 111,
+     "avg_review": 3.66
+    },
+    {
+     "category": "fixed_telephony",
+     "orders": 214,
+     "avg_review": 3.71
+    },
+    {
+     "category": "home_confort",
+     "orders": 397,
+     "avg_review": 3.83
+    },
+    {
+     "category": "audio",
+     "orders": 349,
+     "avg_review": 3.84
+    }
+   ],
+   "without_translation": {
+    "portateis_cozinha_e_preparadores_de_alimentos": 10,
+    "pc_gamer": 3
+   },
+   "concentration": {
+    "n_entities": 74,
+    "top1_share_pct": 9.31,
+    "top10_share_pct": 62.37,
+    "top_1pct_entities_share_pct": 9.31,
+    "top_10pct_entities_share_pct": 49.86,
+    "top_20pct_entities_share_pct": 74.29,
+    "entities_for_80pct_revenue": 18,
+    "hhi": 489.23,
+    "gini": 0.72
+   }
+  },
+  "sellers": {
+   "registered": 3095,
+   "active": 3053,
+   "concentration": {
+    "n_entities": 3053,
+    "top1_share_pct": 1.7,
+    "top10_share_pct": 13.2,
+    "top_1pct_entities_share_pct": 25.77,
+    "top_10pct_entities_share_pct": 67.43,
+    "top_20pct_entities_share_pct": 82.54,
+    "entities_for_80pct_revenue": 540,
+    "hhi": 35.95,
+    "gini": 0.79
+   },
+   "segments": [
+    {
+     "orders": "1",
+     "sellers": 560,
+     "revenue": 133519.66,
+     "revenue_share_pct": 0.99
+    },
+    {
+     "orders": "2-5",
+     "sellers": 851,
+     "revenue": 593036.83,
+     "revenue_share_pct": 4.39
+    },
+    {
+     "orders": "6-20",
+     "sellers": 847,
+     "revenue": 1732367.46,
+     "revenue_share_pct": 12.84
+    },
+    {
+     "orders": "21-100",
+     "sellers": 585,
+     "revenue": 4062126.19,
+     "revenue_share_pct": 30.1
+    },
+    {
+     "orders": ">100",
+     "sellers": 210,
+     "revenue": 6973350.6,
+     "revenue_share_pct": 51.68
+    }
+   ]
+  },
+  "customers": {
+   "repeat_customers_pct": 3.04,
+   "customers_with_3plus_orders_pct": 0.25,
+   "median_days_first_to_second": 28.0,
+   "top20pct_customers_share_of_revenue_pct": 56.67,
+   "repeaters_revenue_share_pct": 5.56,
+   "one_time_buyers_revenue_share_pct": 94.44
+  },
+  "basket": {
+   "multi_category_orders_pct": 0.8,
+   "multi_item_single_category_orders_pct": 9.14,
+   "top5_category_pairs": [
+    {
+     "a": "bed_bath_table",
+     "b": "furniture_decor",
+     "orders": 70
+    },
+    {
+     "a": "bed_bath_table",
+     "b": "home_confort",
+     "orders": 43
+    },
+    {
+     "a": "furniture_decor",
+     "b": "housewares",
+     "orders": 24
+    },
+    {
+     "a": "bed_bath_table",
+     "b": "housewares",
+     "orders": 20
+    },
+    {
+     "a": "baby",
+     "b": "cool_stuff",
+     "orders": 20
+    }
+   ]
+  },
+  "outliers": {
+   "orders_delivery_over_60_days": 306,
+   "items_price_over_p99_pct_of_revenue": 11.74
+  }
+ },
+ "samples_2_rows": {
+  "orders": [
+   {
+    "order_id": "5e8dbd76385140aefb062d9ed31c7a75",
+    "customer_id": "19fd0868f95ae82311ca792f5f62a0cc",
+    "order_status": "delivered",
+    "order_purchase_timestamp": "2017-05-19T17:07:52",
+    "order_approved_at": "2017-05-20T17:10:13",
+    "order_delivered_carrier_date": "2017-06-05T17:08:45",
+    "order_delivered_customer_date": "2017-06-08T18:07:41",
+    "order_estimated_delivery_date": "2017-06-26T00:00:00"
+   },
+   {
+    "order_id": "6c996c013efca89d881f5717239cf3b0",
+    "customer_id": "bfa038d9dc03dee42e6574d7df63f51f",
+    "order_status": "delivered",
+    "order_purchase_timestamp": "2018-04-22T15:04:45",
+    "order_approved_at": "2018-04-24T18:10:51",
+    "order_delivered_carrier_date": "2018-04-23T17:12:43",
+    "order_delivered_customer_date": "2018-04-27T19:06:55",
+    "order_estimated_delivery_date": "2018-05-22T00:00:00"
+   }
+  ],
+  "order_items": [
+   {
+    "order_id": "04f352fa3f3b02bb7c523906d577c4b8",
+    "order_item_id": 2,
+    "product_id": "b8c89bc5fa5dc01a5d0e9d7ff0c6ecdb",
+    "seller_id": "6fd52c528dcb38be2eea044946b811f8",
+    "shipping_limit_date": "2017-11-29T19:15:27",
+    "price": 105.6,
+    "freight_value": 15.67
+   },
+   {
+    "order_id": "305f5b9d60b68527059527234dfd2b9e",
+    "order_item_id": 1,
+    "product_id": "89321f94e35fc6d7903d36f74e351d40",
+    "seller_id": "16090f2ca825584b5a147ab24aa30c86",
+    "shipping_limit_date": "2018-06-27T01:57:27",
+    "price": 27.9,
+    "freight_value": 7.94
+   }
+  ],
+  "order_payments": [
+   {
+    "order_id": "8ea30b70e3e6d110ab6eaec18f0a7269",
+    "payment_sequential": 1,
+    "payment_type": "credit_card",
+    "payment_installments": 10,
+    "payment_value": 102.26
+   },
+   {
+    "order_id": "15812af232ebe0d344d123c18fde51eb",
+    "payment_sequential": 1,
+    "payment_type": "boleto",
+    "payment_installments": 1,
+    "payment_value": 27.49
+   }
+  ],
+  "order_reviews": [
+   {
+    "review_id": "febedfe5ba6d8f74f39c7cd0443de455",
+    "order_id": "9a0ea28810c690ef91b1a70c0ed9703e",
+    "review_score": 5,
+    "review_comment_title": null,
+    "review_comment_message": null,
+    "review_creation_date": "2018-07-11T00:00:00",
+    "review_answer_timestamp": "2018-07-11T23:57:12"
+   },
+   {
+    "review_id": "75150e90ce55c49091599d3f9e7e3a39",
+    "order_id": "e11f0b384abcb645f460256db2f8795a",
+    "review_score": 5,
+    "review_comment_title": null,
+    "review_comment_message": "O produto chegou intacto e dentro do previsto. Muito satisfeita com a compra.",
+    "review_creation_date": "2017-07-15T00:00:00",
+    "review_answer_timestamp": "2017-07-15T23:56:35"
+   }
+  ],
+  "customers": [
+   {
+    "customer_id": "bc7398b02f14bcd3a5181e6a9b50c5de",
+    "customer_unique_id": "a2255f4f5dccc6e70357cc06f7b316e5",
+    "customer_zip_code_prefix": 28633,
+    "customer_city": "nova friburgo",
+    "customer_state": "RJ"
+   },
+   {
+    "customer_id": "2ba25daf9792793cb287dd8d0390d8e5",
+    "customer_unique_id": "c0ef37e745e3e5a7d172e900c5e5ccef",
+    "customer_zip_code_prefix": 89480,
+    "customer_city": "major vieira",
+    "customer_state": "SC"
+   }
+  ],
+  "sellers": [
+   {
+    "seller_id": "a066df7361163e7ddc5d7452dd17448b",
+    "seller_zip_code_prefix": 14401,
+    "seller_city": "franca",
+    "seller_state": "SP"
+   },
+   {
+    "seller_id": "f3295428338a40977a03f555246a70f4",
+    "seller_zip_code_prefix": 29032,
+    "seller_city": "vitoria",
+    "seller_state": "ES"
+   }
+  ],
+  "products": [
+   {
+    "product_id": "a25d948ddec359c8d80978d139a4db83",
+    "product_category_name": "brinquedos",
+    "product_name_lenght": 43.0,
+    "product_description_lenght": 1784.0,
+    "product_photos_qty": 2.0,
+    "product_weight_g": 900.0,
+    "product_length_cm": 38.0,
+    "product_height_cm": 24.0,
+    "product_width_cm": 38.0
+   },
+   {
+    "product_id": "2dbad6cd56b73cfd7f1885d112d9b96b",
+    "product_category_name": "beleza_saude",
+    "product_name_lenght": 31.0,
+    "product_description_lenght": 3532.0,
+    "product_photos_qty": 1.0,
+    "product_weight_g": 500.0,
+    "product_length_cm": 20.0,
+    "product_height_cm": 9.0,
+    "product_width_cm": 12.0
+   }
+  ],
+  "geolocation": [
+   {
+    "geolocation_zip_code_prefix": 30240,
+    "geolocation_lat": -19.93,
+    "geolocation_lng": -43.92,
+    "geolocation_city": "belo horizonte",
+    "geolocation_state": "MG"
+   },
+   {
+    "geolocation_zip_code_prefix": 80410,
+    "geolocation_lat": -25.43,
+    "geolocation_lng": -49.28,
+    "geolocation_city": "curitiba",
+    "geolocation_state": "PR"
+   }
+  ],
+  "translation": [
+   {
+    "product_category_name": "dvds_blu_ray",
+    "product_category_name_english": "dvds_blu_ray"
+   },
+   {
+    "product_category_name": "moveis_cozinha_area_de_servico_jantar_e_jardim",
+    "product_category_name_english": "kitchen_dining_laundry_garden_furniture"
+   }
+  ]
+ },
+ "analysis_index": {
+  "metadata": "filas por tabla y metodología",
+  "dataset_context": "esquema, joins, trampas, definiciones",
+  "reproducibility": "versiones y parámetros",
+  "reconciliation": "cuadre de conteos",
+  "domains": "valores posibles (categorías, estados, medios de pago) y traducción completa",
+  "samples": "filas de ejemplo por tabla",
+  "data_quality": "perfil columna a columna",
+  "referential_integrity": "huérfanos y padres sin hijos",
+  "orders": "estados, temporalidad, anomalías",
+  "nulls_by_status": "nulos de fechas por estado",
+  "sales": "GMV, ticket, serie mensual (MoM corregido)",
+  "delivery": "tiempos, atrasos, por estado/mes, relación con reviews",
+  "distance": "distancia vendedor-cliente y su efecto",
+  "freight_model": "qué explica el flete",
+  "seller_compliance": "despacho a tiempo del vendedor",
+  "geography": "estados, ciudades, flujos, geolocation",
+  "payments": "medios de pago y cuotas",
+  "reviews": "scores, comentarios, palabras y n-gramas",
+  "products_and_categories": "ranking, calidad, concentración",
+  "sellers": "concentración y segmentos",
+  "customers": "recompra, cohortes, recencia",
+  "basket": "co-compra de categorías y recompra por categoría",
+  "rfm": "matriz recencia x valor",
+  "outliers": "pedidos/ítems extremos",
+  "cross_dimension_insights": "correlaciones y cruces",
+  "key_findings": "resumen en frases"
+ }
+}

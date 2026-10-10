@@ -1,16 +1,17 @@
+SET client_encoding = 'UTF8';
 -- =============================================================
 -- 02_ddl_fleet.sql
--- DDL: Tablas de flota logistica sintetica
+-- DDL: Tablas de flota logística sintética
 -- Base de datos: olist_logistics_db (PostgreSQL 15+)
--- Proyecto TPI — Analisis de Datos Masivos, UCASAL 2026
+-- Proyecto TPI — Análisis de Datos Masivos, UCASAL 2026
 -- =============================================================
--- Vinculacion con Olist:
+-- Vinculación con Olist:
 --   fleet_deliveries.order_id → olist_orders.order_id
 --   fleet_deliveries.vehicle_id → fleet_vehicles.vehicle_id
 --   fleet_deliveries.driver_id  → fleet_drivers.driver_id
 --   fleet_incidents.order_id    → fleet_deliveries.order_id (nullable)
 --
--- Orden de creacion:
+-- Orden de creación:
 --   1. fleet_vehicles   (sin FK entrante)
 --   2. fleet_drivers    (FK → fleet_vehicles)
 --   3. fleet_deliveries (FK → olist_orders, fleet_vehicles, fleet_drivers)
@@ -26,7 +27,7 @@ DROP TABLE IF EXISTS fleet_vehicles    CASCADE;
 
 -- -------------------------------------------------------------
 -- 1. fleet_vehicles
---    60 vehiculos del catalogo sintetico
+--    60 vehículos del catalogo sintético
 -- -------------------------------------------------------------
 CREATE TABLE fleet_vehicles (
     vehicle_id                  SERIAL        PRIMARY KEY,
@@ -53,12 +54,12 @@ CREATE INDEX idx_veh_type   ON fleet_vehicles (type);
 CREATE INDEX idx_veh_status ON fleet_vehicles (status);
 
 COMMENT ON TABLE fleet_vehicles IS
-    'Catalogo de 60 vehiculos de la flota sintetica. '
+    'Catalogo de 60 vehículos de la flota sintética. '
     'Tipo determina capacidad: moto=30kg, van=500kg, truck=5000kg. '
     'Formato de patente: DENATRAN 2016-2018 (AAA-9999).';
 COMMENT ON COLUMN fleet_vehicles.fuel_consumption_rate_lh IS
     'Consumo de combustible en litros/hora. Calibrado desde '
-    'dynamic_supply_chain_logistics_dataset.csv, escalado por tipo de vehiculo.';
+    'dynamic_supply_chain_logistics_dataset.csv, escalado por tipo de vehículo.';
 
 -- -------------------------------------------------------------
 -- 2. fleet_drivers
@@ -92,19 +93,19 @@ CREATE INDEX idx_drv_region  ON fleet_drivers (region_assigned);
 CREATE INDEX idx_drv_vehicle ON fleet_drivers (vehicle_id);
 
 COMMENT ON TABLE fleet_drivers IS
-    'Conductores sinteticos con nombres brasilenos. '
-    'region_assigned coincide con seller_state de Olist (criterio de asignacion). '
+    'Conductores sintéticos con nombres brasileños. '
+    'region_assigned coincide con seller_state de Olist (criterio de asignación). '
     'Scores calibrados desde dynamic_supply_chain_logistics_dataset.csv.';
 COMMENT ON COLUMN fleet_drivers.driver_behavior_score IS
-    '0 = comportamiento peligroso, 1 = comportamiento optimo. '
-    'Fuente: distribucion real de driver_behavior_score del dataset Kaggle.';
+    '0 = comportamiento peligroso, 1 = comportamiento óptimo. '
+    'Fuente: distribución real de driver_behavior_score del dataset Kaggle.';
 COMMENT ON COLUMN fleet_drivers.fatigue_score_avg IS
     '0 = fatiga extrema, 1 = sin fatiga. '
-    'Fuente: distribucion real de fatigue_monitoring_score del dataset Kaggle.';
+    'Fuente: distribución real de fatigue_monitoring_score del dataset Kaggle.';
 
 -- -------------------------------------------------------------
 -- 3. fleet_deliveries
---    ~96.000 registros — tabla de vinculacion central
+--    ~96.000 registros — tabla de vinculación central
 --    Una fila por orden de Olist con status = 'delivered'
 -- -------------------------------------------------------------
 CREATE TABLE fleet_deliveries (
@@ -116,7 +117,7 @@ CREATE TABLE fleet_deliveries (
     driver_id                INTEGER        NOT NULL
         REFERENCES fleet_drivers (driver_id),
 
-    -- Fechas: extraidas de olist_orders para garantizar consistencia temporal
+    -- Fechas: extraídas de olist_orders para garantizar consistencia temporal
     pickup_date              TIMESTAMP      NOT NULL,   -- = order_purchase_timestamp
     carrier_pickup_date      TIMESTAMP,                 -- = order_delivered_carrier_date
     delivery_date            TIMESTAMP,                 -- = order_delivered_customer_date
@@ -132,6 +133,14 @@ CREATE TABLE fleet_deliveries (
         CONSTRAINT chk_del_lut CHECK (loading_unloading_time_h >= 0),
     route_risk_level         NUMERIC(4,2)   NOT NULL
         CONSTRAINT chk_del_risk CHECK (route_risk_level BETWEEN 0 AND 10),
+
+    -- Predictores externos de demora — calibrados desde el dataset Kaggle
+    -- (datasetengineer, Logistics and Supply Chain Dataset, California 2021-2024)
+    -- Incorporados en Etapa 1 como predictores del Modelo 1 (regresion de eta_variation_hours)
+    traffic_congestion_level   NUMERIC(4,2)   NOT NULL
+        CONSTRAINT chk_del_traffic CHECK (traffic_congestion_level BETWEEN 0 AND 10),
+    weather_condition_severity NUMERIC(4,3)   NOT NULL
+        CONSTRAINT chk_del_weather CHECK (weather_condition_severity BETWEEN 0 AND 1),
 
     CONSTRAINT chk_del_dates CHECK (
         delivery_date IS NULL OR delivery_date >= pickup_date
@@ -149,26 +158,40 @@ CREATE INDEX idx_del_pickup   ON fleet_deliveries (pickup_date);
 -- Indice compuesto para consultas de analisis por periodo y estado
 CREATE INDEX idx_del_state_pickup ON fleet_deliveries (route_state, pickup_date);
 
+-- Indices para los predictores externos de demora (Q1 y Q3)
+CREATE INDEX idx_del_traffic ON fleet_deliveries (traffic_congestion_level);
+CREATE INDEX idx_del_weather ON fleet_deliveries (weather_condition_severity);
+
 COMMENT ON TABLE fleet_deliveries IS
-    'Tabla de vinculacion central entre Olist y la flota sintetica. '
+    'Tabla de vinculación central entre Olist y la flota sintética. '
     'Una fila por orden entregada (order_status = ''delivered'' en olist_orders). '
-    'Clave de integracion: fleet_deliveries.order_id = olist_orders.order_id.';
+    'Clave de integración: fleet_deliveries.order_id = olist_orders.order_id.';
 COMMENT ON COLUMN fleet_deliveries.distance_km IS
     'Estimada como proxy: shipping_costs (BRL) / 3.0. '
-    'Coeficiente empirico ANTT 2017: mediana ~$456 BRL ≈ 152 km inter-estado. '
+    'Coeficiente empírico ANTT 2017: mediana ~$456 BRL ≈ 152 km inter-estado. '
     'Rango forzado: 5–2500 km.';
 COMMENT ON COLUMN fleet_deliveries.eta_variation_hours IS
-    'Variable objetivo para el Modelo 1 (regresion). '
+    'Variable objetivo para el Modelo 1 (regresión). '
     'Calibrada desde eta_variation_hours del dataset Kaggle. '
     'Positivo = demora respecto al ETA estimado. Negativo = adelanto.';
 COMMENT ON COLUMN fleet_deliveries.delivery_status IS
     'Variable objetivo para el Modelo 2 (clasificacion). '
     'Umbral: percentil 60 de delay_probability del dataset Kaggle.';
+COMMENT ON COLUMN fleet_deliveries.traffic_congestion_level IS
+    'Nivel de congestion de trafico en la ruta durante el envio (escala 0-10). '
+    'Calibrado desde traffic_congestion_level del dataset Kaggle (datasetengineer). '
+    'Predictor del Modelo 1 (regresion de eta_variation_hours). '
+    'Permite Q1: comparar congestion promedio en entregas demoradas vs a tiempo.';
+COMMENT ON COLUMN fleet_deliveries.weather_condition_severity IS
+    'Severidad de condiciones climaticas durante el envio (escala 0-1). '
+    'Calibrado desde weather_condition_severity del dataset Kaggle (datasetengineer). '
+    'Predictor independiente del Modelo 1. '
+    'Permite analizar impacto climatico sobre eta_variation_hours.';
 
 -- -------------------------------------------------------------
 -- 4. fleet_maintenance
---    ~720 registros — historial de mantenimientos por vehiculo
---    8–15 eventos por vehiculo a lo largo de 2016–2018
+--    ~720 registros — historial de mantenimientos por vehículo
+--    8–15 eventos por vehículo a lo largo de 2016–2018
 -- -------------------------------------------------------------
 CREATE TABLE fleet_maintenance (
     maintenance_id      SERIAL        PRIMARY KEY,
@@ -191,9 +214,9 @@ CREATE TABLE fleet_maintenance (
 CREATE INDEX idx_mnt_vehicle ON fleet_maintenance (vehicle_id);
 CREATE INDEX idx_mnt_date    ON fleet_maintenance (date);
 CREATE INDEX idx_mnt_type    ON fleet_maintenance (type);
--- Indice compuesto para analisis estacional (mes + tipo)
+-- Indice compuesto para análisis estacional (mes + tipo)
 CREATE INDEX idx_mnt_month_type ON fleet_maintenance (
-    CAST(EXTRACT(MONTH FROM date) AS INTEGER), type
+    (EXTRACT(MONTH FROM date)::INTEGER), type
 );
 
 COMMENT ON TABLE fleet_maintenance IS
@@ -241,31 +264,139 @@ CREATE INDEX idx_inc_type    ON fleet_incidents (type);
 CREATE INDEX idx_inc_order   ON fleet_incidents (order_id) WHERE order_id IS NOT NULL;
 
 COMMENT ON TABLE fleet_incidents IS
-    'Incidentes logisticos que causaron demoras. '
+    'Incidentes logísticos que causaron demoras. '
     'Representa el 15% del subconjunto de ordenes con delivery_status = ''delayed''. '
     'order_id nullable: un incidente puede afectar una entrega sin estar '
-    'asociado a una orden especifica (ej. averia en deposito).';
+    'asociado a una orden especifica (ej. avería en deposito).';
 COMMENT ON COLUMN fleet_incidents.disruption_likelihood IS
-    'Probabilidad de disrupcion calculada por el sistema de monitoreo. '
+    'Probabilidad de disrupción calculada por el sistema de monitoreo. '
     'Calibrada desde disruption_likelihood_score del dataset Kaggle.';
 
 -- =============================================================
--- VERIFICACION RAPIDA POST-IMPORT
+-- DDL AUDIT — verificacion de estructura del schema de flota
 -- =============================================================
--- SELECT 'fleet_vehicles'   AS tabla, COUNT(*) AS filas FROM fleet_vehicles
--- UNION ALL
--- SELECT 'fleet_drivers',            COUNT(*) FROM fleet_drivers
--- UNION ALL
--- SELECT 'fleet_deliveries',         COUNT(*) FROM fleet_deliveries
--- UNION ALL
--- SELECT 'fleet_maintenance',        COUNT(*) FROM fleet_maintenance
--- UNION ALL
--- SELECT 'fleet_incidents',          COUNT(*) FROM fleet_incidents
--- ORDER BY tabla;
+-- Sin datos. Detecta errores de schema antes del import.
+-- Si alguna fila muestra ERROR: corregir antes de ejecutar 03.
+-- =============================================================
 
--- Verificacion de integridad referencial clave:
--- SELECT COUNT(*) AS ordenes_sin_entrega
--- FROM olist_orders o
--- LEFT JOIN fleet_deliveries fd ON fd.order_id = o.order_id
--- WHERE o.order_status = 'delivered' AND fd.order_id IS NULL;
--- Resultado esperado: 0
+-- 1. Tablas de flota creadas
+SELECT
+    COUNT(*)                        AS tablas_flota_creadas,
+    5                               AS esperado,
+    CASE WHEN COUNT(*) = 5
+         THEN 'OK' ELSE 'ERROR' END AS resultado
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN (
+    'fleet_vehicles','fleet_drivers','fleet_deliveries',
+    'fleet_maintenance','fleet_incidents'
+  );
+
+-- 2. Columnas nuevas en fleet_deliveries
+SELECT
+    COUNT(*)                        AS columnas_nuevas_presentes,
+    2                               AS esperado,
+    CASE WHEN COUNT(*) = 2
+         THEN 'OK' ELSE 'ERROR: faltan columnas de contexto externo' END AS resultado
+FROM information_schema.columns
+WHERE table_name   = 'fleet_deliveries'
+  AND column_name IN ('traffic_congestion_level','weather_condition_severity');
+
+-- 3. CHECKs de las columnas nuevas
+SELECT
+    conname                         AS constraint_name,
+    pg_get_constraintdef(oid)       AS definicion,
+    CASE
+        WHEN conname = 'chk_del_traffic' AND pg_get_constraintdef(oid) LIKE '%0%AND%10%'
+             THEN 'OK'
+        WHEN conname = 'chk_del_weather' AND pg_get_constraintdef(oid) LIKE '%0%AND%1%'
+             THEN 'OK'
+        ELSE 'ERROR: definicion incorrecta'
+    END                             AS resultado
+FROM pg_constraint
+WHERE conname IN ('chk_del_traffic','chk_del_weather')
+ORDER BY conname;
+
+-- 4. Indices criticos del DDL de flota verificados por nombre
+--    (el conteo total varia si ya se ejecuto 05_indices.sql anteriormente)
+SELECT
+    indexname                       AS indice,
+    'OK'                            AS resultado
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND indexname IN (
+    'idx_veh_type','idx_veh_status',
+    'idx_drv_region','idx_drv_vehicle',
+    'idx_del_order','idx_del_vehicle','idx_del_driver','idx_del_status',
+    'idx_del_state','idx_del_pickup','idx_del_state_pickup',
+    'idx_del_traffic','idx_del_weather',
+    'idx_mnt_vehicle','idx_mnt_date','idx_mnt_type','idx_mnt_month_type',
+    'idx_inc_vehicle','idx_inc_date','idx_inc_type','idx_inc_order'
+  )
+UNION ALL
+SELECT
+    'FALTANTE: ' || idx             AS indice,
+    'ERROR: indice del DDL no creado' AS resultado
+FROM (VALUES
+    ('idx_veh_type'),('idx_veh_status'),
+    ('idx_drv_region'),('idx_drv_vehicle'),
+    ('idx_del_order'),('idx_del_vehicle'),('idx_del_driver'),('idx_del_status'),
+    ('idx_del_state'),('idx_del_pickup'),('idx_del_state_pickup'),
+    ('idx_del_traffic'),('idx_del_weather'),
+    ('idx_mnt_vehicle'),('idx_mnt_date'),('idx_mnt_type'),('idx_mnt_month_type'),
+    ('idx_inc_vehicle'),('idx_inc_date'),('idx_inc_type'),('idx_inc_order')
+) AS esperados(idx)
+WHERE idx NOT IN (
+    SELECT indexname FROM pg_indexes WHERE schemaname = 'public'
+)
+ORDER BY resultado DESC, indice;
+-- Resultado esperado: 21 filas OK, 0 filas ERROR.
+
+-- 5. Indices especificos de las columnas nuevas
+SELECT
+    indexname                       AS indice,
+    CASE WHEN indexname IS NOT NULL
+         THEN 'OK' ELSE 'ERROR: indice no creado' END AS resultado
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND indexname IN ('idx_del_traffic','idx_del_weather')
+ORDER BY indexname;
+
+-- 6. Resumen ejecutivo
+SELECT verificacion, esperado, resultado FROM (
+    VALUES
+    ('tablas_flota_creadas', '5',
+     (SELECT CASE WHEN COUNT(*) = 5 THEN 'OK' ELSE 'ERROR: ' || COUNT(*)::TEXT END
+      FROM information_schema.tables WHERE table_schema='public'
+        AND table_name IN ('fleet_vehicles','fleet_drivers','fleet_deliveries',
+                           'fleet_maintenance','fleet_incidents'))),
+    ('columnas_traffic_weather_en_deliveries', '2',
+     (SELECT CASE WHEN COUNT(*) = 2 THEN 'OK' ELSE 'ERROR: ' || COUNT(*)::TEXT END
+      FROM information_schema.columns WHERE table_name='fleet_deliveries'
+        AND column_name IN ('traffic_congestion_level','weather_condition_severity'))),
+    ('check_chk_del_traffic_existe', 'SI',
+     (SELECT CASE WHEN COUNT(*) = 1 THEN 'OK' ELSE 'ERROR: no existe' END
+      FROM pg_constraint WHERE conname='chk_del_traffic')),
+    ('check_chk_del_weather_existe', 'SI',
+     (SELECT CASE WHEN COUNT(*) = 1 THEN 'OK' ELSE 'ERROR: no existe' END
+      FROM pg_constraint WHERE conname='chk_del_weather')),
+    ('indices_DDL_flota_presentes', '21 indices clave',
+     (SELECT CASE WHEN COUNT(*) = 21 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT || ' de 21 indices DDL presentes' END
+      FROM pg_indexes WHERE schemaname='public'
+        AND indexname IN (
+            'idx_veh_type','idx_veh_status','idx_drv_region','idx_drv_vehicle',
+            'idx_del_order','idx_del_vehicle','idx_del_driver','idx_del_status',
+            'idx_del_state','idx_del_pickup','idx_del_state_pickup',
+            'idx_del_traffic','idx_del_weather',
+            'idx_mnt_vehicle','idx_mnt_date','idx_mnt_type','idx_mnt_month_type',
+            'idx_inc_vehicle','idx_inc_date','idx_inc_type','idx_inc_order'))),
+    ('idx_del_traffic_creado', 'SI',
+     (SELECT CASE WHEN COUNT(*) = 1 THEN 'OK' ELSE 'ERROR: no existe' END
+      FROM pg_indexes WHERE indexname='idx_del_traffic')),
+    ('idx_del_weather_creado', 'SI',
+     (SELECT CASE WHEN COUNT(*) = 1 THEN 'OK' ELSE 'ERROR: no existe' END
+      FROM pg_indexes WHERE indexname='idx_del_weather'))
+) AS t(verificacion, esperado, resultado)
+ORDER BY verificacion;
+-- Si alguna fila muestra ERROR: NO ejecutar 03_import_data.sql hasta resolverlo.

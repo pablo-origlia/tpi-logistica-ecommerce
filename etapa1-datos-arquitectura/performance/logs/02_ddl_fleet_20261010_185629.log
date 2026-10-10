@@ -1,0 +1,110 @@
+SET
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/02_ddl_fleet.sql:22: NOTICE:  la tabla ┬½fleet_incidents┬╗ no existe, omitiendo
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/02_ddl_fleet.sql:23: NOTICE:  la tabla ┬½fleet_maintenance┬╗ no existe, omitiendo
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/02_ddl_fleet.sql:24: NOTICE:  la tabla ┬½fleet_deliveries┬╗ no existe, omitiendo
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/02_ddl_fleet.sql:25: NOTICE:  la tabla ┬½fleet_drivers┬╗ no existe, omitiendo
+DROP TABLE
+psql:C:/poriglia/tpi-logistica-ecommerce/etapa1-datos-arquitectura/sql/02_ddl_fleet.sql:26: NOTICE:  la tabla ┬½fleet_vehicles┬╗ no existe, omitiendo
+DROP TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+COMMENT
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMENT
+COMMENT
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMENT
+COMMENT
+ tablas_flota_creadas | esperado | resultado 
+----------------------+----------+-----------
+                    5 |        5 | OK
+(1 row)
+
+ columnas_nuevas_presentes | esperado | resultado 
+---------------------------+----------+-----------
+                         2 |        2 | OK
+(1 row)
+
+ constraint_name |                                               definicion                                                | resultado 
+-----------------+---------------------------------------------------------------------------------------------------------+-----------
+ chk_del_traffic | CHECK (((traffic_congestion_level >= (0)::numeric) AND (traffic_congestion_level <= (10)::numeric)))    | OK
+ chk_del_weather | CHECK (((weather_condition_severity >= (0)::numeric) AND (weather_condition_severity <= (1)::numeric))) | OK
+(2 rows)
+
+        indice        | resultado 
+----------------------+-----------
+ idx_del_driver       | OK
+ idx_del_order        | OK
+ idx_del_pickup       | OK
+ idx_del_state        | OK
+ idx_del_state_pickup | OK
+ idx_del_status       | OK
+ idx_del_traffic      | OK
+ idx_del_vehicle      | OK
+ idx_del_weather      | OK
+ idx_drv_region       | OK
+ idx_drv_vehicle      | OK
+ idx_inc_date         | OK
+ idx_inc_order        | OK
+ idx_inc_type         | OK
+ idx_inc_vehicle      | OK
+ idx_mnt_date         | OK
+ idx_mnt_month_type   | OK
+ idx_mnt_type         | OK
+ idx_mnt_vehicle      | OK
+ idx_veh_status       | OK
+ idx_veh_type         | OK
+(21 rows)
+
+     indice      | resultado 
+-----------------+-----------
+ idx_del_traffic | OK
+ idx_del_weather | OK
+(2 rows)
+
+              verificacion              |     esperado     | resultado 
+----------------------------------------+------------------+-----------
+ check_chk_del_traffic_existe           | SI               | OK
+ check_chk_del_weather_existe           | SI               | OK
+ columnas_traffic_weather_en_deliveries | 2                | OK
+ idx_del_traffic_creado                 | SI               | OK
+ idx_del_weather_creado                 | SI               | OK
+ indices_DDL_flota_presentes            | 21 indices clave | OK
+ tablas_flota_creadas                   | 5                | OK
+(7 rows)
+

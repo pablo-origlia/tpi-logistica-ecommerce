@@ -1,0 +1,108 @@
+SET
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+CREATE INDEX
+COMMENT
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+ esquema |               tabla               |                 indice                 | tamanio |                                                                                                                    definicion                                                                                                                     
+---------+-----------------------------------+----------------------------------------+---------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ public  | fleet_deliveries                  | fleet_deliveries_order_id_key          | 7368 kB | CREATE UNIQUE INDEX fleet_deliveries_order_id_key ON public.fleet_deliveries USING btree (order_id)
+ public  | fleet_deliveries                  | fleet_deliveries_pkey                  | 2128 kB | CREATE UNIQUE INDEX fleet_deliveries_pkey ON public.fleet_deliveries USING btree (delivery_id)
+ public  | fleet_deliveries                  | idx_del_analytical_base                | 11 MB   | CREATE INDEX idx_del_analytical_base ON public.fleet_deliveries USING btree (order_id, delivery_status) INCLUDE (vehicle_id, driver_id, eta_variation_hours, distance_km, route_risk_level, loading_unloading_time_h, pickup_date, delivery_date)
+ public  | fleet_deliveries                  | idx_del_delayed_order                  | 1408 kB | CREATE INDEX idx_del_delayed_order ON public.fleet_deliveries USING btree (order_id) WHERE ((delivery_status)::text = 'delayed'::text)
+ public  | fleet_deliveries                  | idx_del_driver                         | 696 kB  | CREATE INDEX idx_del_driver ON public.fleet_deliveries USING btree (driver_id)
+ public  | fleet_deliveries                  | idx_del_driver_covering                | 7280 kB | CREATE INDEX idx_del_driver_covering ON public.fleet_deliveries USING btree (driver_id, delivery_status) INCLUDE (order_id, eta_variation_hours)
+ public  | fleet_deliveries                  | idx_del_order                          | 7368 kB | CREATE INDEX idx_del_order ON public.fleet_deliveries USING btree (order_id)
+ public  | fleet_deliveries                  | idx_del_pickup                         | 2472 kB | CREATE INDEX idx_del_pickup ON public.fleet_deliveries USING btree (pickup_date)
+ public  | fleet_deliveries                  | idx_del_state                          | 664 kB  | CREATE INDEX idx_del_state ON public.fleet_deliveries USING btree (route_state)
+ public  | fleet_deliveries                  | idx_del_state_pickup                   | 4064 kB | CREATE INDEX idx_del_state_pickup ON public.fleet_deliveries USING btree (route_state, pickup_date)
+ public  | fleet_deliveries                  | idx_del_status                         | 624 kB  | CREATE INDEX idx_del_status ON public.fleet_deliveries USING btree (delivery_status)
+ public  | fleet_deliveries                  | idx_del_traffic                        | 2520 kB | CREATE INDEX idx_del_traffic ON public.fleet_deliveries USING btree (traffic_congestion_level)
+ public  | fleet_deliveries                  | idx_del_traffic_status                 | 4600 kB | CREATE INDEX idx_del_traffic_status ON public.fleet_deliveries USING btree (traffic_congestion_level, delivery_status) INCLUDE (eta_variation_hours, weather_condition_severity)
+ public  | fleet_deliveries                  | idx_del_vehicle                        | 776 kB  | CREATE INDEX idx_del_vehicle ON public.fleet_deliveries USING btree (vehicle_id)
+ public  | fleet_deliveries                  | idx_del_vehicle_metrics                | 4472 kB | CREATE INDEX idx_del_vehicle_metrics ON public.fleet_deliveries USING btree (vehicle_id, delivery_status) INCLUDE (eta_variation_hours, distance_km)
+ public  | fleet_deliveries                  | idx_del_vehicle_status                 | 6904 kB | CREATE INDEX idx_del_vehicle_status ON public.fleet_deliveries USING btree (vehicle_id, delivery_status) INCLUDE (eta_variation_hours, route_risk_level, driver_id, distance_km, traffic_congestion_level, weather_condition_severity)
+ public  | fleet_deliveries                  | idx_del_weather                        | 2536 kB | CREATE INDEX idx_del_weather ON public.fleet_deliveries USING btree (weather_condition_severity)
+ public  | fleet_drivers                     | fleet_drivers_pkey                     | 16 kB   | CREATE UNIQUE INDEX fleet_drivers_pkey ON public.fleet_drivers USING btree (driver_id)
+ public  | fleet_drivers                     | idx_drv_region                         | 16 kB   | CREATE INDEX idx_drv_region ON public.fleet_drivers USING btree (region_assigned)
+ public  | fleet_drivers                     | idx_drv_vehicle                        | 16 kB   | CREATE INDEX idx_drv_vehicle ON public.fleet_drivers USING btree (vehicle_id)
+ public  | fleet_incidents                   | fleet_incidents_pkey                   | 96 kB   | CREATE UNIQUE INDEX fleet_incidents_pkey ON public.fleet_incidents USING btree (incident_id)
+ public  | fleet_incidents                   | idx_inc_date                           | 72 kB   | CREATE INDEX idx_inc_date ON public.fleet_incidents USING btree (date)
+ public  | fleet_incidents                   | idx_inc_order                          | 312 kB  | CREATE INDEX idx_inc_order ON public.fleet_incidents USING btree (order_id) WHERE (order_id IS NOT NULL)
+ public  | fleet_incidents                   | idx_inc_type                           | 48 kB   | CREATE INDEX idx_inc_type ON public.fleet_incidents USING btree (type)
+ public  | fleet_incidents                   | idx_inc_type_covering                  | 344 kB  | CREATE INDEX idx_inc_type_covering ON public.fleet_incidents USING btree (type, vehicle_id) INCLUDE (impact_on_delivery_h, disruption_likelihood, order_id)
+ public  | fleet_incidents                   | idx_inc_vehicle                        | 56 kB   | CREATE INDEX idx_inc_vehicle ON public.fleet_incidents USING btree (vehicle_id)
+ public  | fleet_maintenance                 | fleet_maintenance_pkey                 | 32 kB   | CREATE UNIQUE INDEX fleet_maintenance_pkey ON public.fleet_maintenance USING btree (maintenance_id)
+ public  | fleet_maintenance                 | idx_mnt_date                           | 16 kB   | CREATE INDEX idx_mnt_date ON public.fleet_maintenance USING btree (date)
+ public  | fleet_maintenance                 | idx_mnt_month_type                     | 16 kB   | CREATE INDEX idx_mnt_month_type ON public.fleet_maintenance USING btree (((EXTRACT(month FROM date))::integer), type)
+ public  | fleet_maintenance                 | idx_mnt_type                           | 16 kB   | CREATE INDEX idx_mnt_type ON public.fleet_maintenance USING btree (type)
+ public  | fleet_maintenance                 | idx_mnt_vehicle                        | 16 kB   | CREATE INDEX idx_mnt_vehicle ON public.fleet_maintenance USING btree (vehicle_id)
+ public  | fleet_maintenance                 | idx_mnt_vehicle_type_covering          | 56 kB   | CREATE INDEX idx_mnt_vehicle_type_covering ON public.fleet_maintenance USING btree (vehicle_id, type) INCLUDE (cost_brl, downtime_hours)
+ public  | fleet_maintenance                 | idx_mnt_year_month_type                | 56 kB   | CREATE INDEX idx_mnt_year_month_type ON public.fleet_maintenance USING btree (((EXTRACT(year FROM date))::integer), ((EXTRACT(month FROM date))::integer), type) INCLUDE (cost_brl, downtime_hours)
+ public  | fleet_vehicles                    | fleet_vehicles_pkey                    | 16 kB   | CREATE UNIQUE INDEX fleet_vehicles_pkey ON public.fleet_vehicles USING btree (vehicle_id)
+ public  | fleet_vehicles                    | fleet_vehicles_plate_key               | 16 kB   | CREATE UNIQUE INDEX fleet_vehicles_plate_key ON public.fleet_vehicles USING btree (plate)
+ public  | fleet_vehicles                    | idx_veh_status                         | 16 kB   | CREATE INDEX idx_veh_status ON public.fleet_vehicles USING btree (status)
+ public  | fleet_vehicles                    | idx_veh_type                           | 16 kB   | CREATE INDEX idx_veh_type ON public.fleet_vehicles USING btree (type)
+ public  | olist_customers                   | idx_cust_id_state                      | 5760 kB | CREATE INDEX idx_cust_id_state ON public.olist_customers USING btree (customer_id, customer_state)
+ public  | olist_customers                   | idx_cust_state                         | 728 kB  | CREATE INDEX idx_cust_state ON public.olist_customers USING btree (customer_state)
+ public  | olist_customers                   | idx_cust_uid                           | 7416 kB | CREATE INDEX idx_cust_uid ON public.olist_customers USING btree (customer_unique_id)
+ public  | olist_customers                   | idx_cust_zip                           | 1312 kB | CREATE INDEX idx_cust_zip ON public.olist_customers USING btree (customer_zip_code_prefix)
+ public  | olist_customers                   | olist_customers_pkey                   | 7672 kB | CREATE UNIQUE INDEX olist_customers_pkey ON public.olist_customers USING btree (customer_id)
+ public  | olist_geolocation                 | idx_geo_state                          | 6432 kB | CREATE INDEX idx_geo_state ON public.olist_geolocation USING btree (geolocation_state)
+ public  | olist_geolocation                 | idx_geo_zip                            | 9384 kB | CREATE INDEX idx_geo_zip ON public.olist_geolocation USING btree (geolocation_zip_code_prefix)
+ public  | olist_order_items                 | idx_items_order_analytical             | 16 MB   | CREATE INDEX idx_items_order_analytical ON public.olist_order_items USING btree (order_id) INCLUDE (product_id, seller_id, freight_value, price)
+ public  | olist_order_items                 | idx_items_product                      | 3384 kB | CREATE INDEX idx_items_product ON public.olist_order_items USING btree (product_id)
+ public  | olist_order_items                 | idx_items_seller                       | 1336 kB | CREATE INDEX idx_items_seller ON public.olist_order_items USING btree (seller_id)
+ public  | olist_order_items                 | olist_order_items_pkey                 | 6512 kB | CREATE UNIQUE INDEX olist_order_items_pkey ON public.olist_order_items USING btree (order_id, order_item_id)
+ public  | olist_order_payments              | idx_pay_type                           | 696 kB  | CREATE INDEX idx_pay_type ON public.olist_order_payments USING btree (payment_type)
+ public  | olist_order_payments              | olist_order_payments_pkey              | 7904 kB | CREATE UNIQUE INDEX olist_order_payments_pkey ON public.olist_order_payments USING btree (order_id, payment_sequential)
+ public  | olist_order_reviews               | idx_rev_order                          | 7792 kB | CREATE INDEX idx_rev_order ON public.olist_order_reviews USING btree (order_id)
+ public  | olist_order_reviews               | idx_rev_order_score                    | 5744 kB | CREATE INDEX idx_rev_order_score ON public.olist_order_reviews USING btree (order_id) INCLUDE (review_score)
+ public  | olist_order_reviews               | idx_rev_review_id                      | 7704 kB | CREATE INDEX idx_rev_review_id ON public.olist_order_reviews USING btree (review_id)
+ public  | olist_order_reviews               | idx_rev_score                          | 648 kB  | CREATE INDEX idx_rev_score ON public.olist_order_reviews USING btree (review_score)
+ public  | olist_order_reviews               | olist_order_reviews_pkey               | 2184 kB | CREATE UNIQUE INDEX olist_order_reviews_pkey ON public.olist_order_reviews USING btree (review_pk)
+ public  | olist_orders                      | idx_ord_customer                       | 7704 kB | CREATE INDEX idx_ord_customer ON public.olist_orders USING btree (customer_id)
+ public  | olist_orders                      | idx_ord_delivered                      | 2456 kB | CREATE INDEX idx_ord_delivered ON public.olist_orders USING btree (order_delivered_customer_date)
+ public  | olist_orders                      | idx_ord_delivered_only                 | 7368 kB | CREATE INDEX idx_ord_delivered_only ON public.olist_orders USING btree (order_id) WHERE ((order_status)::text = 'delivered'::text)
+ public  | olist_orders                      | idx_ord_purchase                       | 2600 kB | CREATE INDEX idx_ord_purchase ON public.olist_orders USING btree (order_purchase_timestamp)
+ public  | olist_orders                      | idx_ord_status                         | 656 kB  | CREATE INDEX idx_ord_status ON public.olist_orders USING btree (order_status)
+ public  | olist_orders                      | idx_ord_status_covering                | 9856 kB | CREATE INDEX idx_ord_status_covering ON public.olist_orders USING btree (order_status) INCLUDE (order_id, customer_id) WHERE ((order_status)::text = 'delivered'::text)
+ public  | olist_orders                      | idx_ord_year_month_status              | 7520 kB | CREATE INDEX idx_ord_year_month_status ON public.olist_orders USING btree (((EXTRACT(year FROM order_purchase_timestamp))::integer), ((EXTRACT(month FROM order_purchase_timestamp))::integer), order_status) INCLUDE (order_id)
+ public  | olist_orders                      | olist_orders_pkey                      | 7680 kB | CREATE UNIQUE INDEX olist_orders_pkey ON public.olist_orders USING btree (order_id)
+ public  | olist_products                    | idx_prod_category                      | 320 kB  | CREATE INDEX idx_prod_category ON public.olist_products USING btree (product_category_name)
+ public  | olist_products                    | idx_prod_weight                        | 400 kB  | CREATE INDEX idx_prod_weight ON public.olist_products USING btree (product_weight_g)
+ public  | olist_products                    | olist_products_pkey                    | 2520 kB | CREATE UNIQUE INDEX olist_products_pkey ON public.olist_products USING btree (product_id)
+ public  | olist_sellers                     | idx_sel_state                          | 40 kB   | CREATE INDEX idx_sel_state ON public.olist_sellers USING btree (seller_state)
+ public  | olist_sellers                     | idx_sel_zip                            | 88 kB   | CREATE INDEX idx_sel_zip ON public.olist_sellers USING btree (seller_zip_code_prefix)
+ public  | olist_sellers                     | olist_sellers_pkey                     | 256 kB  | CREATE UNIQUE INDEX olist_sellers_pkey ON public.olist_sellers USING btree (seller_id)
+ public  | product_category_name_translation | product_category_name_translation_pkey | 16 kB   | CREATE UNIQUE INDEX product_category_name_translation_pkey ON public.product_category_name_translation USING btree (product_category_name)
+(70 rows)
+
+ olist_orders_total | olist_orders_indices | fleet_deliveries_total | fleet_deliveries_indices 
+--------------------+----------------------+------------------------+--------------------------
+ 59 MB              | 45 MB                | 81 MB                  | 66 MB
+(1 row)
+

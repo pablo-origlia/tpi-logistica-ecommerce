@@ -1,60 +1,54 @@
 SET
 SET
-                                                                                                                                                                                                                                                                                                                                                                                     QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                                      
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Sort  (cost=17426.33..17426.73 rows=161 width=176) (actual time=172.207..172.212 rows=33.00 loops=1)
-   Output: ((EXTRACT(year FROM m.date))::integer), ((EXTRACT(month FROM m.date))::integer), (to_char((to_date((((EXTRACT(month FROM m.date))::integer))::text, 'MM'::text))::timestamp with time zone, 'Month'::text)), (count(*) FILTER (WHERE ((m.type)::text = 'correctivo'::text))), (count(*) FILTER (WHERE ((m.type)::text = 'preventivo'::text))), (count(*)), (round(avg(m.cost_brl) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 2)), (round(avg(m.downtime_hours) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 1)), (count(*)), (count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text))), (round((((count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)))::numeric * 100.0) / (NULLIF(count(*), 0))::numeric), 1))
-   Sort Key: ((EXTRACT(year FROM m.date))::integer), ((EXTRACT(month FROM m.date))::integer)
-   Sort Method: quicksort  Memory: 28kB
-   Buffers: shared hit=3523, temp read=718 written=718
-   I/O Timings: temp read=3.286 write=8.320
-   ->  Hash Right Join  (cost=12718.76..17420.43 rows=161 width=176) (actual time=171.998..172.174 rows=33.00 loops=1)
-         Output: ((EXTRACT(year FROM m.date))::integer), ((EXTRACT(month FROM m.date))::integer), to_char((to_date((((EXTRACT(month FROM m.date))::integer))::text, 'MM'::text))::timestamp with time zone, 'Month'::text), (count(*) FILTER (WHERE ((m.type)::text = 'correctivo'::text))), (count(*) FILTER (WHERE ((m.type)::text = 'preventivo'::text))), (count(*)), (round(avg(m.cost_brl) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 2)), (round(avg(m.downtime_hours) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 1)), (count(*)), (count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text))), (round((((count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)))::numeric * 100.0) / (NULLIF(count(*), 0))::numeric), 1))
-         Inner Unique: true
-         Hash Cond: ((((EXTRACT(year FROM o.order_purchase_timestamp))::integer) = ((EXTRACT(year FROM m.date))::integer)) AND (((EXTRACT(month FROM o.order_purchase_timestamp))::integer) = ((EXTRACT(month FROM m.date))::integer)))
-         Buffers: shared hit=3520, temp read=718 written=718
-         I/O Timings: temp read=3.286 write=8.320
-         ->  HashAggregate  (cost=12674.97..15948.35 rows=93525 width=56) (actual time=171.207..171.351 rows=23.00 loops=1)
-               Output: ((EXTRACT(year FROM o.order_purchase_timestamp))::integer), ((EXTRACT(month FROM o.order_purchase_timestamp))::integer), count(*), count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)), round((((count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)))::numeric * 100.0) / (NULLIF(count(*), 0))::numeric), 1)
-               Group Key: (EXTRACT(year FROM o.order_purchase_timestamp))::integer, (EXTRACT(month FROM o.order_purchase_timestamp))::integer
-               Batches: 1  Memory Usage: 1057kB
-               Buffers: shared hit=3512, temp read=718 written=718
-               I/O Timings: temp read=3.286 write=8.320
-               ->  Hash Join  (cost=4690.57..11505.91 rows=93525 width=16) (actual time=45.952..153.615 rows=96470.00 loops=1)
-                     Output: (EXTRACT(year FROM o.order_purchase_timestamp))::integer, (EXTRACT(month FROM o.order_purchase_timestamp))::integer, fd.delivery_status
-                     Inner Unique: true
-                     Hash Cond: ((o.order_id)::text = (fd.order_id)::text)
-                     Buffers: shared hit=3512, temp read=718 written=718
-                     I/O Timings: temp read=3.286 write=8.320
-                     ->  Seq Scan on public.olist_orders o  (cost=0.00..3083.01 rows=96405 width=41) (actual time=0.013..21.058 rows=96478.00 loops=1)
-                           Output: o.order_purchase_timestamp, o.order_id
-                           Filter: ((o.order_status)::text = 'delivered'::text)
-                           Rows Removed by Filter: 2963
-                           Buffers: shared hit=1840
-                     ->  Hash  (cost=2636.70..2636.70 rows=96470 width=41) (actual time=45.652..45.653 rows=96470.00 loops=1)
-                           Output: fd.delivery_status, fd.order_id
-                           Buckets: 131072  Batches: 2  Memory Usage: 4469kB
-                           Buffers: shared hit=1672, temp written=358
-                           I/O Timings: temp write=4.316
-                           ->  Seq Scan on public.fleet_deliveries fd  (cost=0.00..2636.70 rows=96470 width=41) (actual time=0.013..19.555 rows=96470.00 loops=1)
-                                 Output: fd.delivery_status, fd.order_id
-                                 Buffers: shared hit=1672
-         ->  Hash  (cost=42.75..42.75 rows=69 width=96) (actual time=0.527..0.528 rows=33.00 loops=1)
-               Output: ((EXTRACT(year FROM m.date))::integer), ((EXTRACT(month FROM m.date))::integer), (count(*) FILTER (WHERE ((m.type)::text = 'correctivo'::text))), (count(*) FILTER (WHERE ((m.type)::text = 'preventivo'::text))), (count(*)), (round(avg(m.cost_brl) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 2)), (round(avg(m.downtime_hours) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 1))
-               Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                                                                                                                                                                                                                                                                                                                                                                                                 QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                                                                                  
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Hash Right Join  (cost=20553.00..27467.88 rows=164 width=240) (actual time=228.117..228.238 rows=33.00 loops=1)
+   Output: ((EXTRACT(year FROM m.date))::integer), ((EXTRACT(month FROM m.date))::integer), to_char((to_date((((EXTRACT(month FROM m.date))::integer))::text, 'MM'::text))::timestamp with time zone, 'Month'::text), (count(*) FILTER (WHERE ((m.type)::text = 'correctivo'::text))), (count(*) FILTER (WHERE ((m.type)::text = 'preventivo'::text))), (count(*)), (round(avg(m.cost_brl) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 2)), (round(avg(m.downtime_hours) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 1)), (count(*)), (count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text))), (round((((count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)))::numeric * 100.0) / (NULLIF(count(*), 0))::numeric), 1)), (round(avg(fd.traffic_congestion_level), 2)), (round(avg(fd.weather_condition_severity), 3))
+   Inner Unique: true
+   Hash Cond: ((((EXTRACT(year FROM o.order_purchase_timestamp))::integer) = ((EXTRACT(year FROM m.date))::integer)) AND (((EXTRACT(month FROM o.order_purchase_timestamp))::integer) = ((EXTRACT(month FROM m.date))::integer)))
+   Buffers: shared hit=3712, temp read=784 written=784
+   I/O Timings: temp read=4.207 write=10.912
+   ->  HashAggregate  (cost=20508.70..25995.40 rows=93515 width=120) (actual time=226.758..226.836 rows=23.00 loops=1)
+         Output: ((EXTRACT(year FROM o.order_purchase_timestamp))::integer), ((EXTRACT(month FROM o.order_purchase_timestamp))::integer), count(*), count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)), round((((count(*) FILTER (WHERE ((fd.delivery_status)::text = 'delayed'::text)))::numeric * 100.0) / (NULLIF(count(*), 0))::numeric), 1), round(avg(fd.traffic_congestion_level), 2), round(avg(fd.weather_condition_severity), 3)
+         Group Key: (EXTRACT(year FROM o.order_purchase_timestamp))::integer, (EXTRACT(month FROM o.order_purchase_timestamp))::integer
+         Planned Partitions: 8  Batches: 1  Memory Usage: 297kB
+         Buffers: shared hit=3704, temp read=784 written=784
+         I/O Timings: temp read=4.207 write=10.912
+         ->  Hash Join  (cost=4977.57..11887.79 rows=93515 width=26) (actual time=59.397..194.798 rows=96470.00 loops=1)
+               Output: (EXTRACT(year FROM o.order_purchase_timestamp))::integer, (EXTRACT(month FROM o.order_purchase_timestamp))::integer, fd.delivery_status, fd.traffic_congestion_level, fd.weather_condition_severity
+               Inner Unique: true
+               Hash Cond: ((o.order_id)::text = (fd.order_id)::text)
+               Buffers: shared hit=3704, temp read=784 written=784
+               I/O Timings: temp read=4.207 write=10.912
+               ->  Seq Scan on public.olist_orders o  (cost=0.00..3083.01 rows=96395 width=41) (actual time=0.039..26.654 rows=96478.00 loops=1)
+                     Output: o.order_purchase_timestamp, o.order_id
+                     Filter: ((o.order_status)::text = 'delivered'::text)
+                     Rows Removed by Filter: 2963
+                     Buffers: shared hit=1840
+               ->  Hash  (cost=2828.70..2828.70 rows=96470 width=51) (actual time=58.734..58.735 rows=96470.00 loops=1)
+                     Output: fd.delivery_status, fd.traffic_congestion_level, fd.weather_condition_severity, fd.order_id
+                     Buckets: 131072  Batches: 2  Memory Usage: 5000kB
+                     Buffers: shared hit=1864, temp written=424
+                     I/O Timings: temp write=6.120
+                     ->  Seq Scan on public.fleet_deliveries fd  (cost=0.00..2828.70 rows=96470 width=51) (actual time=0.040..25.038 rows=96470.00 loops=1)
+                           Output: fd.delivery_status, fd.traffic_congestion_level, fd.weather_condition_severity, fd.order_id
+                           Buffers: shared hit=1864
+   ->  Hash  (cost=43.26..43.26 rows=70 width=96) (actual time=1.003..1.004 rows=33.00 loops=1)
+         Output: ((EXTRACT(year FROM m.date))::integer), ((EXTRACT(month FROM m.date))::integer), (count(*) FILTER (WHERE ((m.type)::text = 'correctivo'::text))), (count(*) FILTER (WHERE ((m.type)::text = 'preventivo'::text))), (count(*)), (round(avg(m.cost_brl) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 2)), (round(avg(m.downtime_hours) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 1))
+         Buckets: 1024  Batches: 1  Memory Usage: 11kB
+         Buffers: shared hit=8
+         ->  HashAggregate  (cost=41.16..43.26 rows=70 width=96) (actual time=0.904..0.963 rows=33.00 loops=1)
+               Output: ((EXTRACT(year FROM m.date))::integer), ((EXTRACT(month FROM m.date))::integer), count(*) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), count(*) FILTER (WHERE ((m.type)::text = 'preventivo'::text)), count(*), round(avg(m.cost_brl) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 2), round(avg(m.downtime_hours) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 1)
+               Group Key: (EXTRACT(year FROM m.date))::integer, (EXTRACT(month FROM m.date))::integer
+               Batches: 1  Memory Usage: 56kB
                Buffers: shared hit=8
-               ->  HashAggregate  (cost=40.68..42.75 rows=69 width=96) (actual time=0.491..0.517 rows=33.00 loops=1)
-                     Output: ((EXTRACT(year FROM m.date))::integer), ((EXTRACT(month FROM m.date))::integer), count(*) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), count(*) FILTER (WHERE ((m.type)::text = 'preventivo'::text)), count(*), round(avg(m.cost_brl) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 2), round(avg(m.downtime_hours) FILTER (WHERE ((m.type)::text = 'correctivo'::text)), 1)
-                     Group Key: (EXTRACT(year FROM m.date))::integer, (EXTRACT(month FROM m.date))::integer
-                     Batches: 1  Memory Usage: 56kB
+               ->  Seq Scan on public.fleet_maintenance m  (cost=0.00..21.96 rows=698 width=31) (actual time=0.060..0.495 rows=698.00 loops=1)
+                     Output: (EXTRACT(year FROM m.date))::integer, (EXTRACT(month FROM m.date))::integer, m.type, m.cost_brl, m.downtime_hours
                      Buffers: shared hit=8
-                     ->  Seq Scan on public.fleet_maintenance m  (cost=0.00..21.76 rows=688 width=31) (actual time=0.030..0.278 rows=688.00 loops=1)
-                           Output: (EXTRACT(year FROM m.date))::integer, (EXTRACT(month FROM m.date))::integer, m.type, m.cost_brl, m.downtime_hours
-                           Buffers: shared hit=8
  Planning:
-   Buffers: shared hit=800 read=6 dirtied=1
-   I/O Timings: shared read=0.112
- Planning Time: 15.011 ms
- Execution Time: 173.399 ms
-(54 rows)
+   Buffers: shared hit=890 read=2
+   I/O Timings: shared read=0.102
+ Planning Time: 27.916 ms
+ Execution Time: 229.433 ms
+(48 rows)
 

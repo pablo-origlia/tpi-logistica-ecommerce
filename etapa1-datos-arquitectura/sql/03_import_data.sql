@@ -216,7 +216,9 @@ COPY fleet_deliveries (
     delivery_status,
     eta_variation_hours,
     loading_unloading_time_h,
-    route_risk_level
+    route_risk_level,
+    traffic_congestion_level,
+    weather_condition_severity
 )
 FROM :'file_del'
 WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
@@ -258,28 +260,170 @@ WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8',
 SELECT setval('fleet_incidents_incident_id_seq', MAX(incident_id)) FROM fleet_incidents;
 
 -- =============================================================
--- VERIFICACION FINAL — ejecutar siempre despues del import
+-- DATA AUDIT — verificacion post-import
 -- =============================================================
-SELECT
-    relname                          AS tabla,
-    n_live_tup                       AS filas_estimadas
-FROM pg_stat_user_tables
-WHERE schemaname = 'public'
-ORDER BY relname;
+-- Actualizar estadisticas antes de consultar pg_stat
+ANALYZE;
 
--- Control de FK critica: todas las ordenes 'delivered' tienen entrega registrada
+-- -------------------------------------------------------------
+-- 1. VOLUMENES EXACTOS POR TABLA
+-- (COUNT(*) real, no estimacion de pg_stat_user_tables)
+-- -------------------------------------------------------------
+SELECT tabla, filas_reales, filas_esperadas,
+    CASE WHEN filas_reales = filas_esperadas THEN 'OK'
+         WHEN filas_reales > 0              THEN 'REVISAR'
+         ELSE                                    'ERROR: tabla vacia'
+    END AS resultado
+FROM (
+    VALUES
+    ('olist_geolocation',                (SELECT COUNT(*) FROM olist_geolocation),                1000163),
+    ('olist_customers',                  (SELECT COUNT(*) FROM olist_customers),                     99441),
+    ('olist_sellers',                    (SELECT COUNT(*) FROM olist_sellers),                        3095),
+    ('olist_products',                   (SELECT COUNT(*) FROM olist_products),                      32952),
+    ('product_category_name_translation',(SELECT COUNT(*) FROM product_category_name_translation),     71),
+    ('olist_orders',                     (SELECT COUNT(*) FROM olist_orders),                        99441),
+    ('olist_order_items',                (SELECT COUNT(*) FROM olist_order_items),                  112650),
+    ('olist_order_reviews',              (SELECT COUNT(*) FROM olist_order_reviews),                 99224),
+    ('olist_order_payments',             (SELECT COUNT(*) FROM olist_order_payments),               103886),
+    ('fleet_vehicles',                   (SELECT COUNT(*) FROM fleet_vehicles),                         60),
+    ('fleet_drivers',                    (SELECT COUNT(*) FROM fleet_drivers),                          40),
+    ('fleet_deliveries',                 (SELECT COUNT(*) FROM fleet_deliveries),                    96470),
+    ('fleet_maintenance',                (SELECT COUNT(*) FROM fleet_maintenance),                     698),
+    ('fleet_incidents',                  (SELECT COUNT(*) FROM fleet_incidents),                       3612)
+) AS t(tabla, filas_reales, filas_esperadas)
+ORDER BY tabla;
+
+-- -------------------------------------------------------------
+-- 2. SECUENCIAS SERIAL — verificar sincronizacion post-COPY
+-- -------------------------------------------------------------
+-- Un setval() incorrecto generaria conflicto de PK en el primer
+-- INSERT posterior al import.
 SELECT
-    COUNT(*)                         AS ordenes_delivered_sin_entrega_en_flota
+    seq.sequencename                AS secuencia,
+    seq.last_value                  AS ultimo_valor,
+    maximos.max_id                  AS max_id_en_tabla,
+    CASE WHEN seq.last_value = maximos.max_id
+         THEN 'OK' ELSE 'ERROR: secuencia desincronizada' END AS resultado
+FROM pg_sequences seq
+JOIN (
+    VALUES
+    ('fleet_vehicles_vehicle_id_seq',  (SELECT MAX(vehicle_id)    FROM fleet_vehicles)),
+    ('fleet_drivers_driver_id_seq',    (SELECT MAX(driver_id)     FROM fleet_drivers)),
+    ('fleet_deliveries_delivery_id_seq',(SELECT MAX(delivery_id)  FROM fleet_deliveries)),
+    ('fleet_maintenance_maintenance_id_seq',(SELECT MAX(maintenance_id) FROM fleet_maintenance)),
+    ('fleet_incidents_incident_id_seq',(SELECT MAX(incident_id)   FROM fleet_incidents))
+) AS maximos(nombre, max_id)
+  ON seq.sequencename = maximos.nombre
+WHERE seq.schemaname = 'public'
+ORDER BY seq.sequencename;
+
+-- -------------------------------------------------------------
+-- 3. INTEGRIDAD REFERENCIAL CRITICA
+-- -------------------------------------------------------------
+-- 3a. Ordenes delivered sin entrega en flota
+--     Resultado esperado: 8 (ordenes con delivery_date=NULL en Olist)
+SELECT
+    COUNT(*)                        AS ordenes_delivered_sin_flota,
+    8                               AS esperado_documentado,
+    CASE WHEN COUNT(*) = 8
+         THEN 'OK (bug conocido de Olist)'
+         WHEN COUNT(*) = 0
+         THEN 'OK (cero diferencias)'
+         ELSE 'REVISAR: valor inesperado' END AS resultado
 FROM olist_orders o
 LEFT JOIN fleet_deliveries fd ON fd.order_id = o.order_id
 WHERE o.order_status = 'delivered'
   AND fd.order_id IS NULL;
--- Resultado esperado: 0
 
--- Distribucion de tipos de vehiculo
-SELECT type, COUNT(*) FROM fleet_vehicles GROUP BY type ORDER BY type;
+-- 3b. Items de flota sin orden en Olist (debe ser 0)
+SELECT
+    COUNT(*)                        AS entregas_sin_orden_olist,
+    0                               AS esperado,
+    CASE WHEN COUNT(*) = 0
+         THEN 'OK' ELSE 'ERROR: FK rota' END AS resultado
+FROM fleet_deliveries fd
+LEFT JOIN olist_orders o ON o.order_id = fd.order_id
+WHERE o.order_id IS NULL;
+
+-- -------------------------------------------------------------
+-- 4. RANGOS DE COLUMNAS NUEVAS EN FLEET_DELIVERIES
+-- -------------------------------------------------------------
+SELECT
+    'traffic_congestion_level'      AS columna,
+    ROUND(MIN(traffic_congestion_level)::NUMERIC, 2)  AS minimo,
+    ROUND(AVG(traffic_congestion_level)::NUMERIC, 2)  AS promedio,
+    ROUND(MAX(traffic_congestion_level)::NUMERIC, 2)  AS maximo,
+    COUNT(*) FILTER (WHERE traffic_congestion_level NOT BETWEEN 0 AND 10) AS fuera_rango,
+    CASE WHEN COUNT(*) FILTER (WHERE traffic_congestion_level NOT BETWEEN 0 AND 10) = 0
+         THEN 'OK' ELSE 'ERROR: valores fuera del rango 0-10' END AS resultado
+FROM fleet_deliveries
+UNION ALL
+SELECT
+    'weather_condition_severity',
+    ROUND(MIN(weather_condition_severity)::NUMERIC, 3),
+    ROUND(AVG(weather_condition_severity)::NUMERIC, 3),
+    ROUND(MAX(weather_condition_severity)::NUMERIC, 3),
+    COUNT(*) FILTER (WHERE weather_condition_severity NOT BETWEEN 0 AND 1),
+    CASE WHEN COUNT(*) FILTER (WHERE weather_condition_severity NOT BETWEEN 0 AND 1) = 0
+         THEN 'OK' ELSE 'ERROR: valores fuera del rango 0-1' END
+FROM fleet_deliveries;
+
+-- -------------------------------------------------------------
+-- 5. DISTRIBUCION DE VEHICULOS Y DELIVERY STATUS
+-- -------------------------------------------------------------
+SELECT type AS tipo_vehiculo, COUNT(*) AS cantidad FROM fleet_vehicles
+GROUP BY type ORDER BY type;
 -- Esperado: moto=25, van=25, truck=10
 
--- Distribucion de delivery_status
-SELECT delivery_status, COUNT(*), ROUND(COUNT(*)*100.0/SUM(COUNT(*)) OVER(),1) AS pct
-FROM fleet_deliveries GROUP BY delivery_status;
+SELECT
+    delivery_status,
+    COUNT(*)                                            AS entregas,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1)  AS pct
+FROM fleet_deliveries
+GROUP BY delivery_status;
+-- Esperado: on_time ~75%, delayed ~25%
+
+-- -------------------------------------------------------------
+-- 6. RESUMEN EJECUTIVO — una fila por verificacion clave
+-- -------------------------------------------------------------
+SELECT verificacion, esperado, resultado FROM (
+    VALUES
+    ('olist_orders cargadas', '99441',
+     (SELECT CASE WHEN COUNT(*) = 99441 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT END FROM olist_orders)),
+    ('fleet_deliveries cargadas', '96470',
+     (SELECT CASE WHEN COUNT(*) = 96470 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT END FROM fleet_deliveries)),
+    ('olist_order_items cargadas', '112650',
+     (SELECT CASE WHEN COUNT(*) = 112650 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT END FROM olist_order_items)),
+    ('olist_order_reviews cargadas', '99224',
+     (SELECT CASE WHEN COUNT(*) = 99224 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT END FROM olist_order_reviews)),
+    ('fleet_maintenance cargada', '698',
+     (SELECT CASE WHEN COUNT(*) = 698 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT END FROM fleet_maintenance)),
+    ('fleet_incidents cargados', '3612',
+     (SELECT CASE WHEN COUNT(*) = 3612 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT END FROM fleet_incidents)),
+    ('FK deliveries->orders intacta', '0 huerfanos',
+     (SELECT CASE WHEN COUNT(*) = 0 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT || ' huerfanos' END
+      FROM fleet_deliveries fd
+      LEFT JOIN olist_orders o ON o.order_id = fd.order_id WHERE o.order_id IS NULL)),
+    ('traffic_fuera_rango_0_10', '0',
+     (SELECT CASE WHEN COUNT(*) = 0 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT END
+      FROM fleet_deliveries WHERE traffic_congestion_level NOT BETWEEN 0 AND 10)),
+    ('weather_fuera_rango_0_1', '0',
+     (SELECT CASE WHEN COUNT(*) = 0 THEN 'OK'
+                  ELSE 'ERROR: ' || COUNT(*)::TEXT END
+      FROM fleet_deliveries WHERE weather_condition_severity NOT BETWEEN 0 AND 1)),
+    ('secuencia_fleet_deliveries', 'max=96470',
+     (SELECT CASE WHEN last_value = (SELECT MAX(delivery_id) FROM fleet_deliveries)
+                  THEN 'OK' ELSE 'ERROR: last_value=' || last_value::TEXT END
+      FROM pg_sequences WHERE sequencename='fleet_deliveries_delivery_id_seq'))
+) AS t(verificacion, esperado, resultado)
+ORDER BY
+    CASE WHEN resultado LIKE 'ERROR%' THEN 0 ELSE 1 END,  -- errores primero
+    verificacion;
