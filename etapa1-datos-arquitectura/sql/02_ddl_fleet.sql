@@ -9,14 +9,14 @@ SET client_encoding = 'UTF8';
 --   fleet_deliveries.order_id → olist_orders.order_id
 --   fleet_deliveries.vehicle_id → fleet_vehicles.vehicle_id
 --   fleet_deliveries.driver_id  → fleet_drivers.driver_id
---   fleet_incidents.order_id    → fleet_deliveries.order_id (nullable)
+--   fleet_incidents.order_id    → olist_orders.order_id (nullable)
 --
 -- Orden de creación:
 --   1. fleet_vehicles   (sin FK entrante)
 --   2. fleet_drivers    (FK → fleet_vehicles)
 --   3. fleet_deliveries (FK → olist_orders, fleet_vehicles, fleet_drivers)
 --   4. fleet_maintenance(FK → fleet_vehicles)
---   5. fleet_incidents  (FK → fleet_vehicles, fleet_deliveries)
+--   5. fleet_incidents  (FK → fleet_vehicles, olist_orders)
 -- =============================================================
 
 DROP TABLE IF EXISTS fleet_incidents   CASCADE;
@@ -27,7 +27,7 @@ DROP TABLE IF EXISTS fleet_vehicles    CASCADE;
 
 -- -------------------------------------------------------------
 -- 1. fleet_vehicles
---    60 vehículos del catalogo sintético
+--    100 vehículos del catálogo sintético (95 activos, 5 de baja)
 -- -------------------------------------------------------------
 CREATE TABLE fleet_vehicles (
     vehicle_id                  SERIAL        PRIMARY KEY,
@@ -37,7 +37,7 @@ CREATE TABLE fleet_vehicles (
     brand                       VARCHAR(50)   NOT NULL,
     model                       VARCHAR(50)   NOT NULL,
     year                        SMALLINT      NOT NULL
-        CONSTRAINT chk_veh_year CHECK (year BETWEEN 2010 AND 2017),
+        CONSTRAINT chk_veh_year CHECK (year BETWEEN 2010 AND 2016),
     capacity_kg                 SMALLINT      NOT NULL
         CONSTRAINT chk_veh_cap CHECK (capacity_kg > 0),
     fuel_type                   VARCHAR(20)   NOT NULL
@@ -54,7 +54,7 @@ CREATE INDEX idx_veh_type   ON fleet_vehicles (type);
 CREATE INDEX idx_veh_status ON fleet_vehicles (status);
 
 COMMENT ON TABLE fleet_vehicles IS
-    'Catalogo de 60 vehículos de la flota sintética. '
+    'Catalogo de 100 vehículos de la flota sintética (95 activos, 5 de baja; las bajas no reciben entregas). '
     'Tipo determina capacidad: moto=30kg, van=500kg, truck=5000kg. '
     'Formato de patente: DENATRAN 2016-2018 (AAA-9999).';
 COMMENT ON COLUMN fleet_vehicles.fuel_consumption_rate_lh IS
@@ -63,18 +63,17 @@ COMMENT ON COLUMN fleet_vehicles.fuel_consumption_rate_lh IS
 
 -- -------------------------------------------------------------
 -- 2. fleet_drivers
---    40 conductores asignados por region
+--    95 conductores, 1 por vehículo activo (fleet_drivers.vehicle_id único en los datos)
 -- -------------------------------------------------------------
 CREATE TABLE fleet_drivers (
     driver_id              SERIAL        PRIMARY KEY,
     name                   VARCHAR(100)  NOT NULL,
     license_type           CHAR(1)       NOT NULL
         CONSTRAINT chk_drv_license CHECK (license_type IN ('A', 'B', 'C', 'E')),
-        -- A = moto, B = van, C = truck rigido, E = articulado (CNH DETRAN)
-        -- Nota: el script genera 'E' para trucks (license_map original).
-        -- La correccion a 'C' aplica desde v1.1 en adelante.
+        -- A = moto, B = van, E = truck (CNH DETRAN). 'C' (camión rígido) queda permitido pero no se usa.
+        -- La licencia es coherente con el tipo del vehículo asignado al conductor.
     hire_date              DATE          NOT NULL
-        CONSTRAINT chk_drv_hire CHECK (hire_date BETWEEN '2010-01-01' AND '2016-12-31'),
+        CONSTRAINT chk_drv_hire CHECK (hire_date BETWEEN '2010-01-01' AND '2016-08-31'),   -- anterior al inicio de Olist
     region_assigned        CHAR(2)       NOT NULL
         CONSTRAINT chk_drv_region CHECK (region_assigned IN (
             'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA',
@@ -94,14 +93,16 @@ CREATE INDEX idx_drv_vehicle ON fleet_drivers (vehicle_id);
 
 COMMENT ON TABLE fleet_drivers IS
     'Conductores sintéticos con nombres brasileños. '
-    'region_assigned coincide con seller_state de Olist (criterio de asignación). '
-    'Scores calibrados desde dynamic_supply_chain_logistics_dataset.csv.';
+    'Un conductor por vehículo activo; la licencia habilita el tipo de vehículo. '
+    'region_assigned = estado de reparto (customer_state de destino). '
+    'Los scores provienen de las distribuciones de dynamic_supply_chain_logistics_dataset.csv y sesgan '
+    'la asignación de entregas tardías (ver generate_fleet_dataset.py).';
 COMMENT ON COLUMN fleet_drivers.driver_behavior_score IS
     '0 = comportamiento peligroso, 1 = comportamiento óptimo. '
-    'Fuente: distribución real de driver_behavior_score del dataset Kaggle.';
+    'Marginal del dataset Kaggle (driver_behavior_score).';
 COMMENT ON COLUMN fleet_drivers.fatigue_score_avg IS
     '0 = fatiga extrema, 1 = sin fatiga. '
-    'Fuente: distribución real de fatigue_monitoring_score del dataset Kaggle.';
+    'Marginal del dataset Kaggle (fatigue_monitoring_score).';
 
 -- -------------------------------------------------------------
 -- 3. fleet_deliveries
@@ -122,21 +123,20 @@ CREATE TABLE fleet_deliveries (
     carrier_pickup_date      TIMESTAMP,                 -- = order_delivered_carrier_date
     delivery_date            TIMESTAMP,                 -- = order_delivered_customer_date
 
-    -- Metricas del trayecto (calibradas desde el dataset Kaggle)
+    -- Métricas del trayecto: derivadas de datos reales de Olist o simuladas (ver COMMENT de cada columna)
     distance_km              NUMERIC(8,1)   NOT NULL
-        CONSTRAINT chk_del_dist CHECK (distance_km BETWEEN 5 AND 2500),
+        CONSTRAINT chk_del_dist CHECK (distance_km BETWEEN 5 AND 6000),
     route_state              CHAR(2)        NOT NULL,   -- estado de origen = seller_state
     delivery_status          VARCHAR(10)    NOT NULL
         CONSTRAINT chk_del_status CHECK (delivery_status IN ('on_time', 'delayed')),
-    eta_variation_hours      NUMERIC(6,2)   NOT NULL,   -- positivo = demora, negativo = adelanto
+    eta_variation_hours      NUMERIC(6,2)   NOT NULL,   -- positivo = más lento que lo esperado
     loading_unloading_time_h NUMERIC(5,2)   NOT NULL
         CONSTRAINT chk_del_lut CHECK (loading_unloading_time_h >= 0),
     route_risk_level         NUMERIC(4,2)   NOT NULL
         CONSTRAINT chk_del_risk CHECK (route_risk_level BETWEEN 0 AND 10),
 
-    -- Predictores externos de demora — calibrados desde el dataset Kaggle
-    -- (datasetengineer, Logistics and Supply Chain Dataset, California 2021-2024)
-    -- Incorporados en Etapa 1 como predictores del Modelo 1 (regresion de eta_variation_hours)
+    -- Covariables operativas simuladas: marginales del dataset Kaggle (Logistics and Supply Chain),
+    -- condicionadas a señales reales de Olist (ver generate_fleet_dataset.py)
     traffic_congestion_level   NUMERIC(4,2)   NOT NULL
         CONSTRAINT chk_del_traffic CHECK (traffic_congestion_level BETWEEN 0 AND 10),
     weather_condition_severity NUMERIC(4,3)   NOT NULL
@@ -158,7 +158,7 @@ CREATE INDEX idx_del_pickup   ON fleet_deliveries (pickup_date);
 -- Indice compuesto para consultas de analisis por periodo y estado
 CREATE INDEX idx_del_state_pickup ON fleet_deliveries (route_state, pickup_date);
 
--- Indices para los predictores externos de demora (Q1 y Q3)
+-- Índices de tráfico y clima (Q1 y Q3)
 CREATE INDEX idx_del_traffic ON fleet_deliveries (traffic_congestion_level);
 CREATE INDEX idx_del_weather ON fleet_deliveries (weather_condition_severity);
 
@@ -167,31 +167,28 @@ COMMENT ON TABLE fleet_deliveries IS
     'Una fila por orden entregada (order_status = ''delivered'' en olist_orders). '
     'Clave de integración: fleet_deliveries.order_id = olist_orders.order_id.';
 COMMENT ON COLUMN fleet_deliveries.distance_km IS
-    'Estimada como proxy: shipping_costs (BRL) / 3.0. '
-    'Coeficiente empírico ANTT 2017: mediana ~$456 BRL ≈ 152 km inter-estado. '
-    'Rango forzado: 5–2500 km.';
+    'Derivada de datos reales: distancia haversine vendedor→cliente (centroides de zip de Olist) '
+    'por un factor de ruta de 1,15 a 1,35. Rango forzado: 5–6000 km.';
 COMMENT ON COLUMN fleet_deliveries.eta_variation_hours IS
-    'Variable objetivo para el Modelo 1 (regresión). '
-    'Calibrada desde eta_variation_hours del dataset Kaggle. '
-    'Positivo = demora respecto al ETA estimado. Negativo = adelanto.';
+    'Derivada de fechas reales: horas de tránsito (despacho→cliente) menos las esperadas (mediana por estado '
+    'de destino y quintil de distancia). Positivo = más lento que lo esperado. Acotada a [-168, 336] h '
+    '(los valores en los límites están censurados): no usar como variable objetivo.';
 COMMENT ON COLUMN fleet_deliveries.delivery_status IS
-    'Variable objetivo para el Modelo 2 (clasificacion). '
-    'Umbral: percentil 60 de delay_probability del dataset Kaggle.';
+    'Derivada de fechas reales: delayed si la entrega superó la fecha prometida de Olist '
+    '(equivale a demora_olist).';
 COMMENT ON COLUMN fleet_deliveries.traffic_congestion_level IS
     'Nivel de congestion de trafico en la ruta durante el envio (escala 0-10). '
-    'Calibrado desde traffic_congestion_level del dataset Kaggle (datasetengineer). '
-    'Predictor del Modelo 1 (regresion de eta_variation_hours). '
-    'Permite Q1: comparar congestion promedio en entregas demoradas vs a tiempo.';
+    'Simulada: marginal de Kaggle condicionada a la demora real, el residuo de tránsito, la carga mensual y la '
+    'urbanización del destino. Su asociación con la demora está impuesta por el generador. Usada en Q1 y Q3.';
 COMMENT ON COLUMN fleet_deliveries.weather_condition_severity IS
     'Severidad de condiciones climaticas durante el envio (escala 0-1). '
-    'Calibrado desde weather_condition_severity del dataset Kaggle (datasetengineer). '
-    'Predictor independiente del Modelo 1. '
-    'Permite analizar impacto climatico sobre eta_variation_hours.';
+    'Simulada: marginal de Kaggle condicionada a la demora real, el residuo de tránsito y la estación lluviosa '
+    'de la macrorregión. Su asociación con la demora está impuesta por el generador. Usada en Q1 y Q3.';
 
 -- -------------------------------------------------------------
 -- 4. fleet_maintenance
---    ~720 registros — historial de mantenimientos por vehículo
---    8–15 eventos por vehículo a lo largo de 2016–2018
+--    ~800 registros — historial de mantenimientos por vehículo, generado a partir del uso real
+--    (km acumulados por las entregas) entre 2016-09 y 2018-10
 -- -------------------------------------------------------------
 CREATE TABLE fleet_maintenance (
     maintenance_id      SERIAL        PRIMARY KEY,
@@ -220,17 +217,17 @@ CREATE INDEX idx_mnt_month_type ON fleet_maintenance (
 );
 
 COMMENT ON TABLE fleet_maintenance IS
-    'Historial de mantenimientos. Patron estacional: mayor probabilidad de '
-    'mantenimiento correctivo en nov–dic (×1.5) y ene–feb (×1.2), '
-    'coherente con picos de demanda del e-commerce en Olist.';
+    'Historial de mantenimientos generado a partir del uso real (km acumulados por las entregas). '
+    'Preventivo por km o cada 6 meses; correctivo con hazard creciente en edad, uso y km desde el último preventivo. '
+    'La estacionalidad emerge del volumen de órdenes (no está hardcodeada).';
 COMMENT ON COLUMN fleet_maintenance.component IS
     'Componente intervenido: aceite_motor, frenos, motor, transmision, '
     'suspension, sistema_electrico, neumaticos, etc.';
 
 -- -------------------------------------------------------------
 -- 5. fleet_incidents
---    ~15% del subconjunto de ordenes demoradas
---    Registra causas operativas de demoras
+--    ~3,7% de las entregas (más probables en órdenes tardías)
+--    Registra causas operativas de las demoras
 -- -------------------------------------------------------------
 CREATE TABLE fleet_incidents (
     incident_id             SERIAL        PRIMARY KEY,
@@ -246,14 +243,13 @@ CREATE TABLE fleet_incidents (
             'falla_mecanica_menor',
             'accidente'
         )),
-        -- Valores sin tildes: coinciden exactamente con los generados
-        -- por generate_fleet_dataset.py (incident_types, L472-473)
+        -- Valores sin tildes, iguales a los que genera generate_fleet_dataset.py
     disruption_likelihood   NUMERIC(4,3)  NOT NULL
         CONSTRAINT chk_inc_disrup CHECK (disruption_likelihood BETWEEN 0 AND 1),
     impact_on_delivery_h    NUMERIC(6,2)  NOT NULL
         CONSTRAINT chk_inc_impact CHECK (impact_on_delivery_h >= 0),
-        -- retraso_trafico: 1–6h | condicion_climatica: 2–12h
-        -- averia: 4–24h | falla_mecanica_menor: 1–8h | accidente: 8–48h
+        -- retraso_trafico: 1–6h | condicion_climatica: 2–12h | averia: 4–24h
+        -- falla_mecanica_menor: 1–4h | accidente: 8–48h (a la mitad en entregas puntuales)
     order_id                VARCHAR(40)
         REFERENCES olist_orders (order_id)   -- nullable: no toda demora tiene incidente
 );
@@ -264,13 +260,12 @@ CREATE INDEX idx_inc_type    ON fleet_incidents (type);
 CREATE INDEX idx_inc_order   ON fleet_incidents (order_id) WHERE order_id IS NOT NULL;
 
 COMMENT ON TABLE fleet_incidents IS
-    'Incidentes logísticos que causaron demoras. '
-    'Representa el 15% del subconjunto de ordenes con delivery_status = ''delayed''. '
+    'Incidentes logísticos (~3,7% de las entregas). Probabilidad creciente con la demora real, tráfico, clima, '
+    'riesgo, edad del vehículo y días desde el último mantenimiento (cubre ~15-25% de las órdenes tardías). '
     'order_id nullable: un incidente puede afectar una entrega sin estar '
     'asociado a una orden especifica (ej. avería en deposito).';
 COMMENT ON COLUMN fleet_incidents.disruption_likelihood IS
-    'Probabilidad de disrupción calculada por el sistema de monitoreo. '
-    'Calibrada desde disruption_likelihood_score del dataset Kaggle.';
+    'Probabilidad de disrupción. Marginal de disruption_likelihood_score del dataset Kaggle, asociada al impacto.';
 
 -- =============================================================
 -- DDL AUDIT — verificacion de estructura del schema de flota
@@ -292,9 +287,9 @@ WHERE table_schema = 'public'
     'fleet_maintenance','fleet_incidents'
   );
 
--- 2. Columnas nuevas en fleet_deliveries
+-- 2. Columnas de tráfico y clima en fleet_deliveries
 SELECT
-    COUNT(*)                        AS columnas_nuevas_presentes,
+    COUNT(*)                        AS columnas_trafico_clima,
     2                               AS esperado,
     CASE WHEN COUNT(*) = 2
          THEN 'OK' ELSE 'ERROR: faltan columnas de contexto externo' END AS resultado
@@ -302,7 +297,7 @@ FROM information_schema.columns
 WHERE table_name   = 'fleet_deliveries'
   AND column_name IN ('traffic_congestion_level','weather_condition_severity');
 
--- 3. CHECKs de las columnas nuevas
+-- 3. CHECKs de tráfico y clima
 SELECT
     conname                         AS constraint_name,
     pg_get_constraintdef(oid)       AS definicion,
@@ -352,7 +347,7 @@ WHERE idx NOT IN (
 ORDER BY resultado DESC, indice;
 -- Resultado esperado: 21 filas OK, 0 filas ERROR.
 
--- 5. Indices especificos de las columnas nuevas
+-- 5. Índices de tráfico y clima
 SELECT
     indexname                       AS indice,
     CASE WHEN indexname IS NOT NULL

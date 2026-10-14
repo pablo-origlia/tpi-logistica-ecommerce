@@ -1,1 +1,0 @@
-﻿-- Tablas temporales (#) para cÃ¡lculos intermedios del EDA

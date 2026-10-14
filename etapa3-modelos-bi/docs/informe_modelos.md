@@ -1,8 +1,8 @@
-﻿# Informe de modelos
+# Informe de modelos
 
-## TÃ©cnica elegida
-## JustificaciÃ³n
+## Tecnica elegida
+## Justificacion
 ## Variables utilizadas
 ## Resultados
-## EvaluaciÃ³n
+## Evaluacion
 ## Significado para el problema

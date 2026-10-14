@@ -1,1 +1,0 @@
-﻿-- CREATE VIEW para el dataset analÃ­tico (JOIN principal Olist + flota)

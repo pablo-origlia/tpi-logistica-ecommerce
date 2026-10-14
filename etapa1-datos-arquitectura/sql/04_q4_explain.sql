@@ -1,9 +1,7 @@
 SET client_encoding = 'UTF8';
 -- 04_q4_explain.sql
 -- Q4: Tipos de incidente: impacto en horas y cobertura
--- Ejecutar: psql -U postgres -d olist_logistics_db -f 04_q4_explain.sql
---   SIN indices: > ..\performance\explain_sin_indices\q4_sin_idx.txt
---   CON indices: > ..\performance\explain_con_indices\q4_con_idx.txt
+-- Ejecutado por run_pipeline.ps1: sin y con los indices de 05_indices.sql.
 -- ============================================================
 
 SET track_io_timing = on;

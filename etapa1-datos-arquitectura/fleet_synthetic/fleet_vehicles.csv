@@ -1,61 +1,101 @@
 vehicle_id,plate,type,brand,model,year,capacity_kg,fuel_type,fuel_consumption_rate_lh,status
-1,APW-3454,van,Fiat,Master,2016,500,diesel,6.19,activo
-2,CAC-9110,van,Renault,Master,2015,500,diesel,7.9,activo
-3,MSG-8408,moto,Yamaha,Burgman 125,2016,30,flex,2.42,activo
-4,GMO-4242,van,Ford,Ducato,2016,500,flex,6.84,baja
-5,FLL-6450,moto,Suzuki,Burgman 125,2012,30,flex,3.85,activo
-6,AAY-2306,van,Fiat,Kombi,2015,500,flex,7.89,activo
-7,EAS-1663,van,Fiat,Kombi,2016,500,gas_natural,6.57,activo
-8,TQQ-7585,van,Renault,Master,2010,500,gas_natural,4.81,activo
-9,AAS-6249,moto,Yamaha,Burgman 125,2010,30,flex,2.64,activo
-10,DWK-5218,van,Ford,Master,2016,500,flex,6.3,activo
-11,PAI-5282,moto,Honda,Factor 150,2015,30,flex,4.76,activo
-12,DSZ-2986,van,Renault,Master,2012,500,gas_natural,5.91,activo
-13,RHA-2802,van,Volkswagen,Master,2010,500,flex,5.23,activo
-14,JCG-7287,moto,Suzuki,Burgman 125,2015,30,gasolina,5.19,activo
-15,IIC-3255,moto,Honda,Factor 150,2010,30,gasolina,3.54,activo
-16,TKQ-6539,truck,Ford Cargo,Accelo 1016,2017,5000,diesel_b10,12.22,activo
-17,VCP-1956,moto,Suzuki,Factor 150,2010,30,flex,3.43,activo
-18,PTX-7015,moto,Honda,Factor 150,2014,30,gasolina,1.65,activo
-19,WVN-2693,van,Renault,Ducato,2017,500,gas_natural,6.1,activo
-20,BUA-8022,moto,Yamaha,Burgman 125,2012,30,flex,2.24,activo
-21,QLN-4444,moto,Honda,Burgman 125,2013,30,gasolina,3.26,activo
-22,QNU-1606,van,Fiat,Master,2014,500,gas_natural,6.23,activo
-23,CRY-6854,moto,Suzuki,CG 160,2014,30,gasolina,2.43,baja
-24,OVW-4009,van,Ford,Master,2011,500,flex,5.37,activo
-25,PGJ-3806,van,Ford,Ducato,2017,500,flex,7.8,activo
-26,YDM-3368,moto,Honda,Factor 150,2016,30,flex,4.55,activo
-27,BWV-5146,truck,Scania,Cargo 1119,2012,5000,diesel,9.74,activo
-28,ZVQ-5777,moto,Honda,Factor 150,2011,30,gasolina,1.28,activo
-29,LEG-6315,truck,Ford Cargo,Accelo 1016,2010,5000,diesel_b10,10.52,activo
-30,WHT-7799,truck,Scania,VM 270,2012,5000,diesel_b10,12.21,activo
-31,ZWZ-9932,van,Ford,Kombi,2010,500,flex,4.74,activo
-32,UAZ-1512,moto,Suzuki,CG 160,2013,30,flex,1.0,activo
-33,PGE-8004,van,Ford,Master,2010,500,flex,4.8,activo
-34,VYN-6188,van,Renault,Kombi,2014,500,flex,7.58,activo
-35,PUG-8421,van,Ford,Master,2014,500,flex,5.22,activo
-36,DBT-8390,van,Ford,Transit,2014,500,flex,6.33,baja
-37,XPW-7303,truck,Ford Cargo,Accelo 1016,2017,5000,diesel_b10,9.96,activo
-38,AAS-6732,van,Ford,Kombi,2013,500,diesel,7.0,activo
-39,NBS-9945,moto,Yamaha,Burgman 125,2013,30,flex,2.07,activo
-40,JZB-9306,truck,Ford Cargo,Accelo 1016,2011,5000,diesel,10.32,activo
-41,DJE-3504,truck,Mercedes-Benz,P 310,2014,5000,diesel,11.79,activo
-42,RQG-3143,truck,Volvo,Cargo 1119,2013,5000,diesel,11.12,baja
-43,CIQ-9787,truck,Mercedes-Benz,Cargo 1119,2010,5000,diesel_b10,12.68,activo
-44,DLI-9082,moto,Suzuki,Burgman 125,2010,30,flex,4.3,activo
-45,PUE-8266,moto,Yamaha,Burgman 125,2017,30,flex,1.49,activo
-46,PYG-3156,moto,Honda,CG 160,2016,30,gasolina,1.0,baja
-47,KKR-5846,moto,Yamaha,Burgman 125,2011,30,flex,4.45,activo
-48,FGN-2191,truck,Ford Cargo,Accelo 1016,2014,5000,diesel,11.03,activo
-49,HPM-2365,moto,Yamaha,Factor 150,2014,30,gasolina,1.18,baja
-50,DFS-7588,van,Fiat,Ducato,2013,500,flex,6.51,activo
-51,MRZ-7619,van,Ford,Transit,2012,500,diesel,6.39,activo
-52,MYQ-8576,moto,Suzuki,CG 160,2012,30,gasolina,1.92,activo
-53,OUP-6348,van,Ford,Transit,2013,500,flex,6.47,activo
-54,IQN-4486,moto,Honda,Factor 150,2016,30,gasolina,3.7,activo
-55,XUH-7819,moto,Suzuki,Burgman 125,2010,30,flex,3.02,activo
-56,DVQ-6320,moto,Yamaha,CG 160,2010,30,flex,2.44,activo
-57,EOY-1009,van,Renault,Master,2014,500,gas_natural,6.25,activo
-58,XAV-3193,van,Fiat,Ducato,2016,500,gas_natural,7.24,activo
-59,QMA-2633,moto,Honda,Factor 150,2016,30,flex,4.68,activo
-60,FQE-6989,van,Fiat,Master,2016,500,gas_natural,5.93,activo
+1,UND-8556,moto,Yamaha,Factor 150,2012,30,gasolina,2.91,activo
+2,KVO-4990,moto,Yamaha,CG 160,2010,30,flex,4.94,activo
+3,OHQ-2486,moto,Suzuki,Burgman 125,2012,30,gasolina,6.14,activo
+4,RUT-2751,moto,Yamaha,Factor 150,2013,30,flex,3.2,activo
+5,BXT-4299,moto,Suzuki,Factor 150,2012,30,flex,2.19,activo
+6,UEM-2169,moto,Suzuki,Factor 150,2012,30,flex,2.13,activo
+7,FEV-6667,moto,Suzuki,CG 160,2012,30,gasolina,4.6,activo
+8,VKX-3594,moto,Honda,Burgman 125,2014,30,flex,2.0,activo
+9,DUU-8022,moto,Yamaha,Factor 150,2014,30,gasolina,2.17,activo
+10,NOA-2258,moto,Honda,CG 160,2013,30,flex,2.48,activo
+11,RCT-6170,moto,Yamaha,Factor 150,2013,30,flex,2.02,activo
+12,PAJ-4930,moto,Suzuki,CG 160,2011,30,gasolina,2.01,activo
+13,KVB-8700,moto,Honda,Burgman 125,2012,30,flex,2.45,activo
+14,NUZ-6978,moto,Yamaha,Factor 150,2012,30,flex,2.0,activo
+15,VCC-7943,moto,Suzuki,Burgman 125,2013,30,flex,2.26,activo
+16,YDM-7266,moto,Yamaha,Factor 150,2011,30,flex,2.82,activo
+17,JPJ-9636,moto,Honda,Factor 150,2010,30,gasolina,6.43,activo
+18,MSL-3392,moto,Suzuki,Burgman 125,2011,30,gasolina,2.15,activo
+19,UTH-1713,moto,Honda,Factor 150,2016,30,flex,2.0,activo
+20,SHV-6212,moto,Yamaha,CG 160,2013,30,gasolina,3.53,activo
+21,WRL-3777,moto,Yamaha,CG 160,2014,30,flex,2.0,activo
+22,TKU-1374,moto,Honda,Factor 150,2011,30,flex,2.0,activo
+23,IEP-8140,moto,Honda,CG 160,2016,30,flex,2.04,activo
+24,PPH-1205,van,Fiat,Master,2012,500,diesel,4.0,activo
+25,MHM-7039,van,Ford,Transit,2016,500,diesel,4.39,activo
+26,UGY-3983,van,Volkswagen,Kombi,2015,500,flex,9.85,activo
+27,LAX-5884,van,Fiat,Transit,2013,500,flex,6.23,activo
+28,DHG-6934,van,Volkswagen,Kombi,2016,500,flex,13.13,activo
+29,TZF-3127,van,Fiat,Ducato,2013,500,flex,9.94,activo
+30,LVZ-3853,van,Fiat,Master,2014,500,diesel,4.02,activo
+31,HZY-2626,van,Fiat,Kombi,2010,500,flex,15.84,activo
+32,DXC-7736,van,Renault,Master,2011,500,diesel,4.05,activo
+33,XAU-4019,van,Volkswagen,Transit,2012,500,flex,7.66,activo
+34,JGA-9430,van,Renault,Ducato,2010,500,gas_natural,4.0,activo
+35,DTE-4304,van,Volkswagen,Kombi,2016,500,flex,4.05,activo
+36,ZUI-9745,van,Ford,Kombi,2013,500,flex,4.01,activo
+37,DHD-1161,van,Volkswagen,Master,2010,500,diesel,6.6,activo
+38,TPK-2797,van,Renault,Master,2010,500,diesel,4.0,activo
+39,SLD-6104,van,Renault,Ducato,2012,500,flex,4.46,activo
+40,NRI-9599,van,Volkswagen,Transit,2016,500,flex,4.88,activo
+41,YDQ-8566,van,Fiat,Kombi,2010,500,flex,15.0,activo
+42,EPE-9396,van,Volkswagen,Master,2013,500,diesel,4.0,activo
+43,MRC-3591,van,Renault,Transit,2015,500,flex,4.69,activo
+44,TPY-8808,van,Renault,Kombi,2012,500,flex,4.23,activo
+45,KCQ-9662,van,Renault,Transit,2013,500,flex,4.01,activo
+46,ZTV-8348,van,Renault,Ducato,2016,500,diesel,4.0,activo
+47,BEV-3868,van,Ford,Master,2011,500,gas_natural,4.0,activo
+48,EHP-2382,van,Ford,Ducato,2013,500,flex,4.0,activo
+49,AVB-4862,van,Volkswagen,Kombi,2014,500,flex,4.05,activo
+50,ZNT-8874,van,Renault,Master,2013,500,flex,4.01,activo
+51,BFG-6782,van,Volkswagen,Master,2012,500,flex,4.12,activo
+52,YNX-1914,van,Fiat,Master,2010,500,gas_natural,4.0,activo
+53,BVV-8205,van,Renault,Ducato,2016,500,gas_natural,8.49,activo
+54,QQQ-8010,van,Volkswagen,Ducato,2015,500,diesel,10.92,activo
+55,NVM-8056,van,Ford,Kombi,2014,500,flex,4.0,activo
+56,LME-4751,van,Volkswagen,Ducato,2012,500,flex,4.06,activo
+57,JLJ-2646,van,Volkswagen,Ducato,2012,500,gas_natural,13.14,activo
+58,WMU-3954,van,Ford,Kombi,2016,500,diesel,9.19,activo
+59,WON-7895,van,Volkswagen,Ducato,2012,500,diesel,4.01,activo
+60,PSN-8745,van,Renault,Ducato,2016,500,flex,7.2,activo
+61,PPC-5708,van,Renault,Kombi,2010,500,gas_natural,9.08,activo
+62,KPL-8042,van,Renault,Master,2016,500,flex,5.2,activo
+63,YBC-5684,van,Volkswagen,Ducato,2011,500,diesel,5.03,activo
+64,MMR-5703,van,Volkswagen,Master,2016,500,flex,5.3,activo
+65,UDY-8604,van,Fiat,Master,2010,500,flex,6.0,activo
+66,SKX-7968,van,Fiat,Kombi,2015,500,gas_natural,8.04,activo
+67,IQH-8156,van,Ford,Kombi,2012,500,flex,4.0,activo
+68,CYO-4940,van,Volkswagen,Transit,2010,500,diesel,13.9,activo
+69,SJU-6513,van,Ford,Ducato,2012,500,gas_natural,7.03,activo
+70,WYL-2066,van,Ford,Master,2016,500,flex,5.19,activo
+71,QAR-5900,van,Fiat,Ducato,2013,500,gas_natural,4.04,activo
+72,ZLI-4980,van,Fiat,Transit,2013,500,diesel,4.0,activo
+73,XKZ-1397,van,Renault,Kombi,2011,500,gas_natural,4.0,activo
+74,RZA-6990,truck,Mercedes-Benz,VM 270,2014,5000,diesel_b10,7.0,activo
+75,CGG-5079,truck,Mercedes-Benz,Cargo 1119,2015,5000,diesel,22.65,activo
+76,HRX-1325,truck,Mercedes-Benz,Accelo 1016,2011,5000,diesel,15.92,activo
+77,BZG-3589,truck,Ford Cargo,Accelo 1016,2010,5000,diesel_b10,23.77,activo
+78,DUV-7282,truck,Ford Cargo,Cargo 1119,2013,5000,diesel,7.0,activo
+79,BSN-5858,truck,Volvo,VM 270,2014,5000,diesel_b10,7.0,activo
+80,VTB-2737,truck,Mercedes-Benz,P 310,2010,5000,diesel_b10,9.51,activo
+81,SNB-1631,truck,Volvo,Accelo 1016,2010,5000,diesel_b10,12.03,activo
+82,KEJ-1825,truck,Ford Cargo,Accelo 1016,2012,5000,diesel,15.09,activo
+83,ZGQ-8853,truck,Volvo,P 310,2011,5000,diesel_b10,7.07,activo
+84,KPN-7297,truck,Scania,VM 270,2013,5000,diesel,7.97,activo
+85,YRK-9222,truck,Scania,Accelo 1016,2010,5000,diesel,7.05,activo
+86,CHP-4850,truck,Ford Cargo,VM 270,2012,5000,diesel,7.33,activo
+87,QVF-9541,truck,Volvo,VM 270,2012,5000,diesel,7.37,activo
+88,MMD-3030,truck,Mercedes-Benz,VM 270,2012,5000,diesel_b10,10.25,activo
+89,OPQ-6549,truck,Scania,Accelo 1016,2015,5000,diesel,7.43,activo
+90,NQN-4245,truck,Ford Cargo,VM 270,2015,5000,diesel_b10,23.31,activo
+91,TWN-7599,truck,Volvo,P 310,2015,5000,diesel,17.86,activo
+92,JMB-2042,truck,Mercedes-Benz,Accelo 1016,2016,5000,diesel,7.05,activo
+93,VOI-5387,truck,Mercedes-Benz,VM 270,2012,5000,diesel_b10,7.0,activo
+94,LVS-8708,truck,Scania,P 310,2014,5000,diesel,7.0,activo
+95,DNJ-5515,truck,Ford Cargo,Accelo 1016,2016,5000,diesel_b10,7.08,activo
+96,URD-7347,van,Renault,Transit,2016,500,flex,4.01,baja
+97,QTN-5200,van,Fiat,Kombi,2011,500,gas_natural,15.76,baja
+98,YOF-8550,truck,Ford Cargo,Cargo 1119,2014,5000,diesel,7.27,baja
+99,DIC-8518,van,Renault,Ducato,2013,500,flex,4.0,baja
+100,HEG-9163,moto,Suzuki,CG 160,2014,30,flex,2.23,baja

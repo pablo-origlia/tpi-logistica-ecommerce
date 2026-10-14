@@ -1,332 +1,325 @@
-# Propuesta de Datasets — TPI Análisis de Datos Masivos
+# Propuesta del proyecto — Optimización de la cadena logística de última milla
 
-*Asignatura: Análisis de Datos Masivos — Maestría en Ciencias de Datos, UCASAL 2026*  
-*Estado: Etapa 1 completada — corrida `20261010_185629`, v1.3, SEED=42*
+*Asignatura: Análisis de Datos Masivos — Maestría en Ciencias de Datos, UCASAL 2026*
 
----
-
-## 1. Introducción
-
-El TPI recorre el ciclo completo **BBDD → Consultas → Preparación → Análisis → Indicadores → Visualización → Interpretación → Decisión** a lo largo de cuatro etapas. Se trabaja sobre el dominio **logística de última milla en e-commerce**, combinando dos fuentes:
-
-1. **Olist Brazilian E-Commerce Dataset** ([Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)) — ~100.000 órdenes reales, 9 tablas relacionales, 2016–2018, licencia CC BY-NC-SA 4.0.
-2. **Dataset de flota logística sintético calibrado** — 5 tablas generadas con `generate_fleet_dataset.py` v1.3, vinculadas a Olist vía `order_id`, calibradas con distribuciones reales del dataset `dynamic_supply_chain_logistics_dataset.csv` ([Kaggle](https://www.kaggle.com/datasets/datasetengineer/logistics-and-supply-chain-dataset)).
+Este documento define el problema, las fuentes de datos, la estructura de la base, las preguntas analíticas, los indicadores y el plan de trabajo del TPI. El proyecto recorre el ciclo **BBDD → Consultas → Preparación → Análisis → Indicadores → Visualización → Interpretación → Decisión** a lo largo de cuatro etapas.
 
 ---
 
-## 2. Problema central
+## 1. Problema, contexto y usuarios
 
-**"Optimización de la cadena logística de última milla: análisis del impacto de las condiciones operativas de la flota (tipo de vehículo, comportamiento del conductor, incidentes en ruta, condiciones de tráfico y clima, mantenimiento) sobre los tiempos de entrega y la satisfacción del cliente en un operador de e-commerce brasileño."**
+**Problema.** *Optimización de la cadena logística de última milla: análisis del impacto de las condiciones operativas de la flota (tipo de vehículo, comportamiento del conductor, incidentes en ruta, tráfico, clima y mantenimiento) sobre los tiempos de entrega y la satisfacción del cliente en un operador de e-commerce brasileño.*
 
-El dataset de Olist expone el *resultado* de la logística (si la orden llegó a tiempo y la reseña del cliente). El dataset de flota expone las *causas* operativas. La combinación permite pasar de análisis descriptivo de síntomas a análisis **causal y prescriptivo**:
+**Contexto.** En el e-commerce, la última milla (del centro de distribución al cliente) concentra buena parte del costo logístico y define la experiencia de compra. Las órdenes de Olist, un marketplace brasileño, permiten observar el *resultado* de la logística (si cada orden llegó antes o después de la fecha prometida y qué reseña dejó el cliente). Los datos de flota aportan variables operativas candidatas a explicar ese resultado.
 
-- `fleet_deliveries` vincula cada orden con el vehículo, conductor, distancia, estado de la entrega, nivel de congestionamiento y severidad climática.
-- `fleet_maintenance` permite analizar si el historial de mantenimiento correctivo se correlaciona con entregas demoradas posteriores.
-- `fleet_incidents` documenta las causas operativas de las demoras (avería, tráfico, clima, accidente).
-- `eta_variation_hours` en `fleet_deliveries` es la variable objetivo para el Modelo 1 de regresión.
+**Usuarios de la información y decisiones que se mejoran**
+
+| Usuario | Decisiones |
+|---|---|
+| Gerencia de operaciones logísticas | Dónde reforzar capacidad y cómo prometer plazos por destino y época del año |
+| Jefatura de flota y mantenimiento | Plan de mantenimiento preventivo; asignación de vehículos y conductores |
+| Calidad y atención al cliente | Anticipar y mitigar las entregas tardías que deterioran la satisfacción |
+
+**Tipo de análisis.** Descriptivo (qué ocurre y dónde), predictivo (tiempo de entrega y probabilidad de demora) y prescriptivo (priorización de destinos y rutas con mayor demora real y volumen).
 
 ---
 
-## 3. Fuente 1: Olist Brazilian E-Commerce Dataset
+## 2. Fuentes de datos y caracterización
 
-**Link:** https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce  
-**Licencia:** CC BY-NC-SA 4.0 | **Período:** 2016–2018 | **Volumen:** ~100.000 órdenes, 9 tablas
+### 2.1 Fuentes
 
-### Tablas y campos clave
+| Fuente | Origen | Naturaleza | Volumen |
+|---|---|---|---|
+| **Olist Brazilian E-Commerce** | [Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), CC BY-NC-SA 4.0 | Datos reales, anonimizados, 2016–2018 | 9 tablas, ~1,55 millones de filas |
+| **Flota logística sintética** | Generada con `scripts/generate_fleet_dataset.py` | Derivada de datos reales de Olist o simulada condicionada a ellos | 5 tablas, ~101.000 filas |
+| **Logistics and Supply Chain** | [Kaggle](https://www.kaggle.com/datasets/datasetengineer/logistics-and-supply-chain-dataset) | Datos de telemetría logística; solo aporta las distribuciones marginales de las variables simuladas | 1 archivo CSV |
+
+**Clave de vinculación entre fuentes:** `olist_orders.order_id` = `fleet_deliveries.order_id`.
+
+### 2.2 Caracterización por tipo de dato
+
+| Tipo | Datos | Dónde | Tratamiento |
+|---|---|---|---|
+| **Estructurados** | Las 14 tablas relacionales: órdenes, ítems, clientes, vendedores, productos, pagos, coordenadas y flota (numéricos, categóricos, fechas y coordenadas) | PostgreSQL | Consultas SQL, vistas y dataset analítico |
+| **No estructurados** | Texto libre de las reseñas (`review_comment_title` y `review_comment_message`, en portugués). 40.977 de las 99.224 reseñas tienen mensaje | `olist_order_reviews` | Se conserva en la base; el análisis usa solo la puntuación y la indicación de si hay comentario. Queda abierta la posibilidad de un análisis de sentimiento |
+| **Semiestructurados** | No hay en las fuentes (sin JSON, XML ni registros de eventos) | — | — |
+
+### 2.3 Qué es real y qué es simulado
+
+| Variable | Naturaleza |
+|---|---|
+| Fechas de compra, despacho, entrega y promesa; estados; pesos; precios y fletes; reseñas; pagos | **Real** (Olist) |
+| `fleet_deliveries.delivery_status`, `distance_km`, `eta_variation_hours` | **Derivada de datos reales** (demora de Olist, geografía y tiempos de tránsito) |
+| `traffic_congestion_level`, `weather_condition_severity`, `route_risk_level`, `loading_unloading_time_h` | **Simulada**, condicionada a señales reales |
+| Conductores (`driver_behavior_score`, `fatigue_score_avg`), mantenimientos e incidentes | **Simulada**, condicionada a señales reales y al uso de los vehículos |
+
+> **Advertencia metodológica.** Las asociaciones entre las variables simuladas y la demora real están impuestas por el generador: describen un escenario, no evidencia empírica. Además, al generarse condicionadas al resultado, usarlas como predictores equivale a una fuga de información. Por eso los modelos de la Etapa 3 se evalúan con dos conjuntos de predictores: **A** (variables reales conocidas al comprar) y **B** (A más las variables simuladas), y la mejora de B sobre A se interpreta como consecuencia del diseño.
+
+---
+
+## 3. Fuente 1: Olist Brazilian E-Commerce
+
+### 3.1 Tablas
 
 | Tabla | Registros | Campos clave | Rol en el TPI |
-|---|---|---|---|
-| `olist_orders` | 99.441 | `order_id`, `order_status`, timestamps de entrega y estimado | Tabla central — estado y tiempos |
-| `olist_order_items` | 112.650 | `order_id`, `product_id`, `freight_value`, `price` | Costos de flete y asignación de vehículo por peso |
-| `olist_customers` | 99.441 | `customer_id`, `customer_state` | Geolocalización del cliente |
-| `olist_sellers` | 3.095 | `seller_id`, `seller_state` | Origen del envío — asignación de conductor |
-| `olist_products` | 32.952 | `product_id`, `product_weight_g` | `weight_g` determina tipo de vehículo asignado |
-| `olist_order_reviews` | 99.224 | `order_id`, `review_score`, `review_comment_message` | Satisfacción del cliente |
+|---|---:|---|---|
+| `olist_orders` | 99.441 | `order_id`, `order_status`, fechas de compra, despacho, entrega y promesa | Tabla central: estado y tiempos |
+| `olist_order_items` | 112.650 | `order_id`, `product_id`, `seller_id`, `price`, `freight_value` | Costos de flete; vendedor de origen; peso para asignar el vehículo |
+| `olist_customers` | 99.441 | `customer_id`, `customer_state`, `customer_zip_code_prefix` | Destino del envío |
+| `olist_sellers` | 3.095 | `seller_id`, `seller_state`, `seller_zip_code_prefix` | Origen del envío |
+| `olist_products` | 32.952 | `product_id`, `product_weight_g`, categoría | El peso determina el tipo de vehículo |
+| `olist_order_reviews` | 99.224 | `order_id`, `review_score`, comentario | Satisfacción del cliente |
 | `olist_order_payments` | 103.886 | `order_id`, `payment_type`, `payment_value` | Análisis financiero |
-| `olist_geolocation` | 1.000.163 | lat/lng por prefijo CEP | Coordenadas geográficas de Brasil |
-| `product_category_name_translation` | 71 | Traducción de categorías al inglés | — |
+| `olist_geolocation` | 1.000.163 | prefijo de CEP, latitud, longitud | Distancias geográficas |
+| `product_category_name_translation` | 71 | categoría en portugués e inglés | Traducción de categorías |
 
-### Problemas de calidad identificados (resueltos en Etapa 1)
+### 3.2 Problemas de calidad conocidos del dataset
 
-| Problema | Magnitud | Solución en DDL / Acción Etapa 2 |
+| Problema | Magnitud | Tratamiento |
 |---|---|---|
-| Coordenadas GPS fuera de Brasil | 42 registros (0.003%) | DROP de CHECKs geográficos en DDL; filtrar en notebook de limpieza |
-| Productos con `weight_g = 0` | 4 productos | CHECK `>= 0 OR NULL`; imputar con mediana de categoría en Etapa 2 |
-| `order_items` con producto inexistente | variable | Placeholder `unknown_product_placeholder` en DDL; excluir del dataset analítico |
-| `review_id` duplicados | 814 casos | Nueva PK `review_pk SERIAL`; usar `review_pk` como clave, no `review_id` |
-| Órdenes `delivered` sin `delivery_date` | 8 órdenes | Documentado; excluir del dataset analítico en Etapa 2 |
+| Coordenadas fuera de Brasil | 42 de 1.000.163 (0,004 %) | Sin restricción geográfica en la base; se filtran en la preparación de datos |
+| Productos con peso 0 o nulo | 4 con peso 0 y 3 nulos | La base admite 0 y NULL; se imputa con la mediana de la categoría |
+| `review_id` duplicados | 814 | Clave interna `review_pk`; no se usa `review_id` para unir |
+| Órdenes `delivered` sin fecha de entrega | 8 | Se excluyen del dataset analítico |
+| Ítems que apuntan a productos inexistentes | 0 | La base incluye un producto auxiliar (`unknown_product_placeholder`) para preservar la integridad referencial; ningún ítem lo usa |
 
 ---
 
-## 4. Fuente 2: Dataset de flota logística (sintético calibrado)
+## 4. Fuente 2: flota logística sintética
 
-### Proceso de generación — `generate_fleet_dataset.py` v1.3
+### 4.1 Cómo se genera
 
-El script:
-1. Lee el dataset de telemetría de Kaggle y extrae distribuciones estadísticas reales: `fuel_consumption_rate`, `eta_variation_hours`, `driver_behavior_score`, `fatigue_monitoring_score`, `delay_probability`, `route_risk_level`, `disruption_likelihood_score`, `shipping_costs`, `traffic_congestion_level` (0–10), `weather_condition_severity` (0–1).
-2. Lee las órdenes de Olist con `order_status = 'delivered'` y genera una entrega por orden.
-3. Vincula con Olist usando `order_id` como FK en `fleet_deliveries`.
+`scripts/generate_fleet_dataset.py` produce las cinco tablas a partir de los datos reales de Olist.
 
-**Reproducibilidad — seeds asignados:**
+1. **Se deriva de datos reales lo que existe en Olist:**
+   - `distance_km`: distancia haversine entre el vendedor y el cliente (centroides de código postal de Olist) por un factor de ruta de 1,15 a 1,35.
+   - `delivery_status`: `delayed` si Olist entregó después de la fecha prometida.
+   - `eta_variation_hours`: horas reales de tránsito menos las esperadas para ese estado de destino y quintil de distancia, acotadas a [−168, 336] h.
+2. **Se simula, condicionado a señales reales, lo que no existe en Olist** (tráfico, clima, riesgo de ruta, conductor, incidentes y mantenimiento) con una **cópula gaussiana**: cada variable se construye a partir de señales reales estandarizadas más ruido y se mapea por cuantiles a la distribución empírica de Kaggle, de modo que las marginales son exactamente las de Kaggle y solo cambia la dependencia con la realidad. La fuerza de cada vínculo es un parámetro explícito.
+3. **Estructura coherente.** Hay un conductor por vehículo activo, la licencia habilita el tipo de vehículo, el conductor de la entrega maneja el vehículo de la entrega y los vehículos en baja no reciben entregas. El mantenimiento se genera después de las entregas, a partir de los kilómetros acumulados (preventivo por kilómetros o cada seis meses; correctivo con una probabilidad creciente con la edad, el uso y los kilómetros desde el último preventivo), de modo que su estacionalidad emerge del volumen de órdenes. Los incidentes tienen una probabilidad creciente con la demora real, el tráfico, el clima, el riesgo, la edad del vehículo y los días desde el último mantenimiento.
 
-| Sección | Seed | Propósito |
-|---|---|---|
-| Global | `SEED = 42` | Inicialización general |
-| `fleet_maintenance` | `SEED + 10` | Seed propio para aislarlo de cambios en otras secciones |
-| `traffic_congestion_level` | `SEED + 20` | Seed propio para las dos columnas nuevas |
-| `weather_condition_severity` | `SEED + 21` | Seed propio |
-| `fleet_incidents` sample | `SEED` | vía `random_state=SEED` en pandas |
+**Parámetros de efecto**
 
-**Bugs corregidos durante el desarrollo:**
+| Variable | Pesos de las señales en el latente |
+|---|---|
+| Tráfico | demora 0,25 · residuo de tránsito 0,15 · carga mensual 0,25 · urbanización del destino 0,20 |
+| Clima | demora 0,25 · residuo de tránsito 0,10 · estación lluviosa de la macrorregión 0,40 |
+| Riesgo de ruta | demora 0,30 · distancia 0,25 · lejanía del destino 0,20 |
+| Conductor | `BEHAVIOR_BETA` = 0,4 y `FATIGUE_BETA` = 0,5: sesgan la asignación de las entregas tardías |
+| Incidentes | tasa global 3,7 %; coeficientes: demora 1,6 · tráfico 0,35 · clima 0,30 · riesgo 0,25 · edad 0,20 · días desde el mantenimiento 0,25 |
+| Mantenimiento | probabilidad mensual base de correctivo 0,04 (tope 0,20) |
 
-- **v1.1 → v1.2:** tipos de incidente tenían tildes (`"avería"`) pero el CHECK del DDL los espera sin tildes. Fix: reemplazar todas las strings de datos.
-- **v1.2 → v1.3:** `n_incidents = len(fleet_deliveries) * 0.15` calculaba el 15% del total (14.470) en lugar de las demoradas (3.612). Fix: `len(delayed_deliveries) * 0.15`. Además se agregó `np.random.seed(SEED + 10)` al inicio de la sección de mantenimiento para aislar su seed.
+**Reproducibilidad.** `SEED = 42` con un único generador. El script imprime una validación (dependencia con la realidad, marginales contra Kaggle y coherencia estructural) y la guarda en `fleet_generation_log.txt`.
 
-### Tablas generadas
+### 4.2 Tablas
 
-#### `fleet_vehicles` — 60 vehículos
+#### `fleet_vehicles` — 100 vehículos (95 activos, 5 en baja)
 
 | Campo | Tipo | Descripción |
 |---|---|---|
 | `vehicle_id` | INT | PK |
-| `plate` | VARCHAR | Formato DENATRAN 2016–2018: `AAA-9999` |
-| `type` | VARCHAR | `moto` (25) / `van` (25) / `truck` (10) |
-| `brand`, `model` | VARCHAR | Marcas y modelos reales del mercado brasileño |
-| `year` | INT | 2010–2017 |
-| `capacity_kg` | INT | moto=30 / van=500 / truck=5000 |
-| `fuel_type` | VARCHAR | flex/gasolina (motos), flex/diesel (vans), diesel (trucks) |
-| `fuel_consumption_rate_lh` | FLOAT | Calibrado desde Kaggle, escalado por tipo |
-| `status` | VARCHAR | `activo` (90%) / `baja` (10%) |
+| `plate` | CHAR(8) | Patente `AAA-9999`, única |
+| `type` | VARCHAR | `moto` (24), `van` (53) o `truck` (23), según el mix de pesos de Olist |
+| `brand`, `model` | VARCHAR | Marcas y modelos del mercado brasileño |
+| `year` | SMALLINT | 2010–2016 |
+| `capacity_kg` | SMALLINT | moto 30, van 500, truck 5000 |
+| `fuel_type` | VARCHAR | flex/gasolina (motos), flex/diesel/gas natural (vans), diesel (trucks) |
+| `fuel_consumption_rate_lh` | NUMERIC | Marginal de Kaggle, escalada por tipo |
+| `status` | VARCHAR | `activo` (95) o `baja` (5); las bajas no reciben entregas |
 
-#### `fleet_drivers` — 40 conductores
+#### `fleet_drivers` — 95 conductores (uno por vehículo activo)
 
 | Campo | Tipo | Descripción |
 |---|---|---|
 | `driver_id` | INT | PK |
-| `name` | VARCHAR | Nombres sintéticos brasileños |
-| `license_type` | VARCHAR | A (moto) / B (van) / E (truck) — categorías CNH DETRAN |
-| `hire_date` | DATE | 2010–2016 |
-| `region_assigned` | VARCHAR | Estado de Brasil |
-| `vehicle_id` | INT | FK → `fleet_vehicles` |
-| `driver_behavior_score` | FLOAT | Calibrado desde Kaggle (0–1) |
-| `fatigue_score_avg` | FLOAT | Calibrado desde Kaggle (0–1) |
+| `name` | VARCHAR | Nombre sintético |
+| `license_type` | CHAR(1) | A (moto), B (van) o E (truck), coherente con el vehículo |
+| `hire_date` | DATE | 2010 a 2016-08, anterior al inicio de Olist |
+| `region_assigned` | CHAR(2) | Estado de reparto (estado de destino en el que opera) |
+| `vehicle_id` | INT | FK a `fleet_vehicles`; único en los datos (1:1) |
+| `driver_behavior_score` | NUMERIC | 0 a 1, marginal de Kaggle; sesga la asignación de entregas tardías |
+| `fatigue_score_avg` | NUMERIC | 0 a 1, marginal de Kaggle; sesga la asignación de entregas tardías |
 
-#### `fleet_deliveries` — 96.470 registros (tabla de vinculación central)
+#### `fleet_deliveries` — 96.470 registros (tabla de vinculación)
 
 | Campo | Tipo | Descripción |
 |---|---|---|
 | `delivery_id` | INT | PK |
-| `order_id` | VARCHAR | **FK → `olist_orders`** — clave de vinculación entre fuentes |
-| `vehicle_id` | INT | FK → `fleet_vehicles` — asignado por `product_weight_g` |
-| `driver_id` | INT | FK → `fleet_drivers` — asignado por `seller_state` |
-| `pickup_date` | DATETIME | = `order_purchase_timestamp` de Olist |
-| `carrier_pickup_date` | DATETIME | = `order_delivered_carrier_date` de Olist |
-| `delivery_date` | DATETIME | = `order_delivered_customer_date` de Olist |
-| `distance_km` | FLOAT | Proxy: `shipping_costs / 3.0` (coef. ANTT 2017, rango 5–2500 km) |
-| `route_state` | VARCHAR | Estado de origen (= `seller_state`) |
-| `delivery_status` | VARCHAR | `on_time` / `delayed` — umbral: percentil 60 de `delay_probability` |
-| `eta_variation_hours` | FLOAT | Calibrado desde Kaggle — **variable objetivo Modelo 1** |
-| `loading_unloading_time_h` | FLOAT | Calibrado desde Kaggle |
-| `route_risk_level` | FLOAT | Calibrado desde Kaggle (0–10) |
-| `traffic_congestion_level` | NUMERIC | Calibrado desde Kaggle (0–10), seed SEED+20 |
-| `weather_condition_severity` | NUMERIC | Calibrado desde Kaggle (0–1), seed SEED+21 |
+| `order_id` | VARCHAR | FK a `olist_orders`, única: clave de vinculación entre fuentes |
+| `vehicle_id` | INT | FK a `fleet_vehicles`; asignado según el peso del primer ítem (moto < 300 g, van < 2000 g, truck ≥ 2000 g) |
+| `driver_id` | INT | FK a `fleet_drivers`; conductor del estado de destino y del tipo de vehículo requerido |
+| `pickup_date`, `carrier_pickup_date`, `delivery_date` | TIMESTAMP | Fechas de compra, despacho y entrega, tomadas de Olist |
+| `distance_km` | NUMERIC | Derivada de datos reales (ver 4.1); rango 5–6000 km |
+| `route_state` | CHAR(2) | Estado de origen (`seller_state`) |
+| `delivery_status` | VARCHAR | Derivada de datos reales: `delayed` si la entrega superó la fecha prometida (8,1 %) |
+| `eta_variation_hours` | NUMERIC | Derivada de datos reales; acotada a [−168, 336] h (6,4 % de los valores en los límites): no se usa como variable objetivo |
+| `loading_unloading_time_h` | NUMERIC | Marginal de Kaggle, escalada por tipo de vehículo y peso; sin vínculo con la demora (variable de control) |
+| `route_risk_level` | NUMERIC | Simulada, 0 a 10 |
+| `traffic_congestion_level` | NUMERIC | Simulada, 0 a 10 |
+| `weather_condition_severity` | NUMERIC | Simulada, 0 a 1 |
 
-**Lógica de asignación de vehículo:**
-```
-product_weight_g < 300        → moto
-300 ≤ product_weight_g < 2000 → van
-product_weight_g ≥ 2000       → truck
-```
+Distribución: 88.644 entregas a tiempo (91,9 %) y 7.826 demoradas (8,1 %).
 
-**Distribución resultante:** 72.389 on_time (75%) — 24.081 delayed (25%)
-
-#### `fleet_maintenance` — 698 registros (con SEED+10)
+#### `fleet_maintenance` — 802 registros (547 preventivos, 255 correctivos)
 
 | Campo | Descripción |
 |---|---|
 | `maintenance_id` | PK |
-| `vehicle_id` | FK → `fleet_vehicles` |
-| `date` | Distribuido 2016–2018 (8–15 eventos por vehículo) |
-| `type` | `preventivo` / `correctivo` |
-| `component` | aceite_motor, frenos, motor, transmisión, etc. |
-| `cost_brl` | Rango realista por tipo de vehículo |
-| `downtime_hours` | preventivo: 1–6 h / correctivo: 4–48 h |
-| `mileage_at_service` | Kilometraje acumulado al momento del servicio |
+| `vehicle_id` | FK a `fleet_vehicles` |
+| `date` | Entre 2016-09 y 2018-10 |
+| `type` | `preventivo` (68,2 %) o `correctivo` (31,8 %) |
+| `component` | Componente intervenido (aceite, frenos, motor, transmisión, etc.) |
+| `cost_brl` | Costo por tipo de vehículo y de mantenimiento (promedio: correctivo R$ 2.080, preventivo R$ 321) |
+| `downtime_hours` | Preventivo 1–6 h; correctivo 4–48 h, creciente con la edad (promedio correctivo: 30,9 h) |
+| `mileage_at_service` | Kilometraje acumulado a partir de las entregas del vehículo |
 
-Patrón estacional: la probabilidad de mantenimiento correctivo aumenta en nov–dic (×1.5) y ene–feb (×1.2), coherente con el pico de demanda del e-commerce brasileño visible en Olist.
-
-#### `fleet_incidents` — 3.612 registros (15% de 24.081 demoradas)
+#### `fleet_incidents` — 3.531 registros (19,2 % de las entregas tardías y 2,3 % de las puntuales)
 
 | Campo | Descripción |
 |---|---|
 | `incident_id` | PK |
-| `vehicle_id` | FK → `fleet_vehicles` |
-| `date` | Entre pickup_date y delivery_date del viaje |
-| `type` | `retraso_trafico` (40%) / `condicion_climatica` (25%) / `averia` (20%) / `falla_mecanica_menor` (10%) / `accidente` (5%) |
-| `disruption_likelihood` | Calibrado desde Kaggle (0–1) |
-| `impact_on_delivery_h` | accidente: 8–48h / averia: 4–24h / trafico: 1–6h |
-| `order_id` | FK → `fleet_deliveries.order_id` (nullable) |
+| `vehicle_id` | FK a `fleet_vehicles` (el de la entrega) |
+| `date` | Entre el despacho y la entrega del viaje |
+| `type` | `retraso_trafico`, `condicion_climatica`, `averia`, `falla_mecanica_menor` o `accidente`, con probabilidades que dependen del tráfico, el clima, el riesgo, la edad y el mantenimiento |
+| `disruption_likelihood` | 0 a 1, marginal de Kaggle asociada al impacto |
+| `impact_on_delivery_h` | accidente 8–48 h; avería 4–24 h; clima 2–12 h; tráfico 1–6 h; falla menor 1–4 h (la mitad en entregas puntuales) |
+| `order_id` | FK a `olist_orders`, nullable |
 
 ---
 
-## 5. Esquema de integración entre fuentes
+## 5. Estructura de la base de datos
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        FUENTE 1: OLIST                           │
-│                                                                  │
-│  olist_customers ──► olist_orders ◄──── olist_order_items        │
-│                          │  │                   │                │
-│                          │  └── olist_reviews   olist_products   │
-│                          │  └── olist_payments  (product_weight_g│
-│                          │                       → tipo vehiculo)│
-│              olist_sellers + olist_geolocation                   │
-│              (seller_state → asignacion de conductor)            │
-└──────────────────────────┬───────────────────────────────────────┘
-                           │ order_id (FK)
-                           ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                  TABLA DE VINCULACIÓN                            │
-│                   fleet_deliveries                               │
-│  order_id FK | vehicle_id FK | driver_id FK                      │
-│  delivery_status | eta_variation_hours | distance_km             │
-│  route_risk_level | traffic_congestion_level                     │
-│  weather_condition_severity | loading_unloading_time_h           │
-└───────┬──────────────────────────────────┬───────────────────────┘
-        │ vehicle_id (FK)                  │ vehicle_id (FK)
-        ▼                                  ▼
-┌───────────────────┐            ┌──────────────────────────┐
-│  fleet_vehicles   │            │    fleet_maintenance     │
-│  type, capacity   │            │    type, component       │
-│  fuel_type, year  │            │    cost_brl, downtime_h  │
-└───────────────────┘            └──────────────────────────┘
-        │ vehicle_id (FK)
-        ▼
-┌───────────────────┐
-│  fleet_incidents  │◄── order_id (FK, nullable)
-│  type, impact_h   │
-│  disruption_score │
-└───────────────────┘
-        ▲
-        │ driver_id (FK)
-┌───────────────────┐
-│  fleet_drivers    │
-│  behavior_score   │
-│  fatigue_score    │
-└───────────────────┘
-```
+Base `olist_logistics_db` en PostgreSQL: 14 tablas, con 41 índices definidos en el DDL (20 de Olist y 21 de flota) más 14 índices adicionales (`sql/05_indices.sql`).
 
----
+### 5.1 Relaciones principales
 
-## 6. Preguntas analíticas — Etapa 1
-
-### Q1 — Factores de demora por estado × tipo de vehículo
-
-Tablas: `fleet_deliveries`, `fleet_vehicles`, `fleet_drivers`, `olist_orders`, `olist_customers`  
-Resultado: 80 combinaciones (estado × tipo de vehículo) con al menos 10 entregas
-
-**Hallazgos clave:** las combinaciones con mayor tasa de demora se concentran en estados con mayor distancia de distribución (SP, MG, PR) y en motos, que tienen la mayor exposición a condiciones climáticas y de tráfico. El `traffic_congestion_level` promedio es consistentemente mayor en entregas demoradas.
-
-### Q2 — Driver behavior score vs review score por conductor
-
-Tablas: `fleet_deliveries`, `fleet_drivers`, `olist_order_reviews`  
-Resultado: 40 filas (una por conductor), clasificados en perfil alto/medio/bajo
-
-**Hallazgos clave:** se observa correlación positiva entre `driver_behavior_score` y `review_score` promedio. Los conductores con score < 0.4 (perfil bajo) muestran una tasa de demora promedio superior a los de perfil alto.
-
-### Q3 — Estacionalidad de mantenimientos correctivos vs demoras mensuales
-
-Tablas: `fleet_maintenance`, `fleet_deliveries`, `olist_orders`  
-Resultado: 33 filas (año × mes con datos)
-
-**Hallazgos clave:** la concentración de mantenimientos correctivos en nov–dic coincide con el pico de órdenes demoradas de Olist. El `congestion_promedio` aumenta en los mismos meses, consistente con el pico de temporada alta del e-commerce brasileño.
-
-**Nota de performance:** esta consulta hace spill a disco (784 bloques, 6.1 MB) porque el `HashAggregate` sobre 96.470 filas × `olist_orders` supera el `work_mem = 4 MB` por defecto. Con `SET work_mem = '16 MB'` el spill desaparece y el tiempo baja ~40%.
-
-### Q4 — Tipos de incidente: impacto en horas y cobertura
-
-Tablas: `fleet_incidents`, `fleet_deliveries`, `fleet_vehicles`  
-Resultado: 5 filas (una por tipo de incidente)
-
-**Hallazgos clave:** `accidente` tiene el mayor impacto promedio en horas pero la menor frecuencia (5%). `retraso_trafico` es el más frecuente (40%) con impacto moderado. El índice `idx_del_status` permite filtrar eficientemente las 24.081 entregas demoradas (−35.3% de tiempo de ejecución vs sin índice).
-
-### Q5 — Costo de mantenimiento vs rendimiento por tipo de vehículo
-
-Tablas: `fleet_maintenance`, `fleet_vehicles`, `fleet_deliveries`  
-Resultado: 3 filas (moto / van / truck)
-
-**Hallazgos clave:** los trucks tienen el mayor costo de mantenimiento correctivo pero también la mayor capacidad de carga. Las motos muestran la mayor tasa de entregas a tiempo (75%+) pero el mayor impacto de clima y tráfico. La consulta es completamente interna a las tablas de flota — tiempo de ejecución significativamente menor que Q1 y Q2, que hacen JOIN a Olist.
-
----
-
-## 7. Resultados de performance — Etapa 1
-
-### Tabla comparativa final (corrida `20261010_185629`, caché frío)
-
-| Q | Sin índices (ms) | Con índices (ms) | Δ | Índice activo | Plan principal |
-|---|---:|---:|---:|---|---|
-| Q1 | 239.6 | 162.7 | **−32.1%** | ninguno (Seq Scan correcto) | Parallel Hash Join × 4 tablas, 1 worker |
-| Q2 | 160.4 | 112.4 | **−29.9%** | ninguno (Seq Scan correcto) | Parallel Hash Right Join, 1 worker |
-| Q3 | 214.5 | 229.4 | +7.0% | ninguno — limitante es memoria | Hash Right Join + spill 784 bloques (6.1 MB) |
-| Q4 | 60.0 | 38.8 | **−35.3%** | `idx_del_status` activo | Bitmap Heap Scan → Hash Left Join |
-| Q5 | 111.3 | 89.8 | **−19.3%** | ninguno (Seq Scan correcto) | Merge Join (plan optimizado vs Nested Loop sin idx) |
-
-### Interpretación de los resultados
-
-**Cuatro de cinco consultas mejoran con índices**, con una mejora promedio del 29% para Q1, Q2, Q4 y Q5.
-
-El planner de PostgreSQL elige correctamente `Seq Scan` en Q1, Q2 y Q5 incluso con índices disponibles. Esto ocurre porque estas consultas necesitan procesar el 100% de las filas de `fleet_deliveries` (para el `GROUP BY`) — un `Seq Scan` en ese caso es más eficiente que un `Index Scan` porque lee las páginas en secuencia en un solo pass. Los índices de las secciones A–E están diseñados para filtros selectivos de Etapa 2, no para los agregados completos de Etapa 1.
-
-**Q3 es el único caso que empeora** y la causa no es el plan de ejecución sino la configuración de memoria: el `HashAggregate` necesita más de 4 MB de `work_mem` para procesar el JOIN de 96.470 filas sin spillover. Este es un hallazgo valioso: muestra que los índices no son siempre la solución y que `work_mem` es el parámetro relevante en este caso.
-
-**Q4 muestra la mayor mejora (−35.3%)** por ser el único donde el índice reduce genuinamente el I/O: `idx_del_status` permite un Bitmap Index Scan que lee solo las 24.081 filas demoradas (25%) en lugar de las 96.470 totales. Es el caso de libro de índice parcial efectivo.
-
----
-
-## 8. Cobertura de las cuatro etapas del TPI
-
-| Etapa | Requerimiento | Cobertura |
-|---|---|---|
-| **Etapa 1** | SGBD relacional, SQL, plan de ejecución, análisis de I/O | PostgreSQL 15. 14 tablas. `fleet_deliveries` (96K) + `olist_order_items` (113K) + `olist_geolocation` (1M). EXPLAIN ANALYZE con comparación sin/con índices documentada. |
-| **Etapa 2** | Dataset analítico, EDA, estadística descriptiva | Limpieza: weight_g=0, coords fuera de Brasil, 8 órdenes sin delivery_date. EDA: distribución de `delivery_status`, correlaciones `traffic_congestion_level` y `weather_condition_severity` vs demoras, análisis temporal. |
-| **Etapa 3** | ≥2 modelos predictivos, ≥10 KPIs | **Modelo 1 (Regresión):** `eta_variation_hours` ~ `distance_km` + `route_risk_level` + `vehicle_type` + `driver_behavior_score` + `traffic_congestion_level` + `weather_condition_severity`. **Modelo 2 (Clasificación):** `delivery_status` (on_time/delayed). |
-| **Etapa 4** | Dashboard ejecutivo, analítico y de decisión | **Ejecutivo:** OTD rate, review score, vehículos de mayor riesgo. **Analítico:** drill-down por estado, tipo de vehículo, conductor. **Decisión:** predicción de riesgo por entrega, alertas de mantenimiento preventivo. |
-
----
-
-## 9. KPIs propuestos (≥ 14)
-
-| # | KPI | Fórmula / Fuente | Tipo |
+| Tabla | Campo | Referencia | Cardinalidad |
 |---|---|---|---|
-| 1 | OTD Rate (Olist) | Órdenes ≤ estimated_delivery / Total entregadas — `olist_orders` | Logístico |
-| 2 | Demora promedio (días) | AVG(delivered − estimated) donde > 0 — `olist_orders` | Logístico |
-| 3 | ETA Variation promedio (h) | AVG(`eta_variation_hours`) por vehículo/región/período — `fleet_deliveries` | Logístico |
-| 4 | Tasa demoras por tipo de vehículo | COUNT(delayed) / COUNT total por `vehicle_type` | Flota |
-| 5 | Congestionamiento promedio en demoradas | AVG(`traffic_congestion_level`) WHERE delivery_status='delayed' | Flota |
-| 6 | Severidad climática en demoradas | AVG(`weather_condition_severity`) WHERE delivery_status='delayed' | Flota |
-| 7 | Review score promedio | AVG(`review_score`) por período/estado — `olist_order_reviews` | Satisfacción |
-| 8 | % reseñas ≤ 2 estrellas | COUNT(score ≤ 2) / COUNT total con reseña | Satisfacción |
-| 9 | Driver behavior score promedio | AVG(`driver_behavior_score`) por conductor/región — `fleet_drivers` | Conductores |
-| 10 | Ratio preventivo/correctivo | COUNT(preventivo) / COUNT(correctivo) por vehículo — `fleet_maintenance` | Mantenimiento |
-| 11 | Costo promedio correctivo por tipo | AVG(`cost_brl`) WHERE type='correctivo' GROUP BY vehicle_type | Mantenimiento |
-| 12 | Tiempo de inactividad promedio | AVG(`downtime_hours`) por tipo de mantenimiento y mes | Mantenimiento |
-| 13 | Tasa de incidentes por vehículo | COUNT(incidents) / COUNT(deliveries) por vehicle_id | Incidentes |
-| 14 | Impacto promedio de incidentes | AVG(`impact_on_delivery_h`) GROUP BY incident_type | Incidentes |
-| 15 | Costo de flete promedio por kg | AVG(freight_value / product_weight_g) — `olist_order_items` + `olist_products` | Financiero |
+| `olist_orders` | `customer_id` | `olist_customers` | N:1 |
+| `olist_order_items` | `order_id`, `product_id`, `seller_id` | `olist_orders`, `olist_products`, `olist_sellers` | N:1; PK compuesta (`order_id`, `order_item_id`) |
+| `olist_order_reviews` | `order_id` | `olist_orders` | N:1; PK `review_pk` |
+| `olist_order_payments` | `order_id` | `olist_orders` | N:1; PK compuesta (`order_id`, `payment_sequential`) |
+| `fleet_deliveries` | `order_id` | `olist_orders` | 1:1 |
+| `fleet_deliveries` | `vehicle_id` | `fleet_vehicles` | N:1 |
+| `fleet_deliveries` | `driver_id` | `fleet_drivers` | N:1 |
+| `fleet_drivers` | `vehicle_id` | `fleet_vehicles` | 1:1 en los datos |
+| `fleet_maintenance` | `vehicle_id` | `fleet_vehicles` | N:1 |
+| `fleet_incidents` | `vehicle_id` | `fleet_vehicles` | N:1 |
+| `fleet_incidents` | `order_id` | `olist_orders` | N:1, nullable |
+
+`olist_geolocation` se une por prefijo de código postal con `olist_customers` y `olist_sellers`, sin clave foránea.
+
+### 5.2 Diagrama
+
+```
+ OLIST (real)                                                     FLOTA (sintética)
+ ────────────                                                     ─────────────────
+ olist_customers ◄─── olist_orders ───► olist_order_items ───► olist_products
+                        │   │   │                    └───────► olist_sellers
+                        │   │   └──► olist_order_reviews
+                        │   └──────► olist_order_payments
+                        │
+                        ├── order_id (1:1) ──► fleet_deliveries ──► fleet_vehicles ◄── fleet_drivers (1:1)
+                        │                            │                  ▲  ▲
+                        │                            └─ driver_id ──────┼──┴──► fleet_drivers
+                        │                                               │
+                        └── order_id (nullable) ──► fleet_incidents ────┤
+                                                    fleet_maintenance ──┘
+
+ olist_geolocation: por prefijo de CEP (clientes y vendedores), sin clave foránea
+```
 
 ---
 
-## 10. Próximos pasos — Etapa 2
+## 6. Preguntas analíticas
 
-- [x] Descargar los 9 CSV de Olist y el dataset de telemetría de Kaggle.
-- [x] Instalar PostgreSQL y crear `olist_logistics_db`.
-- [x] DDL Olist con fixes de calidad (01_ddl_olist.sql). DDL AUDIT 7/7 OK.
-- [x] DDL Flota con columnas traffic y weather (02_ddl_fleet.sql). DDL AUDIT 7/7 OK.
-- [x] Import de 14 tablas con DATA AUDIT 10/10 OK (03_import_data.sql).
-- [x] Diagnóstico de calidad post-import (03c_post_import.sql). 5 problemas documentados.
-- [x] 5 consultas analíticas desarrolladas y verificadas.
-- [x] EXPLAIN ANALYZE sin/con índices — análisis de performance completo.
-- [x] `generate_fleet_dataset.py` v1.3 con reproducibilidad garantizada (SEED=42, sub-seeds documentados, bug de n_incidents corregido).
-- [ ] **Etapa 2 — Notebook `01_limpieza.ipynb`:** imputar weight_g=0, filtrar coords fuera de Brasil, excluir 8 órdenes sin delivery_date.
-- [ ] **Etapa 2 — Notebook `02_eda.ipynb`:** distribución de `eta_variation_hours`, correlación conductor↔reseña, análisis de `traffic_congestion_level` y `weather_condition_severity` vs `delivery_status`.
-- [ ] **Etapa 2 — Dataset analítico:** JOIN principal 14 tablas → 1 dataset unificado.
+Cada pregunta se responde con una consulta SQL (`sql/04_q*_explain.sql`). Los hallazgos citados provienen del análisis exploratorio de la Etapa 2 sobre el dataset analítico.
+
+### Q1 — Factores de demora por estado y tipo de vehículo
+**Pregunta:** ¿cuáles son los principales factores operativos de la flota asociados a las entregas demoradas, por estado de Brasil?
+**Tablas:** `olist_orders`, `olist_customers`, `fleet_deliveries`, `fleet_vehicles`, `fleet_drivers`. **Resultado:** 80 combinaciones estado × tipo de vehículo con al menos 10 entregas (entregas, demoradas, porcentaje, variación de ETA, riesgo, comportamiento del conductor, distancia, tráfico y clima promedios).
+**Hallazgos:** la demora real se concentra por destino: BA 14,0 % y RJ 13,5 %, frente a SP 5,9 %, MG 5,6 % y PR 5,0 %. Por tipo de vehículo es de 7,4 % (moto), 8,1 % (van) y 8,9 % (truck): diferencia despreciable, porque el tipo se asigna por peso. El tráfico promedio es 3,4 puntos mayor en las entregas demoradas (escala 0–10), por construcción del simulador.
+
+### Q2 — Comportamiento del conductor y satisfacción
+**Pregunta:** ¿existe relación entre el `driver_behavior_score` de un conductor y el `review_score` promedio de sus entregas?
+**Tablas:** `fleet_drivers`, `fleet_deliveries`, `olist_order_reviews`. **Resultado:** 95 filas, una por conductor, con perfil alto, medio o bajo.
+**Hallazgos:** por conductor, el score se asocia negativamente con la tasa de demora (rho = −0,43) y positivamente con la reseña (rho = +0,25), por construcción: el simulador asigna más entregas tardías a los conductores de menor score y la reseña lo hereda a través de la demora. Por entrega el efecto es débil (rho = −0,06). Los conductores tienen entre 498 y 2.166 entregas.
+
+### Q3 — Estacionalidad de los mantenimientos y demoras mensuales
+**Pregunta:** ¿en qué meses se concentran más los mantenimientos correctivos y coincide con el pico de demoras?
+**Tablas:** `fleet_maintenance`, `olist_orders`, `fleet_deliveries`. **Resultado:** 26 filas (año y mes con mantenimientos).
+**Hallazgos:** los picos reales de demora son noviembre de 2017 (14,3 %), febrero de 2018 (16,0 %) y marzo de 2018 (21,4 %), y acompañan el volumen mensual de órdenes (rho = +0,68). Los correctivos correlacionan con la demora mensual (+0,58) solo a través del volumen: por cada 1.000 entregas la correlación es −0,09, porque en el simulador siguen el uso de los vehículos.
+**Performance:** esta consulta hace *spill* a disco (786 bloques, unos 6 MB) con el `work_mem` por defecto (4 MB).
+
+### Q4 — Incidentes: impacto y cobertura
+**Pregunta:** ¿qué tipos de incidente tienen mayor impacto en horas y qué proporción de las entregas demoradas cubren?
+**Tablas:** `fleet_incidents`, `fleet_deliveries`, `fleet_vehicles`. **Resultado:** 5 filas, una por tipo de incidente, con total, impacto promedio y máximo, vehículos afectados y distribución por tipo de vehículo.
+**Hallazgos:** hay 3.531 incidentes: el 19,2 % de las entregas tardías (1.499 de 7.826) y el 2,3 % de las puntuales (2.032 de 88.644) tienen al menos uno.
+
+### Q5 — Costo de mantenimiento y rendimiento por tipo de vehículo
+**Pregunta:** ¿cómo se relaciona el costo de mantenimiento con el rendimiento logístico de cada tipo de vehículo?
+**Tablas:** `fleet_maintenance`, `fleet_vehicles`, `fleet_deliveries`. **Resultado:** 3 filas (moto, van, truck) con costo total y por entrega, tiempo de inactividad, porcentaje de entregas a tiempo y distancia.
+**Hallazgos:** la tasa de entregas a tiempo es prácticamente igual entre tipos (moto 92,6 %, van 91,9 %, truck 91,1 %). El costo de mantenimiento responde a los rangos definidos en el generador. Tráfico y clima son iguales entre tipos de vehículo, por lo que no hay evidencia de que las motos sean más afectadas.
+
+---
+
+## 7. Performance de las consultas
+
+Cada consulta se midió con `EXPLAIN (ANALYZE, BUFFERS)` sin y con los 14 índices de `05_indices.sql` (`performance/`). Detalle y metodología en `README.md` de esta etapa.
+
+| Q | Plan principal | Índice usado | Buffers sin / con | Mediana de 3 repeticiones sin / con (ms) |
+|---|---|---|---|---:|
+| Q1 | Parallel Hash Join sobre 5 tablas | ninguno | 5.227 / 5.227 | 183,4 / 228,1 |
+| Q2 | Parallel Hash Right Join | ninguno | 3.804 / 3.804 | 118,9 / 116,8 |
+| Q3 | Hash Right Join con *spill* a disco | ninguno | 3.713 / 3.713 + 786 temporales | 234,9 / 182,3 |
+| Q4 | Bitmap Heap Scan sobre `fleet_deliveries` | `idx_del_status` (del DDL) | 1.927 / 1.927 | 21,4 / 20,6 |
+| Q5 | Merge Join sobre tablas de flota | ninguno | 1.893 / 1.893 | 65,4 / 66,6 |
+
+**Conclusión.** Los índices adicionales no cambian ningún plan ni los buffers leídos; las diferencias de tiempo (de −22 % a +24 %) son ruido de medición y no efecto de los índices. Las consultas leen casi todas las filas de tablas pequeñas (97 % de las órdenes está entregado), por lo que el recorrido completo es la opción más barata. Solo Q4, que filtra el 8,1 % de las entregas, usa un índice, y ya viene del DDL. En Q3 el cuello de botella es la memoria, no el acceso a las filas. Los 14 índices ocupan unos 79 MB sin beneficio medido en estas consultas.
+
+---
+
+## 8. Indicadores (KPIs)
+
+| # | KPI | Definición | Tablas | Naturaleza de los datos |
+|---|---|---|---|---|
+| 1 | Tasa de entrega a tiempo (OTD) | Órdenes entregadas hasta la fecha prometida / órdenes entregadas | `olist_orders` | Real |
+| 2 | Demora promedio (días) | Promedio de (entrega − fecha prometida) en las órdenes tardías | `olist_orders` | Real |
+| 3 | Variación de ETA promedio (h) | Mediana (o promedio) de `eta_variation_hours` por vehículo, región y período | `fleet_deliveries` | Derivada de datos reales (acotada) |
+| 4 | Tasa de demora por tipo de vehículo | Entregas demoradas / entregas, por tipo de vehículo | `fleet_deliveries`, `fleet_vehicles` | Derivada de datos reales |
+| 5 | Congestión promedio en demoradas | Promedio de `traffic_congestion_level` en entregas demoradas | `fleet_deliveries` | Simulada |
+| 6 | Severidad climática en demoradas | Promedio de `weather_condition_severity` en entregas demoradas | `fleet_deliveries` | Simulada |
+| 7 | Puntaje promedio de reseña | Promedio de `review_score` por período, estado y categoría | `olist_order_reviews` | Real |
+| 8 | Porcentaje de reseñas de 1 o 2 estrellas | Reseñas con puntaje ≤ 2 / reseñas | `olist_order_reviews` | Real |
+| 9 | Driver behavior score promedio | Promedio de `driver_behavior_score` por conductor y región | `fleet_drivers` | Simulada |
+| 10 | Índice de fatiga promedio | Promedio de (1 − `fatigue_score_avg`) | `fleet_drivers` | Simulada |
+| 11 | Ratio preventivo / correctivo | Mantenimientos preventivos / correctivos, por vehículo | `fleet_maintenance` | Simulada |
+| 12 | Costo promedio del correctivo por tipo | Promedio de `cost_brl` de los correctivos por tipo de vehículo | `fleet_maintenance`, `fleet_vehicles` | Simulada |
+| 13 | Tiempo de inactividad por mantenimiento | Promedio de `downtime_hours` por tipo de mantenimiento y mes | `fleet_maintenance` | Simulada |
+| 14 | Tasa de incidentes por vehículo | Incidentes / entregas, por vehículo | `fleet_incidents`, `fleet_deliveries` | Simulada |
+| 15 | Impacto promedio de incidentes | Promedio de `impact_on_delivery_h` por tipo de incidente | `fleet_incidents` | Simulada |
+| 16 | Costo de flete por kilogramo | Promedio de `freight_value` / (`product_weight_g` / 1000) | `olist_order_items`, `olist_products` | Real |
+
+Los KPIs de naturaleza simulada describen el sistema simulado; sus asociaciones con la demora están impuestas por el generador. Los de resultado y de satisfacción (1, 2, 7 y 8) y la tasa de demora por destino se calculan sobre datos reales y son los que sostienen las conclusiones del problema. Los conteos (incidentes, correctivos) se normalizan siempre por el volumen de entregas.
+
+---
+
+## 9. Plan de las cuatro etapas
+
+| Etapa | Qué se produce |
+|---|---|
+| **1. Problema, datos y arquitectura** | Este documento; la base `olist_logistics_db` (14 tablas, ver sección 5); la flota sintética; cinco consultas con su análisis de plan de ejecución |
+| **2. Preparación y análisis** | Diagnóstico de calidad de 52 chequeos; dataset analítico de una fila por orden entregada (vista lógica y materializada); análisis exploratorio; nuevo análisis del plan de ejecución |
+| **3. Análisis inteligente y BI** | **Modelo 1 (regresión):** `dias_entrega_total`. **Modelo 2 (clasificación):** `demora_olist` (8,1 % de positivos, clase desbalanceada: AUC-PR y recall). Ridge, Random Forest y un árbol de decisión o regresión logística; validación temporal (entrenamiento hasta 2018-04, prueba desde 2018-05); predictores en dos conjuntos: **A** (variables reales conocidas al comprar: estados de origen y destino, distancia haversine, flete, peso, categoría, mes, volumen mensual y días prometidos) y **B** (A más las variables simuladas, incluidos `dias_desde_ult_mant`, tráfico, clima, riesgo y conductor). KPIs en `sql/kpis.sql` y reglas prescriptivas de priorización de destinos |
+| **4. Dashboard** | Vista ejecutiva (KPIs y alertas), vista analítica (exploración por destino, período, vehículo y conductor, con filtros y drill-down) y vista de decisión (predicciones y recomendaciones), alimentado por el dataset analítico |
+
+---
+
+## 10. Alcance y limitaciones
+
+- Las variables de flota excepto `distance_km`, `delivery_status` y `eta_variation_hours` son simuladas: los indicadores que las usan describen un escenario, no la operación real de Olist.
+- `delivery_status` coincide con la demora real de Olist; el estado de la entrega y la demora son la misma definición.
+- `eta_variation_hours` está acotada y no sirve como variable objetivo.
+- Los datos reales cubren 2016-09 a 2018-08, con un régimen irregular (picos de demora en noviembre de 2017 y en febrero y marzo de 2018) que condiciona la validación temporal.
+- Ocho órdenes `delivered` no tienen fecha de entrega y se excluyen del análisis.
+- Olist se publica bajo CC BY-NC-SA 4.0: el uso es académico y no comercial.

@@ -1,9 +1,7 @@
 SET client_encoding = 'UTF8';
 -- 04_q5_explain.sql
 -- Q5: Costo de mantenimiento vs rendimiento por tipo de vehiculo
--- Ejecutar: psql -U postgres -d olist_logistics_db -f 04_q5_explain.sql
---   SIN indices: > ..\performance\explain_sin_indices\q5_sin_idx.txt
---   CON indices: > ..\performance\explain_con_indices\q5_con_idx.txt
+-- Ejecutado por run_pipeline.ps1: sin y con los indices de 05_indices.sql.
 -- ============================================================
 
 SET track_io_timing = on;

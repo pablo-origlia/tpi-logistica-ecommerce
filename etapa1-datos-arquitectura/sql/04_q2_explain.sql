@@ -1,9 +1,7 @@
 SET client_encoding = 'UTF8';
 -- 04_q2_explain.sql
 -- Q2: behavior_score vs review_score por conductor
--- Ejecutar: psql -U postgres -d olist_logistics_db -f 04_q2_explain.sql
---   > ..\performance\explain_sin_indices\q2_sin_idx.txt
--- (cambiar carpeta a con_indices despues de 05_indices.sql)
+-- Ejecutado por run_pipeline.ps1: sin y con los indices de 05_indices.sql.
 -- Requiere: SET track_io_timing = on
 -- ============================================================
 
@@ -17,9 +15,6 @@ EXPLAIN (
     WAL,
     FORMAT TEXT
 )
--- La columna eta_variacion_promedio_h cuantifica el impacto en horas.
-
-
 -- +-------------------------------------------------------------+
 -- | CONSULTA 2                                                  |
 -- | Existe relacion entre el driver_behavior_score de un       |
@@ -28,8 +23,8 @@ EXPLAIN (
 -- Tablas: fleet_deliveries, fleet_drivers, olist_order_reviews
 -- Metricas registradas:
 --   - Comparar tiempo con y sin idx_rev_order
---   - Filas: ~40 conductores -> 40 filas con review promedio
---   - Plan: esperamos Index Scan en olist_order_reviews
+--   - Filas: 95 conductores -> 95 filas con review promedio
+--   - Plan: el planner procesa todas las filas de ambas tablas (Hash Join) y no usa indices
 
 WITH conductor_performance AS (
     SELECT
@@ -76,6 +71,5 @@ SELECT
 FROM conductor_performance
 ORDER BY driver_behavior_score DESC;
 
--- Interpretacion esperada:
--- Correlacion negativa entre behavior_score y pct_demoradas.
--- Este resultado alimenta el KPI #7 (Driver behavior score promedio);
+-- Lectura: compara pct_demoradas y review_score_promedio entre perfiles de comportamiento
+-- (alimenta el KPI de driver behavior score).

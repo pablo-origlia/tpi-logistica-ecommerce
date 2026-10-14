@@ -1,0 +1,31 @@
+generate_fleet_dataset.py | SEED=42
+vehículos=100 conductores=95 entregas=96,470 mantenimientos=802 incidentes=3,531
+EFFECTS={'traffic': {'delay': 0.25, 'resid': 0.15, 'load': 0.25, 'urban': 0.2}, 'weather': {'delay': 0.25, 'resid': 0.1, 'season': 0.4}, 'risk': {'delay': 0.3, 'dist': 0.25, 'remote': 0.2}}
+BEHAVIOR_BETA=0.4 FATIGUE_BETA=0.5 INCIDENT_RATE=0.037 ASSIGN_BY=customer_state
+
+============================================================
+VALIDACIÓN
+============================================================
+1) Dependencia con la realidad (Spearman vs delay_days / eta_variation_hours)
+   traffic_congestion_level     vs demora real +0.327 | vs eta_var +0.272
+   weather_condition_severity   vs demora real +0.253 | vs eta_var +0.293
+   route_risk_level             vs demora real +0.174 | vs eta_var +0.128
+   loading_unloading_time_h     vs demora real -0.006 | vs eta_var +0.027
+   distance_km vs haversine     +0.999
+   behavior_score vs tasa demora (conductor, n=95): -0.433
+   fatigue_score  vs tasa demora (conductor)            : +0.420
+
+2) Marginales vs Kaggle (media / desvío)
+   traffic_congestion_level     sint 4.99/3.53   kaggle 4.99/3.53
+   weather_condition_severity   sint 0.50/0.35   kaggle 0.50/0.35
+   route_risk_level             sint 7.00/3.24   kaggle 7.00/3.24
+
+3) Coherencia estructural
+   conductor maneja el vehículo de la entrega : 100.0%
+   licencia habilita el vehículo              : 100.0%
+   entregas con vehículo en baja              : 0
+   conductores contratados tras su 1ª entrega  : 0
+   mantenimientos antes del año del vehículo  : 0
+   estado: {'on_time': 0.919, 'delayed': 0.081}
+   distance_km [5.0, 4494.1] · eta_variation_hours [-168.0, 336.0]
+   correctivos vs volumen mensual (emergente)  : rho +0.83 (n=23)

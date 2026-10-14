@@ -217,3 +217,20 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---------------------------------------------------------------
+# Proyecto TPI
+# ---------------------------------------------------------------
+# Datos originales de Kaggle: se descargan (ver README); no se versionan
+etapa1-datos-arquitectura/raw/*
+!etapa1-datos-arquitectura/raw/.gitkeep
+
+# Salida regenerable de los notebooks (el parquet y la muestra de 1.000 filas sí se versionan)
+etapa2-preparacion-eda/output/dataset_analitico.csv
+
+# Archivos temporales y del sistema
+estructura_actual.txt
+.DS_Store
+Thumbs.db
+~$*
+*.tmp

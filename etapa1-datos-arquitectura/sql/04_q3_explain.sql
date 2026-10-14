@@ -1,9 +1,7 @@
 SET client_encoding = 'UTF8';
 -- 04_q3_explain.sql
 -- Q3: Pico estacional de mantenimientos vs demoras (+ congestion promedio mensual)
--- Ejecutar: psql -U postgres -d olist_logistics_db -f 04_q3_explain.sql
---   > ..\performance\explain_sin_indices\q3_sin_idx.txt
--- (cambiar carpeta a con_indices despues de 05_indices.sql)
+-- Ejecutado por run_pipeline.ps1: sin y con los indices de 05_indices.sql.
 -- Requiere: SET track_io_timing = on
 -- ============================================================
 
@@ -17,9 +15,6 @@ EXPLAIN (
     WAL,
     FORMAT TEXT
 )
--- y el KPI #12 (Indice de eficiencia por conductor).
-
-
 -- +-------------------------------------------------------------+
 -- | CONSULTA 3                                                  |
 -- | En que meses se concentran mas los mantenimientos          |
@@ -29,7 +24,7 @@ EXPLAIN (
 -- Metricas registradas:
 --   - Uso de EXTRACT  -  ver si el planner usa idx_mnt_month_type
 --   - Comparar Seq Scan vs Index Scan en fleet_maintenance
---   - Filas: 36 filas (12 meses x 3 anos)
+--   - Filas: 26 filas (anio x mes con mantenimientos)
 
 WITH mantenimiento_mensual AS (
     SELECT

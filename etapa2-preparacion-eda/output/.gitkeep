@@ -1,1 +1,1 @@
-﻿# dataset_analitico.csv y .parquet se generan al ejecutar 01_limpieza.ipynb
+# dataset_analitico.parquet / .csv se generan al ejecutar 01_limpieza.ipynb

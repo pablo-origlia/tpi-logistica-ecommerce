@@ -1,0 +1,510 @@
+Timing is on.
+SET
+Time: 0,254 ms
+SET
+Time: 0,203 ms
+=== A) Vista lógica: agregado por estado de destino ===
+                                                                                                                                                                            QUERY PLAN                                                                                                                                                                            
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize GroupAggregate  (cost=18244.03..18249.96 rows=27 width=43) (actual time=352.815..367.104 rows=27.00 loops=1)
+   Group Key: c.customer_state
+   Buffers: shared hit=10507 read=50
+   ->  Gather Merge  (cost=18244.03..18249.27 rows=46 width=43) (actual time=352.801..367.074 rows=54.00 loops=1)
+         Workers Planned: 1
+         Workers Launched: 1
+         Buffers: shared hit=10507 read=50
+         ->  Sort  (cost=17244.02..17244.09 rows=27 width=43) (actual time=331.598..331.607 rows=27.00 loops=2)
+               Sort Key: c.customer_state
+               Sort Method: quicksort  Memory: 26kB
+               Buffers: shared hit=10507 read=50
+               Worker 0:  Sort Method: quicksort  Memory: 26kB
+               ->  Partial HashAggregate  (cost=17243.11..17243.38 rows=27 width=43) (actual time=331.537..331.547 rows=27.00 loops=2)
+                     Group Key: c.customer_state
+                     Batches: 1  Memory Usage: 32kB
+                     Buffers: shared hit=10500 read=50
+                     Worker 0:  Batches: 1  Memory Usage: 32kB
+                     ->  Hash Join  (cost=14790.91..17137.19 rows=5296 width=858) (actual time=267.437..322.932 rows=48140.50 loops=2)
+                           Hash Cond: (ia.seller_id = (s.seller_id)::text)
+                           Buffers: shared hit=10500 read=50
+                           ->  Parallel Hash Join  (cost=14688.28..17007.39 rows=5296 width=51) (actual time=265.655..296.425 rows=48140.50 loops=2)
+                                 Hash Cond: ((c.customer_id)::text = (o.customer_id)::text)
+                                 Buffers: shared hit=10434 read=50
+                                 ->  Parallel Seq Scan on olist_customers c  (cost=0.00..2072.31 rows=57631 width=42) (actual time=0.016..4.512 rows=49720.50 loops=2)
+                                       Buffers: shared hit=1446 read=50
+                                 ->  Parallel Hash  (cost=14622.08..14622.08 rows=5296 width=81) (actual time=265.203..265.209 rows=48140.50 loops=2)
+                                       Buckets: 131072 (originally 16384)  Batches: 1 (originally 1)  Memory Usage: 13280kB
+                                       Buffers: shared hit=8988
+                                       ->  Hash Join  (cost=11997.34..14622.08 rows=5296 width=81) (actual time=185.446..248.121 rows=48140.50 loops=2)
+                                             Hash Cond: (fd.driver_id = d.driver_id)
+                                             Buffers: shared hit=8988
+                                             ->  Hash Join  (cost=11994.20..14604.41 rows=5296 width=85) (actual time=185.144..240.329 rows=48140.50 loops=2)
+                                                   Hash Cond: (fd.vehicle_id = v.vehicle_id)
+                                                   Buffers: shared hit=8986
+                                                   ->  Hash Join  (cost=11989.95..14585.67 rows=5296 width=89) (actual time=184.859..232.786 rows=48140.50 loops=2)
+                                                         Hash Cond: ((fd.order_id)::text = (ia.order_id)::text)
+                                                         Buffers: shared hit=8982
+                                                         ->  Parallel Hash Join  (cost=2938.66..5519.10 rows=5821 width=123) (actual time=27.019..55.534 rows=48140.50 loops=2)
+                                                               Hash Cond: ((fd.order_id)::text = (o.order_id)::text)
+                                                               Buffers: shared hit=3704
+                                                               ->  Parallel Seq Scan on fleet_deliveries fd  (cost=0.00..2431.47 rows=56747 width=41) (actual time=0.008..4.229 rows=48235.00 loops=2)
+                                                                     Buffers: shared hit=1864
+                                                               ->  Parallel Hash  (cost=2863.66..2863.66 rows=6000 width=90) (actual time=26.973..26.974 rows=48140.50 loops=2)
+                                                                     Buckets: 131072 (originally 16384)  Batches: 1 (originally 1)  Memory Usage: 14784kB
+                                                                     Buffers: shared hit=1840
+                                                                     ->  Parallel Seq Scan on olist_orders o  (cost=0.00..2863.66 rows=6000 width=90) (actual time=0.012..12.937 rows=48140.50 loops=2)
+                                                                           Filter: ((order_delivered_customer_date IS NOT NULL) AND (order_delivered_carrier_date IS NOT NULL) AND (order_delivered_carrier_date <= order_delivered_customer_date) AND (order_purchase_timestamp <= order_delivered_carrier_date) AND ((order_status)::text = 'delivered'::text))
+                                                                           Rows Removed by Filter: 1580
+                                                                           Buffers: shared hit=1840
+                                                         ->  Hash  (cost=7953.97..7953.97 rows=87786 width=97) (actual time=157.639..157.641 rows=98666.00 loops=2)
+                                                               Buckets: 131072  Batches: 1  Memory Usage: 11979kB
+                                                               Buffers: shared hit=5278
+                                                               ->  Subquery Scan on ia  (cost=6198.25..7953.97 rows=87786 width=97) (actual time=91.294..131.195 rows=98666.00 loops=2)
+                                                                     Buffers: shared hit=5278
+                                                                     ->  HashAggregate  (cost=6198.25..7076.11 rows=87786 width=186) (actual time=91.292..124.472 rows=98666.00 loops=2)
+                                                                           Group Key: i.order_id
+                                                                           Batches: 1  Memory Usage: 21521kB
+                                                                           Buffers: shared hit=5278
+                                                                           Worker 0:  Batches: 1  Memory Usage: 21521kB
+                                                                           ->  Hash Join  (cost=1188.42..4796.36 rows=112151 width=83) (actual time=10.452..57.325 rows=112650.00 loops=2)
+                                                                                 Hash Cond: ((i.product_id)::text = (p.product_id)::text)
+                                                                                 Buffers: shared hit=5278
+                                                                                 ->  Seq Scan on olist_order_items i  (cost=0.00..3313.51 rows=112151 width=101) (actual time=0.317..9.437 rows=112650.00 loops=2)
+                                                                                       Buffers: shared hit=4384
+                                                                                 ->  Hash  (cost=776.52..776.52 rows=32952 width=47) (actual time=9.989..9.989 rows=32952.00 loops=2)
+                                                                                       Buckets: 65536  Batches: 1  Memory Usage: 3108kB
+                                                                                       Buffers: shared hit=894
+                                                                                       ->  Seq Scan on olist_products p  (cost=0.00..776.52 rows=32952 width=47) (actual time=0.265..4.359 rows=32952.00 loops=2)
+                                                                                             Buffers: shared hit=894
+                                                   ->  Hash  (cost=3.00..3.00 rows=100 width=4) (actual time=0.266..0.267 rows=100.00 loops=2)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 12kB
+                                                         Buffers: shared hit=4
+                                                         ->  Seq Scan on fleet_vehicles v  (cost=0.00..3.00 rows=100 width=4) (actual time=0.238..0.249 rows=100.00 loops=2)
+                                                               Buffers: shared hit=4
+                                             ->  Hash  (cost=1.95..1.95 rows=95 width=4) (actual time=0.289..0.289 rows=95.00 loops=2)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 12kB
+                                                   Buffers: shared hit=2
+                                                   ->  Seq Scan on fleet_drivers d  (cost=0.00..1.95 rows=95 width=4) (actual time=0.261..0.267 rows=95.00 loops=2)
+                                                         Buffers: shared hit=2
+                           ->  Hash  (cost=63.95..63.95 rows=3095 width=39) (actual time=1.709..1.709 rows=3095.00 loops=2)
+                                 Buckets: 4096  Batches: 1  Memory Usage: 247kB
+                                 Buffers: shared hit=66
+                                 ->  Seq Scan on olist_sellers s  (cost=0.00..63.95 rows=3095 width=39) (actual time=0.357..0.933 rows=3095.00 loops=2)
+                                       Buffers: shared hit=66
+ Planning:
+   Buffers: shared hit=1374 read=69
+ Planning Time: 32.982 ms
+ Execution Time: 370.731 ms
+(88 rows)
+
+Time: 414,528 ms
+=== B) Materializada: mismo agregado ===
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize GroupAggregate  (cost=6091.28..6099.67 rows=27 width=43) (actual time=70.473..78.407 rows=27.00 loops=1)
+   Group Key: estado_destino
+   Buffers: shared hit=2463 read=1839
+   ->  Gather Merge  (cost=6091.28..6098.85 rows=65 width=43) (actual time=70.463..78.373 rows=77.00 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=2463 read=1839
+         ->  Sort  (cost=5091.25..5091.32 rows=27 width=43) (actual time=28.923..28.925 rows=25.67 loops=3)
+               Sort Key: estado_destino
+               Sort Method: quicksort  Memory: 26kB
+               Buffers: shared hit=2463 read=1839
+               Worker 0:  Sort Method: quicksort  Memory: 26kB
+               Worker 1:  Sort Method: quicksort  Memory: 26kB
+               ->  Partial HashAggregate  (cost=5090.34..5090.61 rows=27 width=43) (actual time=28.857..28.861 rows=25.67 loops=3)
+                     Group Key: estado_destino
+                     Batches: 1  Memory Usage: 32kB
+                     Buffers: shared hit=2449 read=1839
+                     Worker 0:  Batches: 1  Memory Usage: 32kB
+                     Worker 1:  Batches: 1  Memory Usage: 32kB
+                     ->  Parallel Seq Scan on mv_dataset_analitico  (cost=0.00..4689.17 rows=40117 width=4) (actual time=0.047..9.450 rows=32093.67 loops=3)
+                           Buffers: shared hit=2449 read=1839
+ Planning:
+   Buffers: shared hit=73 read=4
+ Planning Time: 3.061 ms
+ Execution Time: 78.477 ms
+(25 rows)
+
+Time: 82,201 ms
+=== C) Vista lógica: filtro selectivo (SP, un mes) ===
+                                                                                                                                                                                                                 QUERY PLAN                                                                                                                                                                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Subquery Scan on vw_dataset_analitico  (cost=24063.61..25787.13 rows=18 width=41) (actual time=778.019..841.746 rows=2898.00 loops=1)
+   Buffers: shared hit=59249 read=907
+   ->  Merge Left Join  (cost=24063.61..25786.95 rows=18 width=794) (actual time=778.019..841.495 rows=2898.00 loops=1)
+         Merge Cond: ((o.order_id)::text = (olist_order_reviews.order_id)::text)
+         Buffers: shared hit=59249 read=907
+         ->  Sort  (cost=12908.57..12908.62 rows=18 width=39) (actual time=304.664..304.946 rows=2898.00 loops=1)
+               Sort Key: o.order_id
+               Sort Method: quicksort  Memory: 255kB
+               Buffers: shared hit=57315 read=907
+               ->  Nested Loop  (cost=10526.31..12908.20 rows=18 width=39) (actual time=127.215..294.939 rows=2898.00 loops=1)
+                     Buffers: shared hit=57315 read=907
+                     ->  Nested Loop  (cost=10526.03..12902.79 rows=18 width=71) (actual time=127.193..280.620 rows=2898.00 loops=1)
+                           Buffers: shared hit=48621 read=907
+                           ->  Nested Loop  (cost=10525.89..12899.91 rows=18 width=75) (actual time=127.176..277.294 rows=2898.00 loops=1)
+                                 Buffers: shared hit=42825 read=907
+                                 ->  Nested Loop  (cost=10525.74..12897.02 rows=18 width=79) (actual time=127.165..273.045 rows=2898.00 loops=1)
+                                       Join Filter: ((fd.order_id)::text = (o.order_id)::text)
+                                       Buffers: shared hit=37029 read=907
+                                       ->  Nested Loop  (cost=10525.33..12887.24 rows=19 width=98) (actual time=127.102..235.824 rows=2898.00 loops=1)
+                                             Buffers: shared hit=29239 read=2
+                                             ->  Hash Join  (cost=10524.91..12511.08 rows=45 width=131) (actual time=127.055..177.092 rows=7288.00 loops=1)
+                                                   Hash Cond: ((i.order_id)::text = (o.order_id)::text)
+                                                   Buffers: shared hit=4479
+                                                   ->  HashAggregate  (cost=6198.25..7076.11 rows=87786 width=186) (actual time=95.756..129.833 rows=98666.00 loops=1)
+                                                         Group Key: i.order_id
+                                                         Batches: 1  Memory Usage: 21521kB
+                                                         Buffers: shared hit=2639
+                                                         ->  Hash Join  (cost=1188.42..4796.36 rows=112151 width=83) (actual time=10.056..56.737 rows=112650.00 loops=1)
+                                                               Hash Cond: ((i.product_id)::text = (p.product_id)::text)
+                                                               Buffers: shared hit=2639
+                                                               ->  Seq Scan on olist_order_items i  (cost=0.00..3313.51 rows=112151 width=101) (actual time=0.023..6.407 rows=112650.00 loops=1)
+                                                                     Buffers: shared hit=2192
+                                                               ->  Hash  (cost=776.52..776.52 rows=32952 width=47) (actual time=9.910..9.911 rows=32952.00 loops=1)
+                                                                     Buckets: 65536  Batches: 1  Memory Usage: 3108kB
+                                                                     Buffers: shared hit=447
+                                                                     ->  Seq Scan on olist_products p  (cost=0.00..776.52 rows=32952 width=47) (actual time=0.010..3.285 rows=32952.00 loops=1)
+                                                                           Buffers: shared hit=447
+                                                   ->  Hash  (cost=4326.02..4326.02 rows=51 width=74) (actual time=31.281..31.281 rows=7288.00 loops=1)
+                                                         Buckets: 8192 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 869kB
+                                                         Buffers: shared hit=1840
+                                                         ->  Seq Scan on olist_orders o  (cost=0.00..4326.02 rows=51 width=74) (actual time=0.033..29.475 rows=7288.00 loops=1)
+                                                               Filter: ((order_delivered_customer_date IS NOT NULL) AND (order_delivered_carrier_date IS NOT NULL) AND (order_delivered_carrier_date <= order_delivered_customer_date) AND (order_purchase_timestamp <= order_delivered_carrier_date) AND ((order_status)::text = 'delivered'::text) AND ((date_trunc('month'::text, order_purchase_timestamp))::date = '2017-11-01'::date))
+                                                               Rows Removed by Filter: 92153
+                                                               Buffers: shared hit=1840
+                                             ->  Index Scan using idx_cust_id_state on olist_customers c  (cost=0.42..8.36 rows=1 width=39) (actual time=0.008..0.008 rows=0.40 loops=7288)
+                                                   Index Cond: (((customer_id)::text = (o.customer_id)::text) AND (customer_state = 'SP'::bpchar))
+                                                   Index Searches: 7288
+                                                   Buffers: shared hit=24760 read=2
+                                       ->  Index Only Scan using idx_del_analytical_base on fleet_deliveries fd  (cost=0.42..0.50 rows=1 width=47) (actual time=0.012..0.012 rows=1.00 loops=2898)
+                                             Index Cond: (order_id = (i.order_id)::text)
+                                             Heap Fetches: 0
+                                             Index Searches: 2898
+                                             Buffers: shared hit=7790 read=905
+                                 ->  Index Only Scan using fleet_vehicles_pkey on fleet_vehicles v  (cost=0.14..0.16 rows=1 width=4) (actual time=0.001..0.001 rows=1.00 loops=2898)
+                                       Index Cond: (vehicle_id = fd.vehicle_id)
+                                       Heap Fetches: 2898
+                                       Index Searches: 2898
+                                       Buffers: shared hit=5796
+                           ->  Index Only Scan using fleet_drivers_pkey on fleet_drivers d  (cost=0.14..0.16 rows=1 width=4) (actual time=0.001..0.001 rows=1.00 loops=2898)
+                                 Index Cond: (driver_id = fd.driver_id)
+                                 Heap Fetches: 2898
+                                 Index Searches: 2898
+                                 Buffers: shared hit=5796
+                     ->  Index Scan using olist_sellers_pkey on olist_sellers s  (cost=0.28..0.30 rows=1 width=39) (actual time=0.005..0.005 rows=1.00 loops=2898)
+                           Index Cond: ((seller_id)::text = (max((i.seller_id)::text) FILTER (WHERE (i.order_item_id = 1))))
+                           Index Searches: 2898
+                           Buffers: shared hit=8694
+         ->  Unique  (cost=11155.04..11651.16 rows=98156 width=48) (actual time=473.335..498.111 rows=98663.00 loops=1)
+               Buffers: shared hit=1934
+               ->  Sort  (cost=11155.04..11403.10 rows=99224 width=48) (actual time=473.328..481.624 rows=99214.00 loops=1)
+                     Sort Key: olist_order_reviews.order_id, olist_order_reviews.review_creation_date DESC NULLS LAST, olist_order_reviews.review_pk DESC
+                     Sort Method: quicksort  Memory: 10049kB
+                     Buffers: shared hit=1934
+                     ->  Seq Scan on olist_order_reviews  (cost=0.00..2920.24 rows=99224 width=48) (actual time=0.023..16.371 rows=99224.00 loops=1)
+                           Buffers: shared hit=1928
+ Planning:
+   Buffers: shared hit=145 read=8
+ Planning Time: 9.330 ms
+ Execution Time: 845.952 ms
+(79 rows)
+
+Time: 858,234 ms
+=== D) Materializada: filtro selectivo (SP, un mes) ===
+                                                                  QUERY PLAN                                                                   
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using ix_mv_ds_mes on mv_dataset_analitico  (cost=0.29..505.03 rows=3097 width=41) (actual time=2.918..5.292 rows=2898.00 loops=1)
+   Index Cond: (mes_compra = '2017-11-01'::date)
+   Filter: (estado_destino = 'SP'::bpchar)
+   Rows Removed by Filter: 4390
+   Index Searches: 1
+   Buffers: shared read=331
+ Planning:
+   Buffers: shared hit=16 read=1
+ Planning Time: 0.212 ms
+ Execution Time: 5.377 ms
+(10 rows)
+
+Time: 5,874 ms
+=== E) Costo de construir el dataset completo (lo que paga cada REFRESH) ===
+                                                                                                                                                                                                 QUERY PLAN                                                                                                                                                                                                 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Left Join  (cost=62755.64..206049.85 rows=9004 width=663) (actual time=2205.590..4260.034 rows=96281.00 loops=1)
+   Buffers: shared hit=610124 read=1270, temp read=5208 written=5210
+   ->  Nested Loop Left Join  (cost=62750.01..153616.64 rows=9004 width=425) (actual time=2205.423..3334.406 rows=96281.00 loops=1)
+         Buffers: shared hit=323377 read=1270, temp read=5208 written=5210
+         ->  Hash Left Join  (cost=62741.71..78658.34 rows=9004 width=385) (actual time=2205.391..2812.275 rows=96281.00 loops=1)
+               Hash Cond: (s.seller_zip_code_prefix = gs.zip)
+               Buffers: shared hit=127288 read=1270, temp read=5208 written=5210
+               ->  Hash Left Join  (cost=62173.98..78066.97 rows=9004 width=375) (actual time=2200.879..2764.899 rows=96281.00 loops=1)
+                     Hash Cond: (c.customer_zip_code_prefix = gc.zip)
+                     Buffers: shared hit=127148 read=1270, temp read=5208 written=5210
+                     ->  Merge Left Join  (cost=61606.26..77475.61 rows=9004 width=365) (actual time=2196.187..2704.253 rows=96281.00 loops=1)
+                           Merge Cond: ((o.order_id)::text = (olist_order_reviews_1.order_id)::text)
+                           Buffers: shared hit=127009 read=1269, temp read=5208 written=5210
+                           ->  Merge Left Join  (cost=50451.22..64486.12 rows=9004 width=362) (actual time=1683.294..2064.113 rows=96281.00 loops=1)
+                                 Merge Cond: ((o.order_id)::text = (olist_order_payments.order_id)::text)
+                                 Buffers: shared hit=125081 read=1269, temp read=5208 written=5210
+                                 ->  Sort  (cost=50450.80..50473.31 rows=9004 width=296) (actual time=1683.205..1765.280 rows=96281.00 loops=1)
+                                       Sort Key: o.order_id
+                                       Sort Method: external merge  Disk: 24504kB
+                                       Buffers: shared hit=21292 read=291, temp read=5208 written=5210
+                                       ->  Hash Right Join  (cost=47439.32..49859.40 rows=9004 width=296) (actual time=1123.569..1199.521 rows=96281.00 loops=1)
+                                             Hash Cond: ((olist_order_reviews.order_id)::text = (o.order_id)::text)
+                                             Buffers: shared hit=21292 read=291, temp read=2145 written=2146
+                                             ->  HashAggregate  (cost=3416.36..4397.92 rows=98156 width=41) (actual time=26.879..45.052 rows=98673.00 loops=1)
+                                                   Group Key: olist_order_reviews.order_id
+                                                   Batches: 1  Memory Usage: 9241kB
+                                                   Buffers: shared hit=1928
+                                                   ->  Seq Scan on olist_order_reviews  (cost=0.00..2920.24 rows=99224 width=33) (actual time=0.032..4.652 rows=99224.00 loops=1)
+                                                         Buffers: shared hit=1928
+                                             ->  Hash  (cost=43910.41..43910.41 rows=9004 width=288) (actual time=1096.631..1096.670 rows=96281.00 loops=1)
+                                                   Buckets: 131072 (originally 16384)  Batches: 1 (originally 1)  Memory Usage: 26485kB
+                                                   Buffers: shared hit=19364 read=291, temp read=2145 written=2146
+                                                   ->  Hash Left Join  (cost=36432.97..43910.41 rows=9004 width=288) (actual time=691.436..1033.522 rows=96281.00 loops=1)
+                                                         Hash Cond: ((max((COALESCE(p.product_category_name, 'sin_categoria'::character varying))::text) FILTER (WHERE (i.order_item_id = 1))) = (t.product_category_name)::text)
+                                                         Buffers: shared hit=19364 read=291, temp read=2145 written=2146
+                                                         ->  Hash Join  (cost=36430.37..43883.67 rows=9004 width=271) (actual time=691.301..1003.377 rows=96281.00 loops=1)
+                                                               Hash Cond: ((max((i.seller_id)::text) FILTER (WHERE (i.order_item_id = 1))) = (s.seller_id)::text)
+                                                               Buffers: shared hit=19364 read=290, temp read=2145 written=2146
+                                                               ->  Hash Join  (cost=36327.73..43757.37 rows=9004 width=294) (actual time=690.565..968.365 rows=96281.00 loops=1)
+                                                                     Hash Cond: (fd.driver_id = d.driver_id)
+                                                                     Buffers: shared hit=19331 read=290, temp read=2145 written=2146
+                                                                     ->  Hash Join  (cost=36324.60..43729.54 rows=9004 width=285) (actual time=690.527..941.661 rows=96281.00 loops=1)
+                                                                           Hash Cond: (fd.vehicle_id = v.vehicle_id)
+                                                                           Buffers: shared hit=19330 read=290, temp read=2145 written=2146
+                                                                           ->  Hash Join  (cost=36320.35..43700.65 rows=9004 width=281) (actual time=690.443..915.647 rows=96281.00 loops=1)
+                                                                                 Hash Cond: ((i.order_id)::text = (fd.order_id)::text)
+                                                                                 Buffers: shared hit=19328 read=290, temp read=2145 written=2146
+                                                                                 ->  GroupAggregate  (cost=26342.70..32425.91 rows=87786 width=186) (actual time=466.656..629.873 rows=98666.00 loops=1)
+                                                                                       Group Key: i.order_id
+                                                                                       Buffers: shared hit=14333 read=85, temp read=2145 written=2146
+                                                                                       InitPlan 1
+                                                                                         ->  Aggregate  (cost=941.55..941.56 rows=1 width=8) (actual time=4.742..4.743 rows=1.00 loops=1)
+                                                                                               Buffers: shared hit=3 read=47
+                                                                                               ->  Index Only Scan using idx_prod_weight on olist_products olist_products_1  (cost=0.29..776.83 rows=32945 width=4) (actual time=0.022..2.477 rows=32945.00 loops=1)
+                                                                                                     Index Cond: (product_weight_g > 0)
+                                                                                                     Heap Fetches: 0
+                                                                                                     Index Searches: 1
+                                                                                                     Buffers: shared hit=3 read=47
+                                                                                       ->  Sort  (cost=25401.14..25681.52 rows=112151 width=140) (actual time=466.634..504.906 rows=112650.00 loops=1)
+                                                                                             Sort Key: i.order_id, i.seller_id
+                                                                                             Sort Method: external merge  Disk: 17160kB
+                                                                                             Buffers: shared hit=14330 read=38, temp read=2145 written=2146
+                                                                                             ->  Hash Left Join  (cost=4025.54..7944.43 rows=112151 width=140) (actual time=22.159..83.428 rows=112650.00 loops=1)
+                                                                                                   Hash Cond: ((p.product_category_name)::text = (pm.cat)::text)
+                                                                                                   Buffers: shared hit=14330 read=38
+                                                                                                   ->  Hash Join  (cost=1188.42..4796.36 rows=112151 width=132) (actual time=8.621..49.184 rows=112650.00 loops=1)
+                                                                                                         Hash Cond: ((i.product_id)::text = (p.product_id)::text)
+                                                                                                         Buffers: shared hit=2639
+                                                                                                         ->  Seq Scan on olist_order_items i  (cost=0.00..3313.51 rows=112151 width=113) (actual time=0.017..5.397 rows=112650.00 loops=1)
+                                                                                                               Buffers: shared hit=2192
+                                                                                                         ->  Hash  (cost=776.52..776.52 rows=32952 width=51) (actual time=8.460..8.461 rows=32952.00 loops=1)
+                                                                                                               Buckets: 65536  Batches: 1  Memory Usage: 3237kB
+                                                                                                               Buffers: shared hit=447
+                                                                                                               ->  Seq Scan on olist_products p  (cost=0.00..776.52 rows=32952 width=51) (actual time=0.012..3.118 rows=32952.00 loops=1)
+                                                                                                                     Buffers: shared hit=447
+                                                                                                   ->  Hash  (cost=2836.19..2836.19 rows=74 width=23) (actual time=13.528..13.532 rows=73.00 loops=1)
+                                                                                                         Buckets: 1024  Batches: 1  Memory Usage: 13kB
+                                                                                                         Buffers: shared hit=11691 read=38
+                                                                                                         ->  Subquery Scan on pm  (cost=0.29..2836.19 rows=74 width=23) (actual time=0.151..13.496 rows=73.00 loops=1)
+                                                                                                               Buffers: shared hit=11691 read=38
+                                                                                                               ->  GroupAggregate  (cost=0.29..2835.45 rows=74 width=23) (actual time=0.150..13.485 rows=73.00 loops=1)
+                                                                                                                     Group Key: olist_products.product_category_name
+                                                                                                                     Buffers: shared hit=11691 read=38
+                                                                                                                     ->  Index Scan using idx_prod_category on olist_products  (cost=0.29..2592.01 rows=32336 width=19) (actual time=0.047..8.193 rows=32336.00 loops=1)
+                                                                                                                           Index Cond: (product_category_name IS NOT NULL)
+                                                                                                                           Filter: (product_weight_g > 0)
+                                                                                                                           Rows Removed by Filter: 6
+                                                                                                                           Index Searches: 1
+                                                                                                                           Buffers: shared hit=11683 read=38
+                                                                                 ->  Hash  (cost=9853.95..9853.95 rows=9895 width=161) (actual time=223.722..223.732 rows=96281.00 loops=1)
+                                                                                       Buckets: 131072 (originally 16384)  Batches: 1 (originally 1)  Memory Usage: 20211kB
+                                                                                       Buffers: shared hit=4995 read=205
+                                                                                       ->  Hash Join  (cost=6913.35..9853.95 rows=9895 width=161) (actual time=121.762..184.549 rows=96281.00 loops=1)
+                                                                                             Hash Cond: ((c.customer_id)::text = (o.customer_id)::text)
+                                                                                             Buffers: shared hit=4995 read=205
+                                                                                             ->  Seq Scan on olist_customers c  (cost=0.00..2475.72 rows=97972 width=42) (actual time=0.007..8.579 rows=99441.00 loops=1)
+                                                                                                   Buffers: shared hit=1291 read=205
+                                                                                             ->  Hash  (cost=6789.66..6789.66 rows=9895 width=185) (actual time=121.714..121.720 rows=96281.00 loops=1)
+                                                                                                   Buckets: 131072 (originally 16384)  Batches: 1 (originally 1)  Memory Usage: 22749kB
+                                                                                                   Buffers: shared hit=3704
+                                                                                                   ->  Hash Join  (cost=3707.72..6789.66 rows=9895 width=185) (actual time=38.664..81.820 rows=96281.00 loops=1)
+                                                                                                         Hash Cond: ((fd.order_id)::text = (o.order_id)::text)
+                                                                                                         Buffers: shared hit=3704
+                                                                                                         ->  Seq Scan on fleet_deliveries fd  (cost=0.00..2828.70 rows=96470 width=87) (actual time=0.007..6.011 rows=96470.00 loops=1)
+                                                                                                               Buffers: shared hit=1864
+                                                                                                         ->  Hash  (cost=3580.22..3580.22 rows=10200 width=98) (actual time=38.617..38.620 rows=96281.00 loops=1)
+                                                                                                               Buckets: 131072 (originally 16384)  Batches: 1 (originally 1)  Memory Usage: 13906kB
+                                                                                                               Buffers: shared hit=1840
+                                                                                                               ->  Seq Scan on olist_orders o  (cost=0.00..3580.22 rows=10200 width=98) (actual time=0.010..17.121 rows=96281.00 loops=1)
+                                                                                                                     Filter: ((order_delivered_customer_date IS NOT NULL) AND (order_delivered_carrier_date IS NOT NULL) AND (order_delivered_carrier_date <= order_delivered_customer_date) AND (order_purchase_timestamp <= order_delivered_carrier_date) AND ((order_status)::text = 'delivered'::text))
+                                                                                                                     Rows Removed by Filter: 3160
+                                                                                                                     Buffers: shared hit=1840
+                                                                           ->  Hash  (cost=3.00..3.00 rows=100 width=8) (actual time=0.028..0.029 rows=100.00 loops=1)
+                                                                                 Buckets: 1024  Batches: 1  Memory Usage: 13kB
+                                                                                 Buffers: shared hit=2
+                                                                                 ->  Seq Scan on fleet_vehicles v  (cost=0.00..3.00 rows=100 width=8) (actual time=0.008..0.016 rows=100.00 loops=1)
+                                                                                       Buffers: shared hit=2
+                                                                     ->  Hash  (cost=1.95..1.95 rows=95 width=13) (actual time=0.029..0.030 rows=95.00 loops=1)
+                                                                           Buckets: 1024  Batches: 1  Memory Usage: 13kB
+                                                                           Buffers: shared hit=1
+                                                                           ->  Seq Scan on fleet_drivers d  (cost=0.00..1.95 rows=95 width=13) (actual time=0.009..0.017 rows=95.00 loops=1)
+                                                                                 Buffers: shared hit=1
+                                                               ->  Hash  (cost=63.95..63.95 rows=3095 width=42) (actual time=0.720..0.723 rows=3095.00 loops=1)
+                                                                     Buckets: 4096  Batches: 1  Memory Usage: 256kB
+                                                                     Buffers: shared hit=33
+                                                                     ->  Seq Scan on olist_sellers s  (cost=0.00..63.95 rows=3095 width=42) (actual time=0.013..0.267 rows=3095.00 loops=1)
+                                                                           Buffers: shared hit=33
+                                                         ->  Hash  (cost=1.71..1.71 rows=71 width=34) (actual time=0.113..0.113 rows=71.00 loops=1)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 13kB
+                                                               Buffers: shared read=1
+                                                               ->  Seq Scan on product_category_name_translation t  (cost=0.00..1.71 rows=71 width=34) (actual time=0.090..0.096 rows=71.00 loops=1)
+                                                                     Buffers: shared read=1
+                                 ->  GroupAggregate  (cost=0.42..12725.05 rows=94383 width=99) (actual time=0.083..195.921 rows=99440.00 loops=1)
+                                       Group Key: olist_order_payments.order_id
+                                       Buffers: shared hit=103789 read=978
+                                       ->  Index Scan using olist_order_payments_pkey on olist_order_payments  (cost=0.42..10246.68 rows=103886 width=53) (actual time=0.070..93.686 rows=103886.00 loops=1)
+                                             Index Searches: 1
+                                             Buffers: shared hit=103789 read=978
+                           ->  Unique  (cost=11155.04..11651.16 rows=98156 width=48) (actual time=512.888..551.241 rows=98673.00 loops=1)
+                                 Buffers: shared hit=1928
+                                 ->  Sort  (cost=11155.04..11403.10 rows=99224 width=48) (actual time=512.881..529.258 rows=99224.00 loops=1)
+                                       Sort Key: olist_order_reviews_1.order_id, olist_order_reviews_1.review_creation_date DESC NULLS LAST, olist_order_reviews_1.review_pk DESC
+                                       Sort Method: quicksort  Memory: 10049kB
+                                       Buffers: shared hit=1928
+                                       ->  Seq Scan on olist_order_reviews olist_order_reviews_1  (cost=0.00..2920.24 rows=99224 width=48) (actual time=0.020..12.002 rows=99224.00 loops=1)
+                                             Buffers: shared hit=1928
+                     ->  Hash  (cost=330.10..330.10 rows=19010 width=22) (actual time=4.673..4.675 rows=19010.00 loops=1)
+                           Buckets: 32768  Batches: 1  Memory Usage: 1295kB
+                           Buffers: shared hit=139 read=1
+                           ->  Seq Scan on mv_geo_zip gc  (cost=0.00..330.10 rows=19010 width=22) (actual time=0.031..2.125 rows=19010.00 loops=1)
+                                 Buffers: shared hit=139 read=1
+               ->  Hash  (cost=330.10..330.10 rows=19010 width=22) (actual time=4.423..4.423 rows=19010.00 loops=1)
+                     Buckets: 32768  Batches: 1  Memory Usage: 1295kB
+                     Buffers: shared hit=140
+                     ->  Seq Scan on mv_geo_zip gs  (cost=0.00..330.10 rows=19010 width=22) (actual time=0.012..1.560 rows=19010.00 loops=1)
+                           Buffers: shared hit=140
+         ->  Aggregate  (cost=8.30..8.31 rows=1 width=40) (actual time=0.005..0.005 rows=1.00 loops=96281)
+               Buffers: shared hit=196089
+               ->  Index Scan using idx_inc_order on fleet_incidents fi  (cost=0.28..8.30 rows=1 width=6) (actual time=0.004..0.004 rows=0.04 loops=96281)
+                     Index Cond: ((order_id)::text = (o.order_id)::text)
+                     Index Searches: 96281
+                     Buffers: shared hit=196089
+   ->  Result  (cost=5.63..5.65 rows=1 width=4) (actual time=0.002..0.002 rows=1.00 loops=96281)
+         Buffers: shared hit=286747
+         InitPlan 2
+           ->  Limit  (cost=0.28..5.63 rows=1 width=4) (actual time=0.002..0.002 rows=0.98 loops=96281)
+                 Buffers: shared hit=286747
+                 ->  Index Only Scan Backward using idx_mnt_vehicle_date on fleet_maintenance m  (cost=0.28..16.34 rows=3 width=4) (actual time=0.002..0.002 rows=0.98 loops=96281)
+                       Index Cond: ((vehicle_id = fd.vehicle_id) AND (date <= (o.order_purchase_timestamp)::date))
+                       Heap Fetches: 94161
+                       Index Searches: 96281
+                       Buffers: shared hit=286747
+ Planning:
+   Buffers: shared hit=577 read=33
+ Planning Time: 18.769 ms
+ Execution Time: 4297.107 ms
+(176 rows)
+
+Time: 4317,717 ms (00:04,318)
+=== E2) REFRESH real (ver tiempo en 	iming) ===
+REFRESH MATERIALIZED VIEW
+Time: 9651,859 ms (00:09,652)
+=== F) Espacio ocupado ===
+       relname        | tamano_total | tamano_tabla 
+----------------------+--------------+--------------
+ olist_geolocation    | 83 MB        | 68 MB
+ fleet_deliveries     | 80 MB        | 15 MB
+ olist_orders         | 59 MB        | 14 MB
+ olist_order_items    | 44 MB        | 17 MB
+ mv_dataset_analitico | 41 MB        | 34 MB
+ mv_geo_zip           | 1584 kB      | 1120 kB
+(6 rows)
+
+Time: 34,521 ms
+=== G) Uso de los índices (idx_scan acumulado) ===
+               tabla               |                 indice                 | idx_scan | idx_tup_read 
+-----------------------------------+----------------------------------------+----------+--------------
+ fleet_maintenance                 | idx_mnt_vehicle_date                   |   673969 |       659129
+ fleet_incidents                   | idx_inc_order                          |   673967 |        24689
+ olist_orders                      | olist_orders_pkey                      |   415841 |       415841
+ olist_sellers                     | olist_sellers_pkey                     |   121344 |       121344
+ olist_products                    | olist_products_pkey                    |   112681 |       112680
+ fleet_vehicles                    | fleet_vehicles_pkey                    |   109655 |       109655
+ fleet_drivers                     | fleet_drivers_pkey                     |   105228 |       105228
+ olist_customers                   | olist_customers_pkey                   |    99449 |        99449
+ olist_customers                   | idx_cust_id_state                      |    21898 |         8728
+ fleet_deliveries                  | idx_del_analytical_base                |     8764 |         8764
+ fleet_deliveries                  | idx_del_vehicle                        |      105 |           95
+ fleet_deliveries                  | idx_del_pickup                         |       95 |        11755
+ fleet_deliveries                  | idx_del_order                          |       44 |           44
+ olist_orders                      | idx_ord_customer                       |       42 |           42
+ olist_order_items                 | idx_items_product                      |       30 |           28
+ olist_products                    | idx_prod_weight                        |       29 |       428329
+ mv_geo_zip                        | ux_mv_geo_zip                          |       28 |           28
+ olist_customers                   | idx_cust_zip                           |       18 |       198898
+ olist_sellers                     | idx_sel_zip                            |       14 |           14
+ olist_products                    | idx_prod_category                      |       14 |       389326
+ fleet_deliveries                  | idx_del_status                         |       14 |       641428
+ olist_order_reviews               | idx_rev_order_score                    |       13 |       297682
+ olist_orders                      | idx_ord_status                         |       10 |       988484
+ olist_order_reviews               | idx_rev_order                          |        8 |            8
+ fleet_maintenance                 | idx_mnt_vehicle_type_covering          |        8 |            8
+ fleet_maintenance                 | idx_mnt_vehicle                        |        8 |            8
+ olist_order_payments              | olist_order_payments_pkey              |        8 |       831088
+ olist_order_items                 | idx_items_order_analytical             |        5 |       112654
+ fleet_deliveries                  | idx_del_traffic                        |        4 |            2
+ fleet_deliveries                  | idx_del_weather                        |        4 |            2
+ fleet_deliveries                  | fleet_deliveries_pkey                  |        3 |            3
+ mv_dataset_analitico              | ix_mv_ds_mes                           |        3 |        21864
+ olist_order_reviews               | idx_rev_review_id                      |        3 |       297672
+ olist_geolocation                 | idx_geo_zip                            |        3 |      1000165
+ olist_order_payments              | idx_pay_type                           |        2 |       207772
+ fleet_incidents                   | fleet_incidents_pkey                   |        2 |            2
+ fleet_drivers                     | idx_drv_vehicle                        |        2 |            2
+ fleet_maintenance                 | fleet_maintenance_pkey                 |        2 |            2
+ olist_customers                   | idx_cust_state                         |        2 |       198882
+ olist_order_reviews               | idx_rev_score                          |        2 |       198448
+ product_category_name_translation | product_category_name_translation_pkey |        2 |            2
+ olist_order_items                 | idx_items_seller                       |        1 |       112650
+ olist_orders                      | idx_ord_purchase                       |        1 |        99441
+ fleet_incidents                   | idx_inc_vehicle                        |        0 |            0
+ fleet_incidents                   | idx_inc_date                           |        0 |            0
+ fleet_incidents                   | idx_inc_type                           |        0 |            0
+ olist_orders                      | idx_ord_delivered                      |        0 |            0
+ olist_orders                      | idx_ord_status_covering                |        0 |            0
+ fleet_deliveries                  | idx_del_vehicle_status                 |        0 |            0
+ fleet_deliveries                  | idx_del_traffic_status                 |        0 |            0
+ fleet_deliveries                  | idx_del_driver_covering                |        0 |            0
+ fleet_maintenance                 | idx_mnt_year_month_type                |        0 |            0
+ olist_orders                      | idx_ord_year_month_status              |        0 |            0
+ fleet_incidents                   | idx_inc_type_covering                  |        0 |            0
+ fleet_deliveries                  | idx_del_delayed_order                  |        0 |            0
+ olist_sellers                     | idx_sel_state                          |        0 |            0
+ olist_customers                   | idx_cust_uid                           |        0 |            0
+ fleet_deliveries                  | idx_del_vehicle_metrics                |        0 |            0
+ olist_geolocation                 | idx_geo_state                          |        0 |            0
+ mv_dataset_analitico              | ux_mv_ds_order                         |        0 |            0
+ mv_dataset_analitico              | ix_mv_ds_tipo                          |        0 |            0
+ mv_dataset_analitico              | ix_mv_ds_destino                       |        0 |            0
+ fleet_vehicles                    | fleet_vehicles_plate_key               |        0 |            0
+ fleet_vehicles                    | idx_veh_type                           |        0 |            0
+ fleet_vehicles                    | idx_veh_status                         |        0 |            0
+ fleet_drivers                     | idx_drv_region                         |        0 |            0
+ fleet_deliveries                  | fleet_deliveries_order_id_key          |        0 |            0
+ olist_order_reviews               | olist_order_reviews_pkey               |        0 |            0
+ fleet_deliveries                  | idx_del_driver                         |        0 |            0
+ fleet_deliveries                  | idx_del_state                          |        0 |            0
+ olist_order_items                 | olist_order_items_pkey                 |        0 |            0
+ fleet_deliveries                  | idx_del_state_pickup                   |        0 |            0
+ olist_orders                      | idx_ord_delivered_only                 |        0 |            0
+ fleet_maintenance                 | idx_mnt_date                           |        0 |            0
+ fleet_maintenance                 | idx_mnt_type                           |        0 |            0
+ fleet_maintenance                 | idx_mnt_month_type                     |        0 |            0
+(76 rows)
+
+Time: 5,555 ms

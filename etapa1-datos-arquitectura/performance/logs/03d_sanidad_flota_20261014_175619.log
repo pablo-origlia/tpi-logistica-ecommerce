@@ -1,0 +1,49 @@
+Output format is aligned.
+--- 1) Mezcla de mantenimiento (esperado: preventivos > correctivos, ~25-40 por ciento correctivos)
+    type    |  n  | pct  | costo_prom | downtime_prom_h 
+------------+-----+------+------------+-----------------
+ correctivo | 255 | 31.8 |       2080 |            30.9
+ preventivo | 547 | 68.2 |        321 |             3.5
+(2 rows)
+
+--- 2) Cobertura de incidentes: % de órdenes tardías y a tiempo con incidente
+ delivery_status | entregas | con_incidente | pct_con_incidente 
+-----------------+----------+---------------+-------------------
+ delayed         |     7826 |          1499 |              19.2
+ on_time         |    88644 |          2032 |               2.3
+(2 rows)
+
+--- 3) Kilometraje máximo por vehículo (esperado: del orden de 100-250 mil)
+ vehicle_id | km_max 
+------------+--------
+         20 | 285282
+         92 | 228626
+         71 | 193490
+         72 | 173474
+         73 | 167085
+(5 rows)
+
+--- 4) Reparto de entregas por conductor (esperado: sin extremos; todos los conductores con cientos de entregas)
+ min_entregas | mediana | max_entregas | conductores 
+--------------+---------+--------------+-------------
+          498 |     976 |         2166 |          95
+(1 row)
+
+--- 5) Demora por tipo de vehículo (el tipo se asigna por peso: no es causal)
+ type  | entregas | pct_demora 
+-------+----------+------------
+ moto  |    23575 |        7.4
+ truck |    22256 |        8.9
+ van   |    50639 |        8.1
+(3 rows)
+
+--- 6) Vehículos sin ninguna entrega (esperado: solo los 5 en baja)
+ vehicle_id | type  | status 
+------------+-------+--------
+         96 | van   | baja
+         97 | van   | baja
+         98 | truck | baja
+         99 | van   | baja
+        100 | moto  | baja
+(5 rows)
+

@@ -1,0 +1,53 @@
+dimension,chequeo,afectados,total,pct,accion
+categóricas,categorías de producto sin traducción al inglés,3,74,4.054,COALESCE a nombre en portugués (listar con la consulta de detalle al final del script)
+categóricas,payment_type = not_defined,3,103886,0.003,"Agrupar en ""otro"""
+categóricas,order_status fuera de catálogo,0,99441,0.0,Debe ser 0
+categóricas,zip prefix con longitud <> 5 (pérdida de ceros a la izquierda),0,99441,0.0,Debe ser 0 (CHAR(5))
+categóricas,customer_state fuera de las 27 siglas IBGE,0,99441,0.0,Debe ser 0
+duplicados,zip prefixes con múltiples coordenadas en geolocation,17972,19015,94.515,Colapsar a 1 centroide por zip (mv_geo_zip)
+duplicados,órdenes con más de 1 ítem (riesgo de fan-out en JOIN),9803,98666,9.936,Agregar ítems a nivel orden (grano del dataset = 1 fila por orden)
+duplicados,clientes recurrentes (customer_unique_id con >1 customer_id),2997,96096,3.119,No es error: customer_id cambia por orden. Usar customer_unique_id para recurrencia
+duplicados,órdenes con más de 1 pago,2961,99440,2.978,Sumar payment_value; payment_type = método del pago 1
+duplicados,órdenes con más de 1 vendedor,1278,98666,1.295,Tomar el vendedor del ítem 1 como origen del envío
+duplicados,review_id repetido (filas sobrantes),814,99224,0.82,Usar review_pk; en el dataset se toma la última reseña por orden
+duplicados,órdenes con más de 1 reseña,547,98673,0.554,Agregar a 1 reseña por orden (la más reciente) para no duplicar filas
+fechas,órdenes por fuera de 2016-09 … 2018-10 (rango Olist),0,99441,0.0,Informativo
+fechas,mantenimientos anteriores al año de fabricación del vehículo,0,802,0.0,Debe ser 0
+fechas,incidentes con fecha fuera del viaje (pickup–delivery),0,3531,0.0,Informativo
+fechas,conductores con hire_date posterior a su primera entrega,0,95,0.0,Debe ser 0
+fechas,mantenimientos fuera de 2016-01 … 2018-12,0,802,0.0,Debe ser 0
+inconsistencias,items con freight_value = 0,383,112650,0.34,Conservar: posible envío gratis
+inconsistencias,purchase_ts > carrier_date,166,96478,0.172,Excluir: secuencia temporal imposible
+inconsistencias,carrier_date > customer_date (despacho posterior a entrega),23,96478,0.024,Excluir: secuencia temporal imposible
+inconsistencias,payments con payment_value = 0,9,103886,0.009,Flaguear
+inconsistencias,approved_at < purchase_ts,0,99441,0.0,Flaguear
+inconsistencias,conductor de la entrega con vehículo distinto al de la entrega,0,96470,0.0,Debe ser 0 (1 conductor = 1 vehículo)
+inconsistencias,"entregas donde la licencia del conductor no habilita el tipo de vehículo (A=moto, B=van, E=truck)",0,96470,0.0,Debe ser 0 (la licencia es coherente con el vehículo)
+inconsistencias,delivery_status (flota sintética) vs. demora real Olist: desacuerdo,0,96470,0.0,Debe ser 0 (delivery_status se deriva de la demora real de Olist)
+inconsistencias,fleet_deliveries: delivery_date <> olist.order_delivered_customer_date,0,96470,0.0,Debe ser 0 (la fuente sintética hereda las fechas de Olist)
+inconsistencias,estimated_delivery < purchase_ts,0,99441,0.0,Excluir
+inconsistencias,vehículo asignado inconsistente con peso (regla moto/van/truck),0,96448,0.0,Debe ser 0 (la regla moto/van/truck usa el peso del primer ítem)
+inconsistencias,items con price = 0,0,112650,0.0,Flaguear y revisar (la vista NO los excluye)
+integridad,órdenes sin ítems,775,99441,0.779,Excluir del dataset (sin peso/flete)
+integridad,órdenes delivered sin reseña,646,96478,0.67,Conservar con review_score NULL (LEFT JOIN); excluir solo de KPIs de satisfacción
+integridad,clientes con zip sin coordenadas en geolocation,278,99441,0.28,distancia_haversine_km = NULL; distance_km sí existe (usa el centroide del estado como respaldo)
+integridad,órdenes delivered sin registro en fleet_deliveries,8,96478,0.008,Excluir (INNER JOIN en el dataset analítico)
+integridad,ítems apuntando al placeholder unknown_product_placeholder,0,112650,0.0,Excluir peso del cálculo (peso desconocido)
+integridad,entregas realizadas con vehículo en baja,0,96470,0.0,Debe ser 0 (las bajas no reciben entregas; status es una foto sin fecha)
+integridad,vehículos con más de 1 conductor (rompe la relación 1:1),0,95,0.0,Debe ser 0 (1 conductor por vehículo activo)
+integridad,conductores cuyo vehículo está en baja,0,95,0.0,Debe ser 0 (conductores solo en vehículos activos)
+integridad,fleet_deliveries cuya orden NO está delivered,0,96470,0.0,Debe ser 0
+nulos,reviews sin comentario (message),58247,99224,58.703,Normal: dato opcional. No imputar
+nulos,products sin categoría,610,32952,1.851,Imputar categoría = 'sin_categoria'
+nulos,orders delivered sin order_delivered_customer_date,8,96478,0.008,Excluir del dataset analítico
+nulos,products sin product_weight_g,3,32952,0.009,Imputar con mediana de la categoría
+nulos,orders delivered sin order_delivered_carrier_date,2,96478,0.002,Excluir (no se puede calcular tiempo de despacho)
+outliers,fleet: eta_variation_hours censurado en los límites (=-168 ó =336),6208,96470,6.435,Informativo: la variable está acotada por el generador; este porcentaje es la censura
+outliers,freight_value > Q3+3·IQR,5538,112650,4.916,Conservar y flaguear (flete real alto en regiones remotas)
+outliers,product_weight_g > Q3+3·IQR (extremo severo),3073,32952,9.326,Conservar (son pesos reales); ver winsorización solo para modelos
+outliers,fleet: distance_km censurado en los límites (=5 ó =6000),567,96470,0.588,Informativo: entregas intra-zona (haversine x factor de ruta < 5 km) quedan en el piso del rango declarado
+outliers,tiempo de entrega > 60 días,306,96476,0.317,Conservar y flaguear (entregas reales muy tardías)
+outliers,coordenadas fuera del bounding box de Brasil,42,1000163,0.004,Filtrar al construir mv_geo_zip
+outliers,product_weight_g = 0,4,32952,0.012,Imputar con mediana de la categoría
+outliers,"fleet: eta_variation_hours fuera de [-168, 336]",0,96470,0.0,Debe ser 0 (rango declarado)
+outliers,"fleet: distance_km fuera de [5, 6000]",0,96470,0.0,Debe ser 0 (rango declarado; CHECK chk_del_dist)

@@ -1,0 +1,55 @@
+Timing is on.
+SET
+Time: 0,314 ms
+REFRESH MATERIALIZED VIEW
+Time: 8178,188 ms (00:08,178)
+ANALYZE
+Time: 940,381 ms
+        tabla         |          indice           | tamano  | idx_scan 
+----------------------+---------------------------+---------+----------
+ olist_orders         | idx_ord_status_covering   | 9856 kB |        0
+ olist_orders         | idx_ord_year_month_status | 7520 kB |        0
+ olist_customers      | idx_cust_uid              | 7416 kB |        0
+ olist_orders         | idx_ord_delivered_only    | 7368 kB |        0
+ fleet_deliveries     | idx_del_driver_covering   | 7280 kB |        0
+ fleet_deliveries     | idx_del_vehicle_status    | 7040 kB |        0
+ olist_geolocation    | idx_geo_state             | 6432 kB |        0
+ fleet_deliveries     | idx_del_traffic_status    | 4672 kB |        0
+ fleet_deliveries     | idx_del_vehicle_metrics   | 4544 kB |        0
+ fleet_deliveries     | idx_del_state_pickup      | 4064 kB |        0
+ olist_orders         | idx_ord_delivered         | 2456 kB |        0
+ fleet_deliveries     | idx_del_driver            | 808 kB  |        0
+ mv_dataset_analitico | ix_mv_ds_destino          | 672 kB  |        0
+ mv_dataset_analitico | ix_mv_ds_tipo             | 672 kB  |        0
+ fleet_deliveries     | idx_del_state             | 664 kB  |        0
+ fleet_deliveries     | idx_del_delayed_order     | 464 kB  |        0
+ fleet_incidents      | idx_inc_type_covering     | 336 kB  |        0
+ fleet_incidents      | idx_inc_date              | 64 kB   |        0
+ fleet_maintenance    | idx_mnt_year_month_type   | 64 kB   |        0
+ fleet_incidents      | idx_inc_vehicle           | 56 kB   |        0
+ fleet_incidents      | idx_inc_type              | 48 kB   |        0
+ olist_sellers        | idx_sel_state             | 40 kB   |        0
+ fleet_maintenance    | idx_mnt_date              | 32 kB   |        0
+ fleet_vehicles       | idx_veh_type              | 16 kB   |        0
+ fleet_drivers        | idx_drv_region            | 16 kB   |        0
+ fleet_maintenance    | idx_mnt_month_type        | 16 kB   |        0
+ fleet_vehicles       | idx_veh_status            | 16 kB   |        0
+ fleet_maintenance    | idx_mnt_type              | 16 kB   |        0
+(28 rows)
+
+Time: 20,540 ms
+        tabla         | tabla_heap | indices | ratio_idx_tabla 
+----------------------+------------+---------+-----------------
+ fleet_deliveries     | 15 MB      | 65 MB   |            4.50
+ olist_orders         | 14 MB      | 45 MB   |            3.11
+ olist_order_items    | 17 MB      | 27 MB   |            1.57
+ olist_order_reviews  | 15 MB      | 24 MB   |            1.56
+ olist_customers      | 12 MB      | 22 MB   |            1.91
+ olist_geolocation    | 68 MB      | 15 MB   |            0.23
+ olist_order_payments | 9472 kB    | 8600 kB |            0.91
+ mv_dataset_analitico | 34 MB      | 7592 kB |            0.22
+ olist_products       | 3576 kB    | 3240 kB |            0.91
+ fleet_incidents      | 384 kB     | 896 kB  |            2.33
+(10 rows)
+
+Time: 54,776 ms

@@ -6,25 +6,25 @@ SET client_encoding = 'UTF8';
 -- Proyecto TPI  -  Analisis de Datos Masivos, UCASAL 2026
 -- =============================================================
 -- CUANDO EJECUTAR:
---   Despues de 03_import_data.sql y ANTES de correr las
---   consultas "con indices" del EXPLAIN ANALYZE.
+--   Despues de 03_import_data.sql y de las consultas "sin indices" del
+--   EXPLAIN ANALYZE, y ANTES de las consultas "con indices".
+--   Lo hace run_pipeline.ps1.
 --
 -- QUE HAY ACA vs. QUE YA EXISTE EN EL DDL:
 --   El DDL (01 y 02) creo indices simples sobre columnas de JOIN
 --   y filtro individual (FK, status, timestamps).
---   Este script agrega indices COMPUESTOS y FUNCIONALES que
---   responden al patron real de acceso de las 5 consultas:
---   filtros combinados, agrupaciones por mes/ano, covering
---   indexes para evitar heap fetches, y indices parciales
---   sobre subconjuntos de alta selectividad.
+--   Este script agrega indices COMPUESTOS y FUNCIONALES disenados
+--   para el patron de acceso de las 5 consultas (Q1 a Q5): filtros
+--   combinados, agrupaciones por mes/ano, covering indexes para evitar
+--   heap fetches e indices parciales sobre subconjuntos selectivos.
+--   Que el planner los use o no es justamente lo que se mide: ver
+--   performance/ y la seccion de performance del README de la etapa.
 --
--- WORKFLOW DE MEDICION (ver tabla en 04_consultas_analiticas.sql):
---   1. Ejecutar EXPLAIN ANALYZE sobre cada consulta -> guardar
---      en performance/explain_sin_indices/
+-- WORKFLOW DE MEDICION (lo ejecuta run_pipeline.ps1):
+--   1. EXPLAIN ANALYZE de Q1-Q5 -> performance/explain_sin_indices/
 --   2. Ejecutar este script (05_indices.sql)
---   3. Ejecutar EXPLAIN ANALYZE nuevamente -> guardar en
---      performance/explain_con_indices/
---   4. Comparar: tiempo, filas, Seq Scan -> Index Scan / Bitmap Scan
+--   3. EXPLAIN ANALYZE de Q1-Q5 -> performance/explain_con_indices/
+--   4. Comparar: tiempo, filas, Seq Scan vs Index Scan / Bitmap Scan
 -- =============================================================
 
 
@@ -34,9 +34,8 @@ SET client_encoding = 'UTF8';
 -- =============================================================
 
 -- A1. Covering index en olist_orders para el filtro WHERE + JOIN
---     Evita el heap fetch: el planner obtiene customer_id y order_id
---     directamente desde el indice sin leer la tabla principal.
---     Impacto esperado: elimina Seq Scan en olist_orders (~99k filas).
+--     Objetivo: que el planner obtenga customer_id y order_id directamente
+--     desde el indice, sin leer la tabla principal (~99k filas).
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_ord_status_covering
     ON olist_orders (order_status)
@@ -44,7 +43,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS
     WHERE order_status = 'delivered';
 
 COMMENT ON INDEX idx_ord_status_covering IS
-    'Covering index parcial para Q1 y Q5. Evita heap fetch en olist_orders '
+    'Covering index parcial para Q1 y Q3. Evita heap fetch en olist_orders '
     'al filtrar por status=delivered. Incluye order_id y customer_id.';
 
 -- A2. Indice compuesto en olist_customers para el JOIN + GROUP BY
@@ -60,7 +59,7 @@ COMMENT ON INDEX idx_cust_id_state IS
 
 -- A3. Indice compuesto en fleet_deliveries para el JOIN + filtros combinados
 --     Consulta 1 filtra por vehicle_id y agrupa por delivery_status.
---     INCLUDE ampliado con las dos nuevas columnas de contexto externo.
+--     INCLUDE con las metricas de trayecto y las covariables de trafico y clima.
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_del_vehicle_status
     ON fleet_deliveries (vehicle_id, delivery_status)
@@ -70,7 +69,6 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS
 -- A4. Indice sobre traffic_congestion_level para filtros y agregaciones
 --     Q1: AVG(traffic_congestion_level) GROUP BY estado/tipo
 --     Q3: AVG(traffic_congestion_level) GROUP BY anio/mes
---     Tambien util para Etapa 3: correlacion congestion vs delay_probability
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_del_traffic_status
     ON fleet_deliveries (traffic_congestion_level, delivery_status)
@@ -164,7 +162,7 @@ COMMENT ON INDEX idx_ord_year_month_status IS
 
 -- D1. Covering index en fleet_incidents para el GROUP BY por tipo
 --     + proyeccion de impacto y disruption. Evita heap fetch sobre
---     la tabla de incidentes (~14.000 filas).
+--     la tabla de incidentes (~3.500 filas).
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_inc_type_covering
     ON fleet_incidents (type, vehicle_id)
@@ -176,8 +174,8 @@ COMMENT ON INDEX idx_inc_type_covering IS
 
 -- D2. Indice parcial para el subconjunto de demoradas con incidente
 --     La cobertura CTE de Q4 hace LEFT JOIN sobre delivery_status=delayed.
---     Este indice parcial en fleet_deliveries (~40% de filas) agiliza
---     ese JOIN sin escanear las entregas on_time.
+--     Este indice parcial en fleet_deliveries (~8% de las filas) apunta
+--     a resolver ese JOIN sin recorrer las entregas on_time.
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_del_delayed_order
     ON fleet_deliveries (order_id)
@@ -196,7 +194,7 @@ COMMENT ON INDEX idx_del_delayed_order IS
 
 -- E1. Covering index en fleet_maintenance para el GROUP BY por vehicle_id
 --     agrupado por type de vehiculo. Q5 accede a vehicle_id + type de
---     fleet_vehicles (pequena, 60 filas) y luego agrega desde maintenance.
+--     fleet_vehicles (pequena, 100 filas) y luego agrega desde maintenance.
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_mnt_vehicle_type_covering
     ON fleet_maintenance (vehicle_id, type)
@@ -223,15 +221,14 @@ COMMENT ON INDEX idx_del_vehicle_metrics IS
 
 -- =============================================================
 -- SECCION F  -  Indices para el dataset analitico (Etapa 2)
--- (anticipados: el JOIN principal que generara el dataset analitico)
+-- (el JOIN principal que genera el dataset analitico)
 -- =============================================================
--- Estos indices no impactan en las consultas de Etapa 1 pero
--- se crean ahora para que la generacion del dataset analitico
--- en Etapa 2 sea eficiente desde el primer momento.
+-- Estos indices no impactan en las consultas de Etapa 1; los usa la
+-- vista del dataset analitico de la Etapa 2.
 
 -- F1. Indice compuesto en fleet_deliveries para el JOIN principal
 --     del dataset analitico: order_id + todas las metricas clave.
---     Elimina el Seq Scan completo en la consulta de generacion del dataset.
+--     Objetivo: evitar el Seq Scan completo en la consulta de generacion del dataset.
 CREATE INDEX CONCURRENTLY IF NOT EXISTS
     idx_del_analytical_base
     ON fleet_deliveries (order_id, delivery_status)
@@ -243,7 +240,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS
     );
 
 COMMENT ON INDEX idx_del_analytical_base IS
-    'Covering index anticipado para Etapa 2: cubre el JOIN principal '
+    'Covering index para la Etapa 2: cubre el JOIN principal '
     'order_id + proyecta todas las metricas del dataset analitico '
     'sin heap fetch en fleet_deliveries.';
 
@@ -287,7 +284,5 @@ SELECT
     pg_size_pretty(pg_total_relation_size('fleet_deliveries'))       AS fleet_deliveries_total,
     pg_size_pretty(pg_indexes_size('fleet_deliveries'))              AS fleet_deliveries_indices;
 
--- Nota para la presentacion:
--- Mostrar esta relacion tamano_datos / tamano_indices demuestra el
--- trade-off entre espacio en disco y velocidad de consulta.
--- Tipicamente los indices ocupan 20-40% del tamano de la tabla.
+-- La relacion tamano de datos / tamano de indices muestra el trade-off
+-- entre espacio en disco, costo de escritura y velocidad de consulta.

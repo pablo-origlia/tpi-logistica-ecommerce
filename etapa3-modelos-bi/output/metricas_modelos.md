@@ -1,3 +1,4 @@
-﻿# MÃ©tricas de evaluaciÃ³n
+# Metricas de evaluacion
 
-## Modelo 1 â€
+## Modelo 1 - Regresion
+## Modelo 2 - Clasificacion

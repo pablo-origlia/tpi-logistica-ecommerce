@@ -1,9 +1,7 @@
 SET client_encoding = 'UTF8';
 -- 04_q1_explain.sql
 -- Q1: Factores de demora por estado y tipo de vehiculo (+ congestion y clima)
--- Ejecutar: psql -U postgres -d olist_logistics_db -f 04_q1_explain.sql
---   > ..\performance\explain_sin_indices\q1_sin_idx.txt
--- (cambiar carpeta a con_indices despues de 05_indices.sql)
+-- Ejecutado por run_pipeline.ps1: sin y con los indices de 05_indices.sql.
 -- Requiere: SET track_io_timing = on
 -- ============================================================
 
@@ -26,7 +24,7 @@ EXPLAIN (
 --         fleet_vehicles, fleet_drivers
 -- Metricas registradas:
 --   - Tiempo de ejecucion
---   - Filas procesadas vs retornadas (27 estados -> 27 filas)
+--   - Filas procesadas vs retornadas (80 combinaciones estado x tipo de vehiculo)
 --   - Tipo de JOIN (Hash Join vs Nested Loop)
 --   - Uso de indices idx_ord_status, idx_del_status
 
@@ -46,7 +44,7 @@ SELECT
     ROUND(AVG(fd.route_risk_level)::NUMERIC, 2)            AS riesgo_ruta_promedio,
     ROUND(AVG(fdr.driver_behavior_score)::NUMERIC, 3)      AS comportamiento_conductor_promedio,
     ROUND(AVG(fd.distance_km)::NUMERIC, 1)                 AS distancia_promedio_km,
-    -- Nuevos predictores de contexto externo (incorporados Etapa 1)
+    -- Covariables operativas simuladas (trafico y clima)
     ROUND(AVG(fd.traffic_congestion_level)::NUMERIC, 2)    AS congestion_trafico_promedio,
     ROUND(AVG(fd.weather_condition_severity)::NUMERIC, 3)  AS severidad_clima_promedio
 FROM olist_orders         o
@@ -63,5 +61,4 @@ ORDER BY
     pct_demoradas DESC,
     total_entregas DESC;
 
--- Interpretacion esperada:
--- Estados del nordeste (BA, PE, CE) y tipo truck mostraran mayor % demorado.;
+-- Lectura: una fila por combinacion estado x tipo de vehiculo (minimo 10 entregas), ordenada por % de demora.

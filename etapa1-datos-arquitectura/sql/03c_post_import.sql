@@ -1,14 +1,15 @@
 SET client_encoding = 'UTF8';
 -- =============================================================
 -- 03c_post_import.sql
--- Validacion y limpieza minima post-import
+-- Diagnostico de calidad posterior a la carga (solo lectura)
 -- Base de datos: olist_logistics_db (PostgreSQL 15+)
 -- Proyecto TPI - Analisis de Datos Masivos, UCASAL 2026
 -- =============================================================
 -- CUANDO EJECUTAR: despues de 03_import_data.sql
--- PROPOSITO: diagnosticar la calidad real de los datos ingresados
---   y dejar registros de los problemas encontrados para Etapa 2.
---   NO modifica datos - solo reporta y documenta.
+-- PROPOSITO: diagnosticar los problemas de calidad conocidos de los datos cargados
+--   y documentar como se tratan en la preparacion de datos (Etapa 2).
+--   NO modifica datos - solo reporta. El diagnostico completo (52 chequeos)
+--   esta en etapa2-preparacion-eda/sql/01_diagnostico_calidad.sql.
 -- =============================================================
 
 
@@ -28,7 +29,7 @@ SELECT
         COUNT(*) FILTER (
             WHERE geolocation_lat NOT BETWEEN -34.0 AND 5.27
                OR geolocation_lng NOT BETWEEN -73.99 AND -34.79
-        ) * 100.0 / COUNT(*), 2
+        ) * 100.0 / NULLIF(COUNT(*), 0), 2
     )                                       AS pct_invalidas
 FROM olist_geolocation;
 
@@ -136,7 +137,7 @@ ORDER BY o.order_purchase_timestamp;
 SELECT problema, detalle, accion_etapa2 FROM (
     VALUES
     ('coords_invalidas_geolocation',
-     'Coordenadas fuera de Brasil en olist_geolocation (aprox. 0.03%)',
+     'Coordenadas fuera de Brasil en olist_geolocation (42 de 1.000.163: 0.004%)',
      'Filtrar en notebook limpieza: usar solo coords dentro del bounding box'),
     ('weight_cero_products',
      'Productos con product_weight_g = 0 - dato sucio del CSV original',
