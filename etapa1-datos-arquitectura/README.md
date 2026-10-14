@@ -160,22 +160,22 @@ Cada consulta se midió con `EXPLAIN (ANALYZE, BUFFERS, VERBOSE, SETTINGS, WAL)`
 
 | Q | Plan principal | Índice usado | Buffers (hit + read), sin / con | Primera ejecución sin / con (ms) | Mediana de 3 repeticiones sin / con (ms) |
 |---|---|---|---|---:|---:|
-| Q1 | Parallel Hash Join sobre 5 tablas | ninguno | 5.227 / 5.227 | 190,6 / 201,0 | 175,2 / 208,3 |
-| Q2 | Parallel Hash Right Join | ninguno | 3.804 / 3.804 | 119,3 / 179,3 | 114,6 / 156,4 |
-| Q3 | Hash Right Join con *spill* a disco | ninguno | 3.713 / 3.713 + 786 temporales | 188,5 / 252,0 | 240,8 / 188,7 |
-| Q4 | Bitmap Heap Scan sobre `fleet_deliveries` | `idx_del_status` (del DDL) | 1.927 / 1.927 | 26,0 / 25,2 | 25,2 / 24,9 |
-| Q5 | Merge Join sobre tablas de flota | ninguno | 1.893 / 1.893 | 64,0 / 66,5 | 158,6 / 67,1 |
+| Q1 | Parallel Hash Join sobre 5 tablas | ninguno | 5.227 / 5.227 | 184,4 / 178,2 | 183,4 / 228,1 |
+| Q2 | Parallel Hash Right Join | ninguno | 3.804 / 3.804 | 131,8 / 115,6 | 118,9 / 116,8 |
+| Q3 | Hash Right Join con *spill* a disco | ninguno | 3.713 / 3.713 + 786 temporales | 278,7 / 187,5 | 234,9 / 182,3 |
+| Q4 | Bitmap Heap Scan sobre `fleet_deliveries` | `idx_del_status` (del DDL) | 1.927 / 1.927 | 30,8 / 22,4 | 21,4 / 20,6 |
+| Q5 | Merge Join sobre tablas de flota | ninguno | 1.893 / 1.893 | 69,2 / 61,2 | 65,4 / 66,6 |
 
-**Conclusión principal: los índices de `05_indices.sql` no cambian ningún plan.** Para las cinco consultas, el plan es idéntico antes y después y los buffers leídos son los mismos. Los tiempos varían entre −58 % y +37 % con planes y trabajo idénticos: es ruido de medición de la máquina, no un efecto de los índices. Por eso la métrica de comparación confiable es el trabajo realizado (plan y buffers), que es determinístico, y no el tiempo. En Q1, la primera ejecución sin índices leyó 1.494 bloques del disco (caché fría tras la carga); el total de buffers accedidos es el mismo en ambas fases.
+**Conclusión principal: los índices de `05_indices.sql` no cambian ningún plan.** Para las cinco consultas, el plan es idéntico antes y después y los buffers leídos son los mismos. Los tiempos de las medianas varían entre −22 % y +24 % con planes y trabajo idénticos: es ruido de medición de la máquina, no un efecto de los índices (por ejemplo, Q1 con índices tarda 178 ms en la primera ejecución y 228 ms de mediana). Por eso la métrica de comparación confiable es el trabajo realizado (plan y buffers), que es determinístico, y no el tiempo. La primera ejecución sin índices lee bloques del disco (caché fría: 1.465 en Q1 y 33 en Q2) y las siguientes, de memoria; sumando lecturas de memoria y de disco, el total de buffers accedidos es el mismo en ambas fases.
 
 ### 7.2 Cobertura de lo pedido por el enunciado
 
 | Aspecto | Qué se observó |
 |---|---|
-| **Tiempo de ejecución** | De 25 ms (Q4) a 200–250 ms (Q1 y Q3). Las consultas simples sobre pocas tablas de flota (Q4, Q5) son 3 a 8 veces más rápidas que las que cruzan Olist con la flota (Q1, Q2, Q3). El tiempo de planificación es de 10 a 45 ms |
+| **Tiempo de ejecución** | De ≈ 21 ms (Q4) a ≈ 180–230 ms (Q1 y Q3). Las consultas sobre pocas tablas de flota (Q4, Q5) son 3 a 9 veces más rápidas que las que cruzan Olist con la flota (Q1, Q2, Q3). El tiempo de planificación es de 10 a 45 ms |
 | **Registros procesados y retornados** | Q1 lee 96.470 entregas y 99.441 clientes para devolver 80 filas; Q2 lee 99.224 reseñas y 96.470 entregas para devolver 95; Q5 lee las 96.470 entregas para devolver 3. Todas agregan un volumen grande en pocas filas, y por eso el planner prefiere recorrer las tablas completas |
 | **CPU y memoria** | `EXPLAIN` no mide CPU directamente; se aproxima con los *workers* paralelos (1 en Q1, Q2 y Q5) y el tiempo de ejecución. La memoria se ve en las tablas hash (hasta 10,9 MB en Q1 y Q2) y en Q3, que excede la memoria de trabajo por defecto (`work_mem` = 4 MB) y escribe 786 bloques temporales (≈ 6 MB). Las más costosas son Q1 y Q3 |
-| **Operaciones de E/S** | Todas las consultas se resuelven desde `shared_buffers` (`hit`), salvo la primera ejecución de Q1 con caché fría. Solo Q3 hace E/S temporal (786 bloques leídos y escritos) |
+| **Operaciones de E/S** | Las consultas se resuelven casi por completo desde `shared_buffers` (`hit`); solo la primera ejecución sin índices leyó bloques del disco (1.465 en Q1, 33 en Q2 y 3 en Q4), con la caché fría. Solo Q3 hace E/S temporal (786 bloques leídos y escritos) |
 | **Plan estimado vs real** | El planner estima bien Q4 (7.894 filas estimadas contra 7.826 reales) y Q5, pero se equivoca en las agregaciones: Q1 estima 27 grupos y hay 80, Q2 estima 32 y hay 95, y en Q3 estima 93.544 grupos para una agregación por `EXTRACT(año, mes)` que devuelve 23, porque las estadísticas no cubren expresiones |
 | **Impacto sobre otras operaciones** | Son `SELECT`: toman un bloqueo de lectura que no impide lecturas ni escrituras concurrentes. Sí consumen recursos compartidos: Q1 y Q3 recorren completa `fleet_deliveries` (15 MB), ocupan un *worker* paralelo y memoria de hash, y compiten por `shared_buffers`. Repetidas con frecuencia, afectarían a otros procesos; la Etapa 2 lo resuelve con una vista materializada |
 
